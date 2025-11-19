@@ -1,24 +1,23 @@
 CREATE TABLE Roles (
     role_id INT PRIMARY KEY,
     nom VARCHAR,
+    hierarchie INT, -- pour la modification de rôles, on ne peut destituer un individu d'un role plus haut
 
     peut_gerer_utilisateurs BOOLEAN DEFAULT false,
     peut_gerer_roles BOOLEAN DEFAULT false,
     
     peut_lire_clients BOOLEAN DEFAULT false,
-    peut_creer_clients BOOLEAN DEFAULT false,
-    peut_modifier_clients BOOLEAN DEFAULT false, 
+    peut_gerer_clients BOOLEAN DEFAULT false, 
     peut_gerer_interactions BOOLEAN DEFAULT false,
     
     peut_lire_projets BOOLEAN DEFAULT false,
-    peut_creer_projets BOOLEAN DEFAULT false,
-    peut_modifier_projets BOOLEAN DEFAULT false,
+    peut_gerer_projets BOOLEAN DEFAULT false,
     peut_gerer_jalons BOOLEAN DEFAULT false,
     peut_assigner_intervenants BOOLEAN DEFAULT false,
 
     peut_lire_intervenants BOOLEAN DEFAULT false,
     peut_modifier_intervenants BOOLEAN DEFAULT false, 
-    peut_valider_documents BOOLEAN DEFAULT false,
+    peut_acceder_documents BOOLEAN DEFAULT false,
     peut_gerer_competences BOOLEAN DEFAULT false,
 
     peut_lancer_matching BOOLEAN DEFAULT false,
@@ -53,7 +52,12 @@ CREATE TABLE Clients (
     contact_email VARCHAR,
     contact_telephone VARCHAR,
     type_client TEXT NOT NULL
-        CHECK (type_client IN ('Prospect', 'Actif', 'Ancien'))
+        CHECK (type_client IN ('Prospect', 'Actif', 'Ancien')),
+
+    interlocuteur_principal VARCHAR, --La personne de TNS en contact avec l'entreprise
+    localisation_lat FLOAT,
+    localisation_lng FLOAT,
+    address VARCHAR
     
 );
 
@@ -63,6 +67,7 @@ CREATE TABLE Conventions (
     description TEXT,
     date_debut DATE,
     date_fin DATE,
+    doc_contrat VARCHAR,
 
     client_id INT,
     FOREIGN KEY (client_id) REFERENCES Clients(client_id) ON UPDATE CASCADE ON DELETE CASCADE --suppression d'un client implique suppression de ses conventions
@@ -71,14 +76,16 @@ CREATE TABLE Conventions (
 
 CREATE TABLE Projets (
     projet_id INT PRIMARY KEY ,
+    convention_id INT,
     nom_projet VARCHAR NOT NULL,
     description TEXT,
+    budget FLOAT,
     date_debut DATE,
     date_fin DATE,
     statut TEXT NOT NULL
         CHECK( statut IN ('En attente', 'En cours', 'Terminé', 'Annulé')),
-    
-    convention_id INT,
+    doc_dossier VARCHAR, --Lien vers un dossier contenant tous les documents du projet
+
     FOREIGN KEY (convention_id) REFERENCES Conventions(convention_id) ON UPDATE CASCADE ON DELETE CASCADE -- suppression d'une convention implique suppression des projets associés
 );
 
@@ -88,7 +95,7 @@ CREATE TABLE Competences (
 
     -- sous-compétence (relation réflexive)
     competence_parent INT,
-    FOREIGN KEY (competence_parent) REFERENCES competence_id ON UPDATE CASCADE
+    FOREIGN KEY (competence_parent) REFERENCES competence_id ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE Jalons (
@@ -121,8 +128,8 @@ CREATE TABLE Intervenant_competences (
     intervenant_id INT,
     competence_id INT,
     
-    niveau TEXT NOT NULL
-        CHECK (niveau IN ('Expert', 'Confirmé', 'Débutant')),
+    niveau INT NOT NULL
+        CHECK (niveau BETWEEN 0 AND 5),
     PRIMARY KEY (intervenant_id, competence_id),
     FOREIGN KEY (intervenant_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE CASCADE, --suppression d'un intervenant implique suppression de ses compétences
     FOREIGN KEY (competence_id) REFERENCES Competences(competence_id) ON UPDATE CASCADE ON DELETE CASCADE --suppression d'une compétence implique que l'intervenant n'a plus cette compétence
@@ -132,6 +139,8 @@ CREATE TABLE Intervenant_competences (
 CREATE TABLE Projet_competences (
     projet_id INT,
     competence_id INT,
+    niveau_requis INT NOT NULL
+        CHECK (niveau_requis BETWEEN 0 AND 5),
     FOREIGN KEY (projet_id) REFERENCES Projets(projet_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (competence_id) REFERENCES Competences(competence_id) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (projet_id, competence_id)
