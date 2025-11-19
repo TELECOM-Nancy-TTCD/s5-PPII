@@ -9,7 +9,7 @@ CREATE TABLE Roles (
     
     peut_lire_clients BOOLEAN DEFAULT false,
     peut_gerer_clients BOOLEAN DEFAULT false,
-    peut_creer_interactions BOOLEA DEFAULT false,
+    peut_creer_interactions BOOLEAN DEFAULT false,
     peut_gerer_interactions BOOLEAN DEFAULT false,
     
     peut_lire_projets BOOLEAN DEFAULT false,
@@ -32,7 +32,7 @@ CREATE TABLE Utilisateurs (
     email VARCHAR UNIQUE NOT NULL,
     mot_de_passe_hashed VARCHAR NOT NULL,
     mot_de_passe_expire DATE NULL, -- Date d'expiration du mot de passe, NULL si jamais expiré
-    
+
     nom VARCHAR,
     prenom VARCHAR,
     avatar VARCHAR, -- Lien vers l'avatar de l'utilisateur
@@ -122,7 +122,7 @@ CREATE TABLE Interactions ( -- correspond au 'communique avec' du schéma mais a
     contenu TEXT NOT NULL,
     type_interaction_id TEXT NOT NULL
         CHECK( type_interaction_id IN ('email', 'phone', 'meeting', 'textmessage', 'other')),
-    
+
     -- relations aux autres tables
 
     client_id INT,
