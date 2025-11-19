@@ -1,0 +1,19 @@
+body {
+    margin: 0;
+    background: white
+}
+
+header, footer {
+    background: linear-gradient(45deg, #101010, #475eab);
+    flex: auto;
+}
+
+.page-desc {
+    font: 30px/1.6 system-ui;
+    color: white
+}
+.logo {
+    display: block;
+    float: left;
+    padding-right: 2px;
+}
