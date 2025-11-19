@@ -9,7 +9,7 @@ CREATE TABLE Roles (
     
     peut_lire_clients BOOLEAN DEFAULT false,
     peut_gerer_clients BOOLEAN DEFAULT false,
-    peut_creer_interactions BOOLEA DEFAULT false,
+    peut_creer_interactions BOOLEAN DEFAULT false,
     peut_gerer_interactions BOOLEAN DEFAULT false,
     
     peut_lire_projets BOOLEAN DEFAULT false,
@@ -32,7 +32,6 @@ CREATE TABLE Utilisateurs (
     email VARCHAR UNIQUE NOT NULL,
     mot_de_passe_hashed VARCHAR NOT NULL,
     mot_de_passe_expire TEXT NULL, -- Date d'expiration du mot de passe, NULL si jamais expiré
-    
     nom VARCHAR,
     prenom VARCHAR,
     avatar VARCHAR, -- Lien vers l'avatar de l'utilisateur
