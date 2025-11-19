@@ -54,7 +54,8 @@ CREATE TABLE Clients (
     type_client TEXT NOT NULL
         CHECK (type_client IN ('Prospect', 'Actif', 'Ancien')),
 
-    interlocuteur_principal VARCHAR, --La personne de TNS en contact avec l'entreprise
+    interlocuteur_principal_id INT, --La personne de TNS en contact avec l'entreprise
+    FOREIGN KEY (interlocuteur_principal_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL,
     localisation_lat FLOAT,
     localisation_lng FLOAT,
     address VARCHAR
@@ -95,7 +96,7 @@ CREATE TABLE Competences (
 
     -- sous-compétence (relation réflexive)
     competence_parent INT,
-    FOREIGN KEY (competence_parent) REFERENCES competence_id ON UPDATE CASCADE ON DELETE SET NULL
+    FOREIGN KEY (competence_parent) REFERENCES Competences(competence_id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE Jalons (
