@@ -119,12 +119,9 @@ class DBObject:
     def __init__(self, db: Database):
         self.db = db
 
-    def to_dict(self) -> Dict[str, Any]:
-        # Retourne les attributs publics (non privées) sous forme de dict
-        return {k: v for k, v in self.__dict__.items() if not k.startswith("_") and k != 'db'}
-
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.to_dict()})"
+        return f"<{self.__class__.__name__}>"
+
 
 
 # Classe utilitaire pour faciliter l'initialisation depuis un tuple ou dict
@@ -135,6 +132,9 @@ class _RowInitMixin:
     Fournit aussi la gestion centralisée du cache Redis.
     """
     FIELD_NAMES: List[str] = []
+
+    # Nom de la base de donnée pour les saves
+    DATABASE_NAME : str
 
     # Durée de mise en cache par défaut (30 minutes)
     CACHE_TTL: int = 1_800
@@ -185,7 +185,7 @@ class _RowInitMixin:
             return None
         # Assurer que le nom de champ est bien une chaîne pour satisfaire les analyseurs statiques
         try:
-            id_field = self.FIELD_NAMES[0]
+            id_field = next(f for f in self.FIELD_NAMES if f.endswith('_id'))
             if not isinstance(id_field, str):
                 id_field = str(id_field)
         except Exception:
@@ -209,6 +209,68 @@ class _RowInitMixin:
         payload = json.dumps(self.to_dict())
         # Utiliser setex pour définir TTL
         redis_client.setex(key, self.CACHE_TTL, payload)
+
+    def save(self):
+        # Sauvegarde l'objet dans la base de données
+        fields = ', '.join(self.FIELD_NAMES)
+        placeholders = ', '.join(['?'] * len(self.FIELD_NAMES))
+        values = (getattr(self, f) for f in self.FIELD_NAMES)
+        # Exécuter l'insertion
+        self.db.execute(
+            f"INSERT OR REPLACE INTO {self.DATABASE_NAME} ({fields}) VALUES ({placeholders})",
+            tuple(values)
+        )
+        self.db.commit()
+
+        # Vérifier si l'identifiant était dans le cache de tous les objets
+        cached_ids = self.db.redis_client.get(f"{self.DATABASE_NAME}s:all")
+        if cached_ids:
+            ids_list = json.loads(cached_ids)
+            id_field = next((f for f in self.FIELD_NAMES if f.endswith('_id')), None)
+            if id_field:
+                id_val = getattr(self, id_field, None)
+                if id_val is not None and id_val not in ids_list:
+                    ids_list.append(id_val)
+                    self.db.redis_client.setex(f"{self.DATABASE_NAME}s:all", 1_800, json.dumps(ids_list))
+
+        # Mettre à jour le cache Redis après la sauvegarde
+        try:
+            self._try_cache()
+        except Exception:
+            pass
+
+    def delete(self):
+        # Supprime l'objet de la base de données
+        id_field = next((f for f in self.FIELD_NAMES if f.endswith('_id')), None)
+        if id_field is None:
+            raise ValueError("No ID field found for deletion")
+        id_val = getattr(self, id_field, None)
+        if id_val is None:
+            raise ValueError("ID value is None, cannot delete")
+        self.db.execute(
+            f"DELETE FROM {self.DATABASE_NAME} WHERE {id_field} = ?",
+            (id_val,)
+        )
+        self.db.commit()
+
+        # Supprimer du cache Redis
+        try:
+            key = self._cache_key()
+            if key:
+                self.db.redis_client.delete(key)
+            # Mettre à jour le cache de tous les objets
+            cached_ids = self.db.redis_client.get(f"{self.DATABASE_NAME}s:all")
+            if cached_ids:
+                ids_list = json.loads(cached_ids)
+                if id_val in ids_list:
+                    ids_list.remove(id_val)
+                    self.db.redis_client.setex(f"{self.DATABASE_NAME}s:all", 1_800, json.dumps(ids_list))
+        except Exception:
+            pass
+
+    def __del__(self):
+        # Nettoyage si nécessaire
+        self.delete()
 
 
 class Role(DBObject, _RowInitMixin):
