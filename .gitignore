@@ -1,0 +1,7 @@
+# Environnements virtuels
+venv/
+
+
+# VS Code
+.vscode/
+
