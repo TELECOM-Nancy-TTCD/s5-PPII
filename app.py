@@ -61,10 +61,9 @@ def login():
         
         c = get_db().cursor()
 
-        username = request.form["Adresse e-mail"]
+        adressemail = request.form["Adresse e-mail"]
         mdp = request.form["Mot de passe"]
-        # PAS LA BONNE FACON DE LE FAIRE
-        c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (username,))
+        c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
         
         corresp = c.fetchall()
         if corresp != []: # Si on trouve un utilisateur avec cet email
@@ -78,4 +77,4 @@ def login():
 
     # Pour un login échouant, on ré-affiche la page avec un message supplémentaire (à implémenter dans la template Jinja)
     # Pour le premier affichage, has_failed_login est à False.
-    return render_template('Pages_speciales/login_page.html', has_failed_login)
+    return render_template('Pages_speciales/login_page.html', has_failed_login=has_failed_login)
