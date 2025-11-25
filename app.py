@@ -43,3 +43,50 @@ def login():
 
 
     return render_template('Pages_speciales/login_page.html')
+
+
+# Ici les pages du menus principales (vide) mas utile pour creer le menu 
+@app.route("/")          
+def accueil():
+    return render_template("accueil.html")
+
+@app.route("/contact")
+def contact():
+    return render_template("./Pages_speciales/contact.html")
+
+@app.route("/clients")
+def clients():
+    return render_template("clients.html")
+
+@app.route("/projets")
+def projets():
+    return render_template("projets.html")
+
+@app.route("/recherche_avance")
+def recherche_avance():
+    return render_template("Page_recherche_avance.html")
+
+
+
+# Ci dessous les pages du pied de page , souvent seules.
+@app.route("/cgu")
+def cgu():
+    return render_template("./Pages_speciales/cgu.html")
+
+@app.route("/rgpd")
+def rgpd():
+    return render_template("./Pages_speciales/rgpd.html")
+
+#Ici les pages d'erruer personalisé, elle ne sont pas encore toute la mais il faut que je réflechisse auquelles je met.
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("errors/404.html"), 404
+
+@app.errorhandler(500)
+def serveur_error(error):
+    return render_template("errors/500.html"), 500
+
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

@@ -1,0 +1,16 @@
+Changer de branche : git checkout ma_branche
+
+Afficher les branches locales : git branch
+
+Merge une autre branche (en se palcant sur la branche à changer): git merge branche_a_importe
+
+Voir les conflits : git status
+
+En cas de conflit : ouvrir les fichier onflictuelle, enlever les balises de conflit et save
+Ajouter avec git add les fichier modifier, commit, merge et push. 
+
+Revenir su la branche de dévelloppement 
+
+
+
+
