@@ -17,3 +17,26 @@ header, footer {
     float: left;
     padding-right: 2px;
 }
+
+.login-card {
+    position: absolute;
+    left:25%;
+    top:50%;
+    width: 50%;
+    background: white;
+    padding: 2em;
+    border-radius: 10px;
+    box-shadow: 5px 5px 10px black ;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    gap:5px;
+}
+
+.login-card input{
+    padding: 0.5em;
+    border-radius: 5px;
+    border: 1px solid #475eab;
+    font-size: 15px;
+
+}
