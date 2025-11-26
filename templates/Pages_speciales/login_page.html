@@ -11,7 +11,7 @@
     <header>
       <br>
       <img class="logo" src="/static/tns_logo_icon_couleur.svg" height="60"/>
-      <h1 class="page-desc"> Page de connexion</h1>
+      <h1 class="page-desc">Page de connexion</h1>
       <br>
     </header>
 
@@ -23,9 +23,9 @@
         <input name="Adresse e-mail" type="text" placeholder="e-mail">
         <input name="Mot de passe" type="password" placeholder="Mot de passe">
         {% if has_failed_login %}
-          <p style="color:red; font-size:15px"> Erreur : identifiant ou mot de passe inconnu </p>
+          <p class="erreur_formulaire" style="color:red; font-size:15px"> Erreur : identifiant ou mot de passe inconnu </p>
         {% endif %}
-        <input type="submit" value="Se connecter">
+        <input class="bouton_connexion" type="submit" value="Se connecter">
       </form>
     </div>
 
