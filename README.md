@@ -1,8 +1,7 @@
 # Groupe 07 - TTCD
 
-Git du projet PPII-Prospector
+## Git du projet PPII-Prospector - Branche de développement
 
+Cette branche contient le code en cours de développement, les fonctions encore à perfectionner, etc. dans un environnement global, avant de les merge sur la branche main.
 
-Utiliser des inclusions de templates Jinja: une template pour la structure générale, une
- template de header, une de navbar qui s'inclut dans la template de header, une template de footer...
- Ces templates peuvent alors inclure/être incluses dans d'autres templates pour éviter de répéter du HTML partout
+Cette branche est une **branche de développement** et, à ce titre, **ne doit pas contenir d'éléments sans rapport avec le développement (comme la gestion de projet par exemple).** Ceci afin de limiter la quantité d'éléments devant être importés par quelqu'un s'il souhaite *merge* la branche `dev` dans sa branche `feature` afin de tester celle-ci un environnement plus grand.
