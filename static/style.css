@@ -15,6 +15,7 @@ body {
 
 main {
     flex: 1;
+    padding-top: 75px;
 }
 
 .page-desc {
@@ -68,6 +69,9 @@ main {
 }
 
 .main-menu {
+    width: 100%;
+    position: fixed;
+    z-index: 2000;
     height: 75px;
     display: flex;
     flex-direction: lign-row;
@@ -131,3 +135,58 @@ main {
     color: rgb(204, 204, 204);
     display: inline-block;
 }
+
+.clients-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    padding-top: 25px;
+    position: relative;
+}
+
+
+.client-card {
+    display: flex;
+    gap: 15px;
+    background-color: #1b1b1b;
+    border-radius: 10px;
+    padding: 12px 15px;   
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.client-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+.client-row {
+    display: flex;
+    gap: 15px;
+    flex: 1;
+    align-items: center;
+}
+
+.client-row .col {
+    flex: 1;
+    min-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 4px 0;
+}
+
+#en-tete-clients {
+    top: 75px;
+    position: sticky;
+    background-color: #2b2b2b;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    z-index: 10;
+    display: flex;
+    gap: 15px;
+    border-radius: 10px 10px 0 0;
+    padding: 12px 15px;
+}
+

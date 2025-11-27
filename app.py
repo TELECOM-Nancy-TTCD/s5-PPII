@@ -15,6 +15,14 @@ def get_db():
         db = g._database = sqlite3.connect(DATABASE)
     return db
 
+def get_clients():
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row 
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Clients")
+    clients = cursor.fetchall()
+    conn.close()
+    return clients
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -90,7 +98,8 @@ def contact():
 
 @app.route("/clients")
 def clients():
-    return render_template("clients.html")
+    clients_db = get_clients()
+    return render_template("clients.html", clients_db=clients_db)
 
 @app.route("/projets")
 def projets():
@@ -124,4 +133,4 @@ def serveur_error(error):
 
 if __name__ == "__main__":
     app.run(debug=True)
-    
+

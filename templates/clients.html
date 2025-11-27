@@ -3,6 +3,37 @@
 {% block title %}Clients{% endblock %}
 
 {% block content %}
-<h1>Bienvenue sur la page des clients</h1>
-<p>Modifier a votre guise</p>
+
+
+<h1>Liste des clients</h1>
+<p style="font-size: large;">Ici se trouve tout les clients répertoriés.</p>
+
+<div class="clients-container">
+        <div class="client-row" id="en-tete-clients">
+            <span class="col">ID</span>
+            <span class="col">Nom entreprise</span>
+            <span class="col">Contact</span>
+            <span class="col">Email</span>
+            <span class="col">Téléphone</span>
+            <span class="col">Type client</span>
+            <span class="col">Interlocuteur principal</span>
+            <span class="col">Adresse</span>
+        </div>
+
+    {% for client in clients_db %}
+    <div class="client-card">
+        <div class="client-row">
+            <span class="col">{{ client['client_id'] }}</span>
+            <span class="col">{{ client['nom_entreprise'] }}</span>
+            <span class="col">{{ client['contact_nom'] }}</span>
+            <span class="col">{{ client['contact_email'] }}</span>
+            <span class="col">{{ client['contact_telephone'] }}</span>
+            <span class="col">{{ client['type_client'] }}</span>
+            <span class="col">{{ client['interlocuteur_principal'] }}</span>
+            <span class="col">{{ client['address'] }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
 {% endblock %}
