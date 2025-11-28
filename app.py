@@ -1,11 +1,8 @@
-from flask import Flask, session, render_template, request, redirect, url_for, g
-from flask_login import LoginManager, UserMixin, login_user
+from flask import Flask, session, render_template, request, redirect, url_for, g, abort
+from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
 from hashlib import scrypt
 import os, base64, sqlite3
 
-class User(UserMixin):
-    def __init__(self, id):
-        self.id=id
 
 DATABASE= 'database.db'
 
@@ -15,6 +12,28 @@ def get_db():
         db = g._database = sqlite3.connect(DATABASE)
     return db
 
+class User(UserMixin):
+    def __init__(self, id, nom, prenom, role_id):
+        self.id=id
+        self.nom = nom
+        self.prenom = prenom
+        self.role_id = role_id
+
+    
+    @classmethod
+    def get(cls, user_id : str):
+        try:
+            c = get_db().cursor()
+            
+            c.execute("SELECT utilisateur_id, nom, prenom, role_id FROM Utilisateurs WHERE utilisateur_id = ?",(int(user_id), ))
+            row = c.fetchone()
+
+            if row == None:
+                return None
+            
+            return cls(row)
+        except:
+            return None
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -52,6 +71,15 @@ def load_user(uid):
     return User.get(uid)
 
 
+@app.route("/")
+@app.route("/index")
+@login_required
+def index():
+
+
+    return render_template('index.html', user=current_user)
+
+
 
 @app.route("/login", methods = ["GET", "POST"])
 def login():
@@ -78,3 +106,50 @@ def login():
     # Pour un login échouant, on ré-affiche la page avec un message supplémentaire (à implémenter dans la template Jinja)
     # Pour le premier affichage, has_failed_login est à False.
     return render_template('Pages_speciales/login_page.html', has_failed_login=has_failed_login)
+
+
+def can_manage_users(us : User):
+    c = get_db().cursor()
+    c.execute('SELECT peut_gerer_utilisateurs FROM Roles WHERE role_id = ?', (us.role_id,))
+    
+    r = c.fetchone()
+    if r == None or r[0] == False:
+        return False
+    
+    return True
+
+
+@app.route("/users/create", methods=["GET", "POST"]) # Page à but d'insertion d'utilisateurs dans la table.
+                                                     # TODO: Continuer à travailler sur cette page avant tout pour pouvoir faire des tests sur le login
+@login_required
+def create_user():
+    if not can_manage_users(current_user):
+        abort(403)
+    
+    user_added_successfully= False
+    c = get_db().cursor()
+
+    if request.method == 'POST' : # Form : Rôles : Liste déroulante cherchant les noms des rôles dans la db
+        l = tuple(request.form.values())
+        email, hmdp, nom, prenom, role_name, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib = l
+        print(l)
+
+        hmdp = hash_password(hmdp) 
+        role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
+        c.execute("INSERT INTO Utilisateurs VALUES (?)", (None, email, hmdp, nom, prenom, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib)) 
+        get_db().commit()
+        #Insertion de None = NULL dans la colonne primary key car elle se gère ainsi automatiquement
+        user_added_successfully = True
+
+    # Chargement de la page
+    roles_possibles = c.execute("SELECT nom FROM Roles").fetchall() #Obtention des noms de rôles possibles
+
+    return render_template("create_user.html", context={"success":user_added_successfully, "roles_possibles": roles_possibles})
+
+
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
