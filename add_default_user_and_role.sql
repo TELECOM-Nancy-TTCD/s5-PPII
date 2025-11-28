@@ -3,5 +3,6 @@
 --PRAGMA table_info(Roles);
 --SELECT role_id, nom FROM Roles
 
--- INSERT INTO Utilisateurs VALUES (None, "john@admin.tns.com","kRwuE/Vgiz4bI9yLi+jVteBHC/qxVLrD9TIvPh42iq2FRtTyyX3YdfYnVhY6WjFf412/GFiw8K/NqoxfDPVKqC65HiPT3TsxNF0iePMYRdk=", "ADMIN", "John TNS", false, 169)
+-- INSERT INTO Utilisateurs(utilisateur_id, email, mot_de_passe_hashed, nom, prenom, est_intervenant, heures_dispo_semaine) VALUES (NULL, "john@admin.tns.com","kRwuE/Vgiz4bI9yLi+jVteBHC/qxVLrD9TIvPh42iq2FRtTyyX3YdfYnVhY6WjFf412/GFiw8K/NqoxfDPVKqC65HiPT3TsxNF0iePMYRdk=", "ADMIN", "John TNS", false, 169);
+-- SELECT utilisateur_id, email FROM Utilisateurs;
 -- Mot de passe: superadmin
