@@ -50,6 +50,51 @@ class Database:
             return user
         return None
 
+    def get_users_by_ids(self, user_ids: List[int]) -> List['Utilisateur']:
+        users = []
+        for uid in user_ids:
+            user = self.get_user_by_id(uid)
+            if user:
+                users.append(user)
+        return users
+
+    def get_user_by_email(self, email: str) -> List['Utilisateur']:
+        cursor = self.execute("SELECT * FROM utilisateurs WHERE email = ?", (email,))
+        rows = cursor.fetchone()
+        cursor.close()
+        users = [Utilisateur.from_db_row(self, row) for row in rows]
+        return users
+
+    def get_users_by_name(self, nom: str = None, prenom: str = None) -> List['Utilisateur']:
+        if nom is None and prenom is None:
+            raise ValueError("At least one of 'nom' or 'prenom' must be provided")
+        query = "SELECT * FROM utilisateurs WHERE "
+        params = []
+        conditions = []
+        if nom is not None:
+            conditions.append("nom = ?")
+            params.append(nom)
+        if prenom is not None:
+            conditions.append("prenom = ?")
+            params.append(prenom)
+        query += " AND ".join(conditions)
+        cursor = self.execute(query, tuple(params))
+        rows = cursor.fetchall()
+        cursor.close()
+        users = [Utilisateur.from_db_row(self, row) for row in rows]
+        return users
+
+    def get_users_by_text_search(self, text: str) -> List['Utilisateur']:
+        like_pattern = f"%{text}%"
+        cursor = self.execute(
+            "SELECT * FROM utilisateurs WHERE nom LIKE ? OR prenom LIKE ? OR email LIKE ?",
+            (like_pattern, like_pattern, like_pattern)
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        users = [Utilisateur.from_db_row(self, row) for row in rows]
+        return users
+
     def get_all_users(self, limit: int = 0, *, key=lambda x: True) -> List['Utilisateur']:
         """
         Récupère tous les utilisateurs de la base de données.
@@ -332,6 +377,22 @@ class Role(DBObject, _RowInitMixin):
     def __init__(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]] = None):
         super().__init__(db)
         self._init_from(db, data)
+
+    @property
+    def users(self):
+        cached_users = self.db.redis_client.get(f"role:{self.role_id}:users")
+        if cached_users:
+            users_ids = json.loads(cached_users)
+            users = [self.db.get_user_by_id(uid) for uid in users_ids]
+            return [user for user in users if user is not None]
+        cursor = self.db.execute("SELECT * FROM utilisateurs WHERE role_id = ?", (self.role_id,))
+        rows = cursor.fetchall()
+        cursor.close()
+        users = [Utilisateur.from_db_row(self.db, row) for row in rows]
+        # Mettre en cache les IDs des utilisateurs
+        users_ids = [user.utilisateur_id for user in users]
+        self.db.redis_client.setex(f"role:{self.role_id}:users", 1_800, json.dumps(users_ids))
+        return users
 
 
 class Utilisateur(DBObject, _RowInitMixin):
