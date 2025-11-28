@@ -1,4 +1,6 @@
+import datetime
 import json
+import logging
 import sqlite3
 from typing import Any, Dict, Tuple, List, Optional, cast, Sequence, Mapping
 
@@ -79,7 +81,7 @@ class Database:
         cached_client = self.redis_client.get(f"client:{client_id}")
         if cached_client:
             return Client.from_db_row(self, json.loads(cached_client))
-        cursor = self.db.execute("SELECT * FROM clients WHERE client_id = ?", (client_id,))
+        cursor = self.db.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
         row = cursor.fetchone()
         cursor.close()
         if row:
@@ -102,7 +104,7 @@ class Database:
             if limit > 0:
                 return clients[:limit]
             return clients
-        cursor = self.execute("SELECT * FROM clients " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        cursor = self.execute("SELECT * FROM Clients " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
         rows = cursor.fetchall()
         cursor.close()
 
@@ -113,6 +115,18 @@ class Database:
 
         clients = [Client.from_db_row(self, row) for row in rows if key(Client.from_db_row(self, row))]
         return clients
+
+    def get_role_by_id(self, role_id: int) -> Optional['Role']:
+        cached_role = self.redis_client.get(f"role:{role_id}")
+        if cached_role:
+            return Role.from_db_row(self, json.loads(cached_role))
+        cursor = self.execute("SELECT * FROM Roles WHERE role_id = ?", (role_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        if row:
+            role = Role.from_db_row(self, row)
+            return role
+        return None
 
 
 class DBObject:
@@ -211,6 +225,10 @@ class _RowInitMixin:
         redis_client.setex(key, self.CACHE_TTL, payload)
 
     def save(self):
+        database_name = getattr(self, 'DATABASE_NAME', None)
+        if database_name is None:
+            database_name = self.__class__.__name__ + "s"  # Pluriel simple par défaut
+            logging.warn("Using default DATABASE_NAME '%s' for class %s. It's recommended to explicitly set DATABASE_NAME.", database_name, self.__class__.__name__)
         # Sauvegarde l'objet dans la base de données
         fields = ', '.join(self.FIELD_NAMES)
         placeholders = ', '.join(['?'] * len(self.FIELD_NAMES))
@@ -268,10 +286,6 @@ class _RowInitMixin:
         except Exception:
             pass
 
-    def __del__(self):
-        # Nettoyage si nécessaire
-        self.delete()
-
 
 class Role(DBObject, _RowInitMixin):
     """
@@ -293,6 +307,8 @@ class Role(DBObject, _RowInitMixin):
         'peut_lire_intervenants', 'peut_modifier_intervenants', 'peut_acceder_documents', 'peut_gerer_competences',
         'peut_lancer_matching', 'peut_exporter_csv'
     ]
+
+    DATABASE_NAME = "Roles"
 
     role_id: int
     nom: str
@@ -328,6 +344,8 @@ class Utilisateur(DBObject, _RowInitMixin):
 
     mot_de_passe_hashed: mot de passe hashé de l'utilisateur
 
+    mot_de_passe_expire: date où le mot de passe est expiré (format 'YYYY-MM-DD')
+
     nom: nom de l'utilisateur
 
     prenom: prénom de l'utilisateur
@@ -349,14 +367,18 @@ class Utilisateur(DBObject, _RowInitMixin):
     doc_rib: chemin vers le document du RIB (si intervenant)
     """
     FIELD_NAMES = [
-        'utilisateur_id', 'email', 'mot_de_passe_hashed',
+        'utilisateur_id', 'email', 'mot_de_passe_hashed', 'mot_de_passe_expire'
         'nom', 'prenom', 'role_id',
         'est_intervenant', 'heures_dispo_semaine',
         'doc_carte_vitale', 'doc_cni', 'doc_adhesion', 'doc_rib'
     ]
+
+    DATABASE_NAME = "Utilisateurs"
+
     utilisateur_id: int
     email: str
     mot_de_passe_hashed: str
+    mot_de_passe_expire: Optional[datetime.date]
     nom: str
     prenom: str
     role_id: int
@@ -371,13 +393,19 @@ class Utilisateur(DBObject, _RowInitMixin):
 
     def __init__(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]] = None):
         super().__init__(db)
-        self._patch()
         self._init_from(db, data)
+        self._patch()
 
     def _patch(self):
         # Méthode pour patcher les données si nécessaire (ex: mise à jour de schéma)
         if not isinstance(self.utilisateur_id, int):
             self.utilisateur_id = int(self.utilisateur_id)
+        if not isinstance(self.mot_de_passe_expire, datetime.date):
+            if isinstance(self.mot_de_passe_expire, str):
+                self.mot_de_passe_expire = datetime.datetime.strptime(self.mot_de_passe_expire, '%Y-%m-%d').date()
+            else:
+                logging.warn(f"Invalid mot_de_passe_expire for user {self.utilisateur_id} (v={self.mot_de_passe_expire}), setting to None")
+                self.mot_de_passe_expire = None
         if not isinstance(self.role_id, int):
             self.role_id = int(self.role_id)
         if not isinstance(self.est_intervenant, bool):
@@ -395,16 +423,72 @@ class Utilisateur(DBObject, _RowInitMixin):
 
     @property
     def role(self) -> Role:
-        cached_role = self.db.redis_client.get(f"role:{self.role_id}")
+        cached_role = self.db.get_role_by_id(self.role_id)
         if cached_role:
-            return Role.from_db_row(self.db, json.loads(cached_role))
-        cursor = self.db.execute("SELECT * FROM roles WHERE role_id = ?", (self.role_id,))
-        row = cursor.fetchone()
-        cursor.close()
-        if row:
-            role = Role.from_db_row(self.db, row)
-            return role
+            return cached_role
         raise ValueError(f"Role with id {self.role_id} not found")
+
+    @property
+    def competences(self) -> list[Any] | None:
+        """
+        Récupère les compétences associées à l'utilisateur.
+        :return: Liste des objets Compétence ou None si aucune compétence
+        """
+        cached_competences_ids = self.db.redis_client.get(f"user:{self.utilisateur_id}:competences")
+        not_cached_competences = False
+        if cached_competences_ids:
+            competences_ids = json.loads(cached_competences_ids)
+            competences = []
+            for cid in competences_ids:
+                cached_competence = self.db.redis_client.get(f"competence:{cid}")
+                if cached_competence:
+                    competences.append(Competence.from_db_row(self.db, json.loads(cached_competence)))
+                else:
+                    not_cached_competences = True
+                    break
+            if len(competences) == len(competences_ids):
+                return competences  # Toutes les compétences étaient en cache
+        if not_cached_competences or not cached_competences_ids:
+            cursor = self.db.execute(
+                "SELECT c.* FROM competences c "
+                "JOIN utilisateur_competences uc ON c.competence_id = uc.competence_id "
+                "WHERE uc.utilisateur_id = ?", (self.utilisateur_id,))
+            rows = cursor.fetchall()
+            competences = [Competence.from_db_row(self.db, row) for row in rows]
+            cursor.close()
+            # Mettre en cache les IDs des compétences
+            competences_ids = [competence.competence_id for competence in competences]
+            self.db.redis_client.setex(f"user:{self.utilisateur_id}:competences", 1_800, json.dumps(competences_ids))
+            return competences
+        return None
+
+
+class Intervenant(Utilisateur):
+    """
+    Représente un intervenant, qui est un type spécial d'utilisateur.
+
+    Hérite de la classe Utilisateur.
+
+    Il va représenter un utilisateur avec son poste sur un projet
+
+    poste: poste de l'intervenant sur le projet (ex: 'Chef de projet', 'Développeur', etc.)
+
+    projet_id: identifiant du projet sur lequel l'intervenant travaille (clé étrangère vers Projet)
+    """
+    poste: str
+    projet_id: int
+    def __init__(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]] = None):
+        super().__init__(db, data)
+
+    def save(self):
+        # Vérifier si la propriété 'poste' a été changée et la sauvegarder dans la table appropriée
+        if hasattr(self, 'poste'):
+            self.db.execute(
+                "INSERT OR REPLACE INTO Travaille_sur (utilisateur_id, poste, projet_id) VALUES (?, ?, ?)",
+                (self.utilisateur_id, self.poste, self.projet_id)
+            )
+            self.db.commit()
+        super().save()
 
 
 class Client(DBObject, _RowInitMixin):
@@ -431,6 +515,7 @@ class Client(DBObject, _RowInitMixin):
         'client_id', 'nom_entreprise', 'contact_nom', 'contact_email', 'contact_telephone', 'type_client',
         'interlocuteur_principal_id', 'localisation_lat', 'localisation_lng', 'address'
     ]
+    DATABASE_NAME = "Clients"
     client_id: int
     nom_entreprise: str
     contact_nom: str
@@ -539,7 +624,7 @@ class Convention(DBObject, _RowInitMixin):
     FIELD_NAMES = [
         'convention_id', 'nom_convention', 'description', 'date_debut', 'date_fin', 'doc_contrat', 'client_id'
     ]
-
+    DATABASE_NAME = "Conventions"
     convention_id: int
     nom_convention: str
     description: str
@@ -620,6 +705,7 @@ class Projet(DBObject, _RowInitMixin):
         'projet_id', 'convention_id', 'nom_projet', 'description', 'budget', 'date_debut', 'date_fin', 'statut',
         'doc_dossier'
     ]
+    DATABASE_NAME = "Projets"
     projet_id: int
     convention_id: int
     nom_projet: str
@@ -674,6 +760,133 @@ class Projet(DBObject, _RowInitMixin):
             return jalons
         return None
 
+    @property
+    def competences(self) -> list[Any] | None:
+        """
+        Récupère les compétences associées au projet.
+        :return: Liste des objets Compétence ou None si aucune compétence
+        """
+        cached_competences_ids = self.db.redis_client.get(f"projet:{self.projet_id}:competences")
+        not_cached_competences = False
+        if cached_competences_ids:
+            competences_ids = json.loads(cached_competences_ids)
+            competences = []
+            for cid in competences_ids:
+                cached_competence = self.db.redis_client.get(f"competence:{cid}")
+                if cached_competence:
+                    competences.append(Competence.from_db_row(self.db, json.loads(cached_competence)))
+                else:
+                    not_cached_competences = True
+                    break
+            if len(competences) == len(competences_ids):
+                return competences  # Toutes les compétences étaient en cache
+        if not_cached_competences or not cached_competences_ids:
+            cursor = self.db.execute(
+                "SELECT c.* FROM competences c "
+                "JOIN projet_competences pc ON c.competence_id = pc.competence_id "
+                "WHERE pc.projet_id = ?", (self.projet_id,))
+            rows = cursor.fetchall()
+            competences = [Competence.from_db_row(self.db, row) for row in rows]
+            cursor.close()
+            # Mettre en cache les IDs des compétences
+            competences_ids = [competence.competence_id for competence in competences]
+            self.db.redis_client.setex(f"projet:{self.projet_id}:competences", 1_800, json.dumps(competences_ids))
+            return competences
+        return None
+
+    @property
+    def intervenants(self) -> list[Any] | None:
+        """
+        Renvoie toutes les personnes et leur poste qui interviennent sur ce projet. (Chef(s) de projet et intervenant(s))
+        :return: Liste des objets Utilisateur ou None si aucun intervenant
+        """
+        # Tentative d'utilisation du cache Redis. Le cache stocke une liste d'objets simples
+        # contenant {"utilisateur_id": ..., "poste": ...} afin de pouvoir reconstituer
+        # des objets Intervenant avec leur poste sans dupliquer la totalité des données utilisateur.
+        cached = None
+        try:
+            cached = self.db.redis_client.get(f"projet:{self.projet_id}:intervenants")
+        except Exception:
+            cached = None
+
+        if cached:
+            try:
+                entries = json.loads(cached)
+                intervenants: list[Intervenant] = []
+                incomplete_cache = False
+                for entry in entries:
+                    uid = entry.get("utilisateur_id")
+                    poste = entry.get("poste")
+                    user = self.db.get_user_by_id(uid)
+                    if user is None:
+                        incomplete_cache = True
+                        break
+                    # Construire un Intervenant à partir de l'utilisateur et attacher le poste/projet
+                    interv = Intervenant(self.db, user.to_dict())
+                    if poste is not None:
+                        interv.poste = poste
+                    interv.projet_id = self.projet_id
+                    intervenants.append(interv)
+                if not incomplete_cache:
+                    return intervenants if intervenants else None
+            except Exception:
+                # Si le cache est corrompu ou invalide, on ignore et on interroge la BDD
+                pass
+
+        # Interroger la table Travaille_sur. On tente d'abord de lire la colonne `poste`.
+        rows: list[tuple] = []
+        try:
+            cursor = self.db.execute(
+                "SELECT utilisateur_id, poste FROM Travaille_sur WHERE projet_id = ?",
+                (self.projet_id,)
+            )
+            rows = cursor.fetchall()
+            cursor.close()
+        except Exception:
+            # Si la colonne `poste` n'existe pas (schéma plus ancien), on récupère au moins
+            # les utilisateur_id et on posera `poste = None`.
+            try:
+                cursor = self.db.execute(
+                    "SELECT utilisateur_id FROM Travaille_sur WHERE projet_id = ?",
+                    (self.projet_id,)
+                )
+                rows = [(r[0], None) for r in cursor.fetchall()]
+                cursor.close()
+            except Exception:
+                # En cas d'erreur, retourner None
+                return None
+
+        result: list[Intervenant] = []
+        cache_entries: list[dict] = []
+        for row in rows:
+            if not row:
+                continue
+            uid = row[0]
+            poste = row[1] if len(row) > 1 else None
+            # Normaliser certains types (ex: 0/1) en None si ce n'est pas une chaîne
+            if poste is not None and not isinstance(poste, str):
+                poste = None
+
+            user = self.db.get_user_by_id(uid)
+            if user is None:
+                # Utilisateur inexistant -> ignorer
+                continue
+            interv = Intervenant(self.db, user.to_dict())
+            if poste is not None:
+                interv.poste = poste
+            interv.projet_id = self.projet_id
+            result.append(interv)
+            cache_entries.append({"utilisateur_id": uid, "poste": poste})
+
+        # Mettre en cache la liste des intervenants (utilisateur_id + poste)
+        if cache_entries:
+            try:
+                self.db.redis_client.setex(f"projet:{self.projet_id}:intervenants", 1_800, json.dumps(cache_entries))
+            except Exception:
+                pass
+
+        return result if result else None
+
 
 class Competence(DBObject, _RowInitMixin):
     """
@@ -686,6 +899,7 @@ class Competence(DBObject, _RowInitMixin):
     competence_parent: identifiant de la compétence parente (clé étrangère vers Competence), ou None si pas de parent
     """
     FIELD_NAMES = ['competence_id', 'nom', 'competence_parent']
+    DATABASE_NAME = "Competences"
     competence_id: int
     nom: str
     competence_parent: Optional[int]
@@ -724,6 +938,7 @@ class Jalon(DBObject, _RowInitMixin):
     projet_id: identifiant du projet associé au jalon (clé étrangère vers Projet)
     """
     FIELD_NAMES = ['jalon_id', 'description', 'date_fin', 'est_complete', 'projet_id']
+    DATABASE_NAME = "Jalons"
     jalon_id: int
     description: str
     date_fin: str
@@ -763,6 +978,7 @@ class Interaction(DBObject, _RowInitMixin):
     """
 
     FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'contenu', 'client_id', 'utilisateur_id']
+    DATABASE_NAME = "Interactions"
     interaction_id: int
     date_time_interaction: str
     contenu: str
