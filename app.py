@@ -38,14 +38,15 @@ class User(UserMixin):
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = "login"
 
 app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867' 
 # Clé pour l'encodage des cookies de session
 
-def hash_password(mdp):
+def hash_password(mdp : str):
     salt = os.urandom(16) # Génération d'un salt
 
-    mdp_hache = scrypt(mdp.encode(), salt, 2**14, 8, 1) # hachage du mdp avec le salt
+    mdp_hache = scrypt(mdp.encode(), salt=salt, n=2**14, r=8, p=1) # hachage du mdp avec le salt
 
     return base64.b64encode(salt+mdp_hache).decode() 
     # encodage en B64, et remise en forme texte pour stockage.
@@ -93,17 +94,23 @@ def login():
         mdp = request.form["Mot de passe"]
         c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
         
-        corresp = c.fetchall()
-        if corresp != []: # Si on trouve un utilisateur avec cet email
-            if verify_password(mdp, corresp[0][1]):
-                to_login = corresp[0][0]
-                login_user(User(int(to_login))) # On login l'utilisateur correspondant, identifié par son user id
+        corresp = c.fetchone()
+        if corresp != None: # Si on trouve un utilisateur avec cet email
+            if verify_password(mdp, corresp[1]):
+                to_login = corresp[0]
+                login_user(load_user(to_login)) # On login l'utilisateur correspondant, identifié par son user id
+
+                next_page = request.args.get("next")
+                if next_page == None or next_page[0]=="/":
+                    return redirect(url_for("index"))
+                
+                return redirect(next)
             
-                return redirect(url_for('index')) # TODO: Signaler à l'utilisateur que son login est réussi
+                
         
         has_failed_login = True # Si pas d'utilisateur avec ce mail ou que le mdp est faux, on a raté le login
 
-    # Pour un login échouant, on ré-affiche la page avec un message supplémentaire (à implémenter dans la template Jinja)
+    # Pour un login échouant, on ré-affiche la page avec un message supplémentaire
     # Pour le premier affichage, has_failed_login est à False.
     return render_template('Pages_speciales/login_page.html', has_failed_login=has_failed_login)
 
@@ -119,8 +126,7 @@ def can_manage_users(us : User):
     return True
 
 
-@app.route("/users/create", methods=["GET", "POST"]) # Page à but d'insertion d'utilisateurs dans la table.
-                                                     # TODO: Continuer à travailler sur cette page avant tout pour pouvoir faire des tests sur le login
+@app.route("/users/create", methods=["GET", "POST"])
 @login_required
 def create_user():
     if not can_manage_users(current_user):
@@ -129,12 +135,20 @@ def create_user():
     user_added_successfully= False
     c = get_db().cursor()
 
-    if request.method == 'POST' : # Form : Rôles : Liste déroulante cherchant les noms des rôles dans la db
-        l = tuple(request.form.values())
-        email, hmdp, nom, prenom, role_name, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib = l
-        print(l)
+    if request.method == 'POST' :
+        email = request.form["e-mail"]
+        hmdp = hash_password(request.form["mdp"])
+        nom = request.form["nom"]
+        prenom = request.form["prenom"]
+        role_name = request.form["role"]
+        print(role_name)
+        est_intervenant = "est_intervenant" in request.form
+        heures_dispo = request.form["h_disp"]
+        doc_carte_vitale = request.form["doc_car"]
+        doc_cni = request.form["doc_cni"]
+        doc_adhesion = request.form["doc_adh"]
+        doc_rib = request.form["doc_rib"]
 
-        hmdp = hash_password(hmdp) 
         role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
         c.execute("INSERT INTO Utilisateurs VALUES (?)", (None, email, hmdp, nom, prenom, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib)) 
         get_db().commit()
@@ -142,7 +156,7 @@ def create_user():
         user_added_successfully = True
 
     # Chargement de la page
-    roles_possibles = c.execute("SELECT nom FROM Roles").fetchall() #Obtention des noms de rôles possibles
+    roles_possibles =["a","b","d"] #c.execute("SELECT nom FROM Roles").fetchall() #Obtention des noms de rôles possibles
 
     return render_template("create_user.html", context={"success":user_added_successfully, "roles_possibles": roles_possibles})
 
