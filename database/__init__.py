@@ -2,7 +2,34 @@ import datetime
 import json
 import logging
 import sqlite3
-from typing import Any, Dict, Tuple, List, Optional, cast, Sequence, Mapping
+import unicodedata
+from typing import Any, List, Optional, cast, Sequence, Mapping, Dict, Tuple
+
+
+def normalize_text(s: Optional[str]) -> str:
+    """Normalize a text for consistent comparisons and cache keys (lower, strip, remove accents)."""
+    if s is None:
+        return ""
+    s = s.strip().lower()
+    s = unicodedata.normalize("NFKD", s)
+    return "".join(ch for ch in s if not unicodedata.combining(ch))
+
+
+# Builder de clés Redis exporté
+def redis_key(resource: str, id: Optional[Any] = None, suffix: Optional[str] = None) -> str:
+    """
+    Construit une clé Redis simple et consistante.
+    Exemples:
+      redis_key('user', 123) -> 'user:123'
+      redis_key('Utilisateurs', None, 'email:jean.dupont@example.com') -> 'utilisateurs:email:jean.dupont@example.com'
+    Note: le resource peut être le DATABASE_NAME (avec majuscule initiale) ou un préfixe plus court ('user').
+    """
+    parts: List[str] = [str(resource)]
+    if id is not None:
+        parts.append(str(id))
+    if suffix is not None:
+        parts.append(str(suffix))
+    return ":".join(parts).lower()
 
 
 class Database:
@@ -38,11 +65,38 @@ class Database:
     def cursor(self):
         return self.db.cursor()
 
+    # Méthode utilitaire pour interroger un index Redis secondaire (exact match)
+    def _get_index_ids(self, database_name: str, field: str, value: str) -> Optional[List[int]]:
+        """
+        Interroge l'index Redis secondaire pour `database_name`/`field` = normalized(value).
+        Retourne la liste d'ids (entiers) ou None si l'index n'existe pas.
+        """
+        if not value:
+            return None
+        try:
+            key = redis_key(f"index:{database_name}", suffix=f"{field}:{normalize_text(value)}")
+            members = self.redis_client.smembers(key)
+            if not members:
+                return None
+            ids: List[int] = []
+            for m in members:
+                # redis-py peut renvoyer bytes ou str
+                if isinstance(m, bytes):
+                    m = m.decode()
+                try:
+                    ids.append(int(m))
+                except Exception:
+                    # ignorer les valeurs non-int
+                    continue
+            return ids
+        except Exception:
+            return None
+
     def get_user_by_id(self, user_id: int) -> Optional['Utilisateur']:
-        cached_user = self.redis_client.get(f"user:{user_id}")
+        cached_user = self.redis_client.get(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), user_id))
         if cached_user:
             return Utilisateur.from_db_row(self, json.loads(cached_user))
-        cursor = self.execute("SELECT * FROM utilisateurs WHERE utilisateur_id = ?", (user_id,))
+        cursor = self.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE utilisateur_id = ?", (user_id,))
         row = cursor.fetchone()
         cursor.close()
         if row:
@@ -58,17 +112,44 @@ class Database:
                 users.append(user)
         return users
 
-    def get_user_by_email(self, email: str) -> List['Utilisateur']:
-        cursor = self.execute("SELECT * FROM utilisateurs WHERE email = ?", (email,))
-        rows = cursor.fetchone()
+    def get_user_by_email(self, email: str) -> 'Utilisateur':
+        # Tenter d'utiliser l'index Redis secondaire pour recherche exacte
+        ids = self._get_index_ids(Utilisateur.DATABASE_NAME, 'email', email)
+        if ids:
+            # on s'attend à un seul résultat sur email ; prendre le premier
+            user = self.get_user_by_id(ids[0])
+            if user:
+                return user
+        # Requête d'égalité sur l'email — on s'attend à un seul résultat
+        cursor = self.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE email = ?", (email,))
+        row = cursor.fetchone()
         cursor.close()
-        users = [Utilisateur.from_db_row(self, row) for row in rows]
-        return users
+        if row:
+            user = Utilisateur.from_db_row(self, row)
+            return user
+        raise ValueError(f"User with email {email} not found")
 
     def get_users_by_name(self, nom: str = None, prenom: str = None) -> List['Utilisateur']:
         if nom is None and prenom is None:
             raise ValueError("At least one of 'nom' or 'prenom' must be provided")
-        query = "SELECT * FROM utilisateurs WHERE "
+
+        # Tenter d'utiliser les index Redis secondaires (recherche exacte)
+        ids_sets: List[set] = []
+        if nom is not None:
+            ids = self._get_index_ids(Utilisateur.DATABASE_NAME, 'nom', nom)
+            if ids:
+                ids_sets.append(set(ids))
+        if prenom is not None:
+            ids = self._get_index_ids(Utilisateur.DATABASE_NAME, 'prenom', prenom)
+            if ids:
+                ids_sets.append(set(ids))
+        if ids_sets:
+            # intersecter les sets si plusieurs critères, sinon prendre le seul set
+            result_ids = set.intersection(*ids_sets) if len(ids_sets) > 1 else ids_sets[0]
+            users = [self.get_user_by_id(uid) for uid in result_ids]
+            return [user for user in users if user is not None]
+
+        query = f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE "
         params = []
         conditions = []
         if nom is not None:
@@ -87,7 +168,7 @@ class Database:
     def get_users_by_text_search(self, text: str) -> List['Utilisateur']:
         like_pattern = f"%{text}%"
         cursor = self.execute(
-            "SELECT * FROM utilisateurs WHERE nom LIKE ? OR prenom LIKE ? OR email LIKE ?",
+            f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE nom LIKE ? OR prenom LIKE ? OR email LIKE ?",
             (like_pattern, like_pattern, like_pattern)
         )
         rows = cursor.fetchall()
@@ -102,7 +183,7 @@ class Database:
         :param key: Fonction de filtrage optionnelle
         :return: Liste des objets Utilisateur
         """
-        cached_users = self.redis_client.get("users:all")
+        cached_users = self.redis_client.get(redis_key(Utilisateur.DATABASE_NAME.lower(), None, "all"))
         if cached_users:
             all_users_id = json.loads(cached_users)
             users = [self.get_user_by_id(uid) for uid in all_users_id]
@@ -110,23 +191,24 @@ class Database:
             if limit > 0:
                 return users[:limit]
             return users
-        cursor = self.execute("SELECT * FROM Utilisateurs " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        cursor = self.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
         rows = cursor.fetchall()
         cursor.close()
 
         if limit == 0:
             # Mettre en cache les IDs des utilisateurs
             all_users_id = [row[0] for row in rows]  # Supposant que l'ID est dans la première colonne
-            self.redis_client.setex("users:all", 1_800, json.dumps(all_users_id))
+            self.redis_client.setex(redis_key(Utilisateur.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_users_id))
 
-        users = [Utilisateur.from_db_row(self, row) for row in rows if key(Utilisateur.from_db_row(self, row))]
+        users = [Utilisateur.from_db_row(self, row) for row in rows]
+        users = [user for user in users if key(user)]
         return users
 
     def get_client_by_id(self, client_id: int) -> Optional['Client']:
-        cached_client = self.redis_client.get(f"client:{client_id}")
+        cached_client = self.redis_client.get(redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), client_id))
         if cached_client:
             return Client.from_db_row(self, json.loads(cached_client))
-        cursor = self.db.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
+        cursor = self.execute(f"SELECT * FROM {Client.DATABASE_NAME} WHERE client_id = ?", (client_id,))
         row = cursor.fetchone()
         cursor.close()
         if row:
@@ -141,7 +223,7 @@ class Database:
         :param key: Fonction de filtrage optionnelle
         :return: Liste des objets Client
         """
-        cached_clients = self.redis_client.get("clients:all")
+        cached_clients = self.redis_client.get(redis_key(Client.DATABASE_NAME.lower(), None, "all"))
         if cached_clients:
             all_clients_id = json.loads(cached_clients)
             clients = [self.get_client_by_id(cid) for cid in all_clients_id]
@@ -149,29 +231,112 @@ class Database:
             if limit > 0:
                 return clients[:limit]
             return clients
-        cursor = self.execute("SELECT * FROM Clients " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        cursor = self.execute(f"SELECT * FROM {Client.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
         rows = cursor.fetchall()
         cursor.close()
 
         if limit == 0:
             # Mettre en cache les IDs des clients
             all_clients_id = [row[0] for row in rows]  # Supposant que l'ID est dans la première colonne
-            self.redis_client.setex("clients:all", 1_800, json.dumps(all_clients_id))
+            self.redis_client.setex(redis_key(Client.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_clients_id))
 
-        clients = [Client.from_db_row(self, row) for row in rows if key(Client.from_db_row(self, row))]
+        clients = [Client.from_db_row(self, row) for row in rows]
+        clients = [client for client in clients if key(client)]
         return clients
 
     def get_role_by_id(self, role_id: int) -> Optional['Role']:
-        cached_role = self.redis_client.get(f"role:{role_id}")
+        cached_role = self.redis_client.get(redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), role_id))
         if cached_role:
             return Role.from_db_row(self, json.loads(cached_role))
-        cursor = self.execute("SELECT * FROM Roles WHERE role_id = ?", (role_id,))
+        cursor = self.execute(f"SELECT * FROM {Role.DATABASE_NAME} WHERE role_id = ?", (role_id,))
         row = cursor.fetchone()
         cursor.close()
         if row:
             role = Role.from_db_row(self, row)
             return role
         return None
+
+    def get_project_id(self, project_id: int) -> Optional['Projet']:
+        cached_project = self.redis_client.get(redis_key(getattr(Projet, 'CACHE_PREFIX', None) or Projet.__name__.lower(), project_id))
+        if cached_project:
+            return Projet.from_db_row(self, json.loads(cached_project))
+        cursor = self.execute(f"SELECT * FROM {Projet.DATABASE_NAME} WHERE projet_id = ?", (project_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        if row:
+            project = Projet.from_db_row(self, row)
+            return project
+        return None
+
+    def get_all_projects(self, limit: int = 0, *, key=lambda x: True) -> List['Projet']:
+        cached_projects = self.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), None, "all"))
+        if cached_projects:
+            all_projects_id = json.loads(cached_projects)
+            projects = [self.get_project_id(pid) for pid in all_projects_id]
+            projects = [project for project in projects if project is not None and key(project)]
+            if limit > 0:
+                return projects[:limit]
+            return projects
+        cursor = self.execute(f"SELECT * FROM {Projet.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        rows = cursor.fetchall()
+        cursor.close()
+        if limit == 0:
+            # Mettre en cache les IDs des projets
+            all_projects_id = [row[0] for row in rows]  # Supposant que l'ID est dans la première colonne
+            self.redis_client.setex(redis_key(Projet.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_projects_id))
+        projects = [Projet.from_db_row(self, row) for row in rows]
+        projects = [project for project in projects if key(project)]
+        return projects
+
+    def get_interaction_by_id(self, interaction_id: int) -> Optional['Interaction']:
+        cached_interaction = self.redis_client.get(redis_key(getattr(Interaction, 'CACHE_PREFIX', None) or Interaction.__name__.lower(), interaction_id))
+        if cached_interaction:
+            return Interaction.from_db_row(self, json.loads(cached_interaction))
+        cursor = self.execute(f"SELECT * FROM {Interaction.DATABASE_NAME} WHERE interaction_id = ?", (interaction_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        if row:
+            interaction = Interaction.from_db_row(self, row)
+            return interaction
+        return None
+
+    def get_all_interactions(self, project_id : int | None = None, user_id: int | None = None, limit: int = 0, *, key=lambda x: True) -> List['Interaction']:
+        cached_interactions = self.redis_client.get(redis_key(Interaction.DATABASE_NAME.lower(), None, "all"))
+        if cached_interactions:
+            all_interactions_id = json.loads(cached_interactions)
+            interactions = [self.get_interaction_by_id(iid) for iid in all_interactions_id]
+            interactions = [interaction for interaction in interactions if interaction is not None and key(interaction)]
+            if project_id is not None:
+                interactions = [interaction for interaction in interactions if getattr(interaction, 'projet_id', None) == project_id]
+            if user_id is not None:
+                interactions = [interaction for interaction in interactions if getattr(interaction, 'utilisateur_id', None) == user_id]
+            if limit > 0:
+                return interactions[:limit]
+            return interactions
+        query = f"SELECT * FROM {Interaction.DATABASE_NAME}"
+        params: List[Any] = []
+        conditions: List[str] = []
+        if project_id is not None:
+            conditions.append("projet_id = ?")
+            params.append(project_id)
+        if user_id is not None:
+            conditions.append("utilisateur_id = ?")
+            params.append(user_id)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        if limit > 0:
+            query += " LIMIT ?"
+            params.append(limit)
+        cursor = self.execute(query, tuple(params))
+        rows = cursor.fetchall()
+        cursor.close()
+        if limit == 0:
+            # Mettre en cache les IDs des interactions
+            all_interactions_id = [row[0] for row in rows]  # Supposant que l'ID est dans la première colonne
+            self.redis_client.setex(redis_key(Interaction.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_interactions_id))
+        interactions = [Interaction.from_db_row(self, row) for row in rows]
+        interactions = [interaction for interaction in interactions if key(interaction)]
+        return interactions
 
 
 class DBObject:
@@ -200,6 +365,9 @@ class _RowInitMixin:
     # Préfixe de clé Redis par défaut ; peut être surchargé par les classes (ex: Utilisateur -> 'user')
     CACHE_PREFIX: Optional[str] = None
 
+    # Champs à indexer dans Redis pour recherche exacte (secondary indexes)
+    SECONDARY_INDEX_FIELDS: List[str] = []
+
     def _init_from(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]]):
         self.db = db
         if data is None:
@@ -219,11 +387,13 @@ class _RowInitMixin:
             raise TypeError("data must be a dict, tuple/list or None")
 
         # Après l'initialisation des champs, tenter de mettre l'objet en cache Redis
-        try:
-            self._try_cache()
-        except Exception:
-            # Ne pas lever d'erreur si Redis n'est pas disponible ou si sérialisation échoue
-            pass
+        # Si la classe implémente _patch(), on évite de cacher prématurément l'objet non patché.
+        if not hasattr(self, '_patch'):
+            try:
+                self._try_cache()
+            except Exception:
+                # Ne pas lever d'erreur si Redis n'est pas disponible ou si sérialisation échoue
+                pass
 
     @classmethod
     def from_db_row(cls, db: Database, row: Tuple[Any, ...]):
@@ -232,9 +402,6 @@ class _RowInitMixin:
 
     def to_dict(self) -> Dict[str, Any]:
         return {f: getattr(self, f) for f in self.FIELD_NAMES}
-
-    def __dict__(self):
-        return self.to_dict()
 
     # Méthodes de cache centralisées
     def _cache_key(self) -> Optional[str]:
@@ -269,7 +436,79 @@ class _RowInitMixin:
         # Utiliser setex pour définir TTL
         redis_client.setex(key, self.CACHE_TTL, payload)
 
+    # Méthodes pour gérer les index secondaires Redis (recherches exactes)
+    def _set_secondary_indexes(self) -> None:
+        """
+        Pour chaque champ dans SECONDARY_INDEX_FIELDS, ajoute l'id courant dans le set Redis
+        correspondant à la valeur normalisée du champ.
+        Clef: redis_key(f"index:{DATABASE_NAME}", suffix=f"{field}:{normalized_value}")
+        Valeurs: ensemble d'ids (SADD)
+        """
+        if not self.SECONDARY_INDEX_FIELDS:
+            return
+        try:
+            id_field = next((f for f in self.FIELD_NAMES if f.endswith('_id')), None)
+            if id_field is None:
+                return
+            id_val = getattr(self, id_field, None)
+            if id_val is None:
+                return
+            for field in self.SECONDARY_INDEX_FIELDS:
+                if not hasattr(self, field):
+                    continue
+                raw_value = getattr(self, field)
+                if raw_value is None:
+                    continue
+                normalized = normalize_text(str(raw_value))
+                key = redis_key(f"index:{getattr(self, 'DATABASE_NAME')}", suffix=f"{field}:{normalized}")
+                try:
+                    # Utiliser SADD pour garder la liste des ids correspondant à cette valeur exacte
+                    self.db.redis_client.sadd(key, str(id_val))
+                    # Appliquer TTL en utilisant expire
+                    self.db.redis_client.expire(key, self.CACHE_TTL)
+                except Exception:
+                    # Ne pas lever d'erreur si Redis n'est pas disponible
+                    continue
+        except Exception:
+            pass
+
+    def _delete_secondary_indexes(self) -> None:
+        """
+        Supprime l'id courant des sets d'index secondaires.
+        """
+        if not self.SECONDARY_INDEX_FIELDS:
+            return
+        try:
+            id_field = next((f for f in self.FIELD_NAMES if f.endswith('_id')), None)
+            if id_field is None:
+                return
+            id_val = getattr(self, id_field, None)
+            if id_val is None:
+                return
+            for field in self.SECONDARY_INDEX_FIELDS:
+                if not hasattr(self, field):
+                    continue
+                raw_value = getattr(self, field)
+                if raw_value is None:
+                    continue
+                normalized = normalize_text(str(raw_value))
+                key = redis_key(f"index:{getattr(self, 'DATABASE_NAME')}", suffix=f"{field}:{normalized}")
+                try:
+                    self.db.redis_client.srem(key, str(id_val))
+                    # Optionnel: supprimer la clé si le set est maintenant vide
+                    try:
+                        members = self.db.redis_client.smembers(key)
+                        if not members:
+                            self.db.redis_client.delete(key)
+                    except Exception:
+                        pass
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
     def save(self):
+        # Standardiser le nom de la table/cache utilisé
         database_name = getattr(self, 'DATABASE_NAME', None)
         if database_name is None:
             database_name = self.__class__.__name__ + "s"  # Pluriel simple par défaut
@@ -280,21 +519,36 @@ class _RowInitMixin:
         values = (getattr(self, f) for f in self.FIELD_NAMES)
         # Exécuter l'insertion
         self.db.execute(
-            f"INSERT OR REPLACE INTO {self.DATABASE_NAME} ({fields}) VALUES ({placeholders})",
+            f"INSERT OR REPLACE INTO {database_name} ({fields}) VALUES ({placeholders})",
             tuple(values)
         )
         self.db.commit()
 
+        # Mettre à jour les index secondaires Redis
+        try:
+            self._set_secondary_indexes()
+        except Exception:
+            pass
+
         # Vérifier si l'identifiant était dans le cache de tous les objets
-        cached_ids = self.db.redis_client.get(f"{self.DATABASE_NAME}s:all")
+        try:
+            cached_ids = self.db.redis_client.get(redis_key(database_name.lower(), None, "all"))
+        except Exception:
+            cached_ids = None
         if cached_ids:
-            ids_list = json.loads(cached_ids)
+            try:
+                ids_list = json.loads(cached_ids)
+            except Exception:
+                ids_list = []
             id_field = next((f for f in self.FIELD_NAMES if f.endswith('_id')), None)
             if id_field:
                 id_val = getattr(self, id_field, None)
                 if id_val is not None and id_val not in ids_list:
                     ids_list.append(id_val)
-                    self.db.redis_client.setex(f"{self.DATABASE_NAME}s:all", 1_800, json.dumps(ids_list))
+                    try:
+                        self.db.redis_client.setex(redis_key(database_name.lower(), None, "all"), self.CACHE_TTL, json.dumps(ids_list))
+                    except Exception:
+                        pass
 
         # Mettre à jour le cache Redis après la sauvegarde
         try:
@@ -310,11 +564,24 @@ class _RowInitMixin:
         id_val = getattr(self, id_field, None)
         if id_val is None:
             raise ValueError("ID value is None, cannot delete")
+
+        database_name = getattr(self, 'DATABASE_NAME', None)
+        if database_name is None:
+            database_name = self.__class__.__name__ + "s"
+        else:
+            database_name = str(database_name)
+
         self.db.execute(
-            f"DELETE FROM {self.DATABASE_NAME} WHERE {id_field} = ?",
+            f"DELETE FROM {database_name} WHERE {id_field} = ?",
             (id_val,)
         )
         self.db.commit()
+
+        # Supprimer des index secondaires Redis
+        try:
+            self._delete_secondary_indexes()
+        except Exception:
+            pass
 
         # Supprimer du cache Redis
         try:
@@ -322,12 +589,21 @@ class _RowInitMixin:
             if key:
                 self.db.redis_client.delete(key)
             # Mettre à jour le cache de tous les objets
-            cached_ids = self.db.redis_client.get(f"{self.DATABASE_NAME}s:all")
+            try:
+                cached_ids = self.db.redis_client.get(redis_key(database_name.lower(), None, "all"))
+            except Exception:
+                cached_ids = None
             if cached_ids:
-                ids_list = json.loads(cached_ids)
+                try:
+                    ids_list = json.loads(cached_ids)
+                except Exception:
+                    ids_list = []
                 if id_val in ids_list:
                     ids_list.remove(id_val)
-                    self.db.redis_client.setex(f"{self.DATABASE_NAME}s:all", 1_800, json.dumps(ids_list))
+                    try:
+                        self.db.redis_client.setex(redis_key(database_name.lower(), None, "all"), self.CACHE_TTL, json.dumps(ids_list))
+                    except Exception:
+                        pass
         except Exception:
             pass
 
@@ -380,18 +656,18 @@ class Role(DBObject, _RowInitMixin):
 
     @property
     def users(self):
-        cached_users = self.db.redis_client.get(f"role:{self.role_id}:users")
+        cached_users = self.db.redis_client.get(redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"))
         if cached_users:
             users_ids = json.loads(cached_users)
             users = [self.db.get_user_by_id(uid) for uid in users_ids]
             return [user for user in users if user is not None]
-        cursor = self.db.execute("SELECT * FROM utilisateurs WHERE role_id = ?", (self.role_id,))
+        cursor = self.db.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE role_id = ?", (self.role_id,))
         rows = cursor.fetchall()
         cursor.close()
         users = [Utilisateur.from_db_row(self.db, row) for row in rows]
         # Mettre en cache les IDs des utilisateurs
         users_ids = [user.utilisateur_id for user in users]
-        self.db.redis_client.setex(f"role:{self.role_id}:users", 1_800, json.dumps(users_ids))
+        self.db.redis_client.setex(redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"), 1_800, json.dumps(users_ids))
         return users
 
 
@@ -428,7 +704,7 @@ class Utilisateur(DBObject, _RowInitMixin):
     doc_rib: chemin vers le document du RIB (si intervenant)
     """
     FIELD_NAMES = [
-        'utilisateur_id', 'email', 'mot_de_passe_hashed', 'mot_de_passe_expire'
+        'utilisateur_id', 'email', 'mot_de_passe_hashed', 'mot_de_passe_expire',
         'nom', 'prenom', 'role_id',
         'est_intervenant', 'heures_dispo_semaine',
         'doc_carte_vitale', 'doc_cni', 'doc_adhesion', 'doc_rib'
@@ -451,11 +727,17 @@ class Utilisateur(DBObject, _RowInitMixin):
     doc_rib: Optional[str]
 
     CACHE_PREFIX = 'user'
+    SECONDARY_INDEX_FIELDS = ['email', 'nom', 'prenom']
 
     def __init__(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]] = None):
         super().__init__(db)
         self._init_from(db, data)
         self._patch()
+        # Après patch, mettre en cache l'objet si possible
+        try:
+            self._try_cache()
+        except Exception:
+            pass
 
     def _patch(self):
         # Méthode pour patcher les données si nécessaire (ex: mise à jour de schéma)
@@ -495,7 +777,7 @@ class Utilisateur(DBObject, _RowInitMixin):
         Récupère les compétences associées à l'utilisateur.
         :return: Liste des objets Compétence ou None si aucune compétence
         """
-        cached_competences_ids = self.db.redis_client.get(f"user:{self.utilisateur_id}:competences")
+        cached_competences_ids = self.db.redis_client.get(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.utilisateur_id, "competences"))
         not_cached_competences = False
         if cached_competences_ids:
             competences_ids = json.loads(cached_competences_ids)
@@ -519,7 +801,7 @@ class Utilisateur(DBObject, _RowInitMixin):
             cursor.close()
             # Mettre en cache les IDs des compétences
             competences_ids = [competence.competence_id for competence in competences]
-            self.db.redis_client.setex(f"user:{self.utilisateur_id}:competences", 1_800, json.dumps(competences_ids))
+            self.db.redis_client.setex(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.utilisateur_id, "competences"), 1_800, json.dumps(competences_ids))
             return competences
         return None
 
@@ -577,6 +859,7 @@ class Client(DBObject, _RowInitMixin):
         'interlocuteur_principal_id', 'localisation_lat', 'localisation_lng', 'address'
     ]
     DATABASE_NAME = "Clients"
+    SECONDARY_INDEX_FIELDS = ['contact_email', 'nom_entreprise']
     client_id: int
     nom_entreprise: str
     contact_nom: str
@@ -594,11 +877,10 @@ class Client(DBObject, _RowInitMixin):
 
     @property
     def interlocuteur_principal(self) -> Utilisateur:
-        cached_user = self.db.redis_client.get(f"user:{self.interlocuteur_principal_id}")
+        cached_user = self.db.redis_client.get(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.interlocuteur_principal_id))
         if cached_user:
             return Utilisateur.from_db_row(self.db, json.loads(cached_user))
-        cursor = self.db.execute("SELECT * FROM utilisateurs WHERE utilisateur_id = ?",
-                                    (self.interlocuteur_principal_id,))
+        cursor = self.db.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE utilisateur_id = ?", (self.interlocuteur_principal_id,))
         row = cursor.fetchone()
         cursor.close()
         if row:
@@ -608,7 +890,7 @@ class Client(DBObject, _RowInitMixin):
 
     @property
     def conventions(self) -> list[Any] | None:
-        cached_conventions_ids = self.db.redis_client.get(f"client:{self.client_id}:conventions")
+        cached_conventions_ids = self.db.redis_client.get(redis_key(Client.DATABASE_NAME.lower(), self.client_id, "conventions"))
         not_cached_conventions = False
         if cached_conventions_ids:
             conventions_ids = json.loads(cached_conventions_ids)
@@ -623,19 +905,19 @@ class Client(DBObject, _RowInitMixin):
             if len(conventions) == len(conventions_ids):
                 return conventions  # Toutes les conventions étaient en cache
         if not_cached_conventions or not cached_conventions_ids:
-            cursor = self.db.execute("SELECT * FROM conventions WHERE client_id = ?", (self.client_id,))
+            cursor = self.db.execute(f"SELECT * FROM {Convention.DATABASE_NAME} WHERE client_id = ?", (self.client_id,))
             rows = cursor.fetchall()
             conventions = [Convention.from_db_row(self.db, row) for row in rows]
             cursor.close()
             # Mettre en cache les IDs des conventions
             conventions_ids = [convention.convention_id for convention in conventions]
-            self.db.redis_client.setex(f"client:{self.client_id}:conventions", 1_800, json.dumps(conventions_ids))
+            self.db.redis_client.setex(redis_key(Client.DATABASE_NAME.lower(), self.client_id, "conventions"), 1_800, json.dumps(conventions_ids))
             return conventions
         return None
 
     @property
     def interactions(self) -> list[Any] | None:
-        cached_interactions_ids = self.db.redis_client.get(f"client:{self.client_id}:interactions")
+        cached_interactions_ids = self.db.redis_client.get(redis_key(Client.DATABASE_NAME.lower(), self.client_id, "interactions"))
         not_cached_interactions = False
         if cached_interactions_ids:
             interactions_ids = json.loads(cached_interactions_ids)
@@ -650,13 +932,13 @@ class Client(DBObject, _RowInitMixin):
             if len(interactions) == len(interactions_ids):
                 return interactions  # Toutes les interactions étaient en cache
         if not_cached_interactions or not cached_interactions_ids:
-            cursor = self.db.execute("SELECT * FROM interactions WHERE client_id = ?", (self.client_id,))
+            cursor = self.db.execute(f"SELECT * FROM {Interaction.DATABASE_NAME} WHERE client_id = ?", (self.client_id,))
             rows = cursor.fetchall()
             interactions = [Interaction.from_db_row(self.db, row) for row in rows]
             cursor.close()
             # Mettre en cache les IDs des interactions
             interactions_ids = [interaction.interaction_id for interaction in interactions]
-            self.db.redis_client.setex(f"client:{self.client_id}:interactions", 1_800, json.dumps(interactions_ids))
+            self.db.redis_client.setex(redis_key(Client.DATABASE_NAME.lower(), self.client_id, "interactions"), 1_800, json.dumps(interactions_ids))
             return interactions
         return None
 
@@ -700,10 +982,10 @@ class Convention(DBObject, _RowInitMixin):
 
     @property
     def client(self) -> Client:
-        cached_client = self.db.redis_client.get(f"client:{self.client_id}")
+        cached_client = self.db.redis_client.get(redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), self.client_id))
         if cached_client:
             return Client.from_db_row(self.db, json.loads(cached_client))
-        cursor = self.db.execute("SELECT * FROM clients WHERE client_id = ?", (self.client_id,))
+        cursor = self.db.execute(f"SELECT * FROM {Client.DATABASE_NAME} WHERE client_id = ?", (self.client_id,))
         row = cursor.fetchone()
         cursor.close()
         if row:
@@ -713,7 +995,7 @@ class Convention(DBObject, _RowInitMixin):
 
     @property
     def projets(self) -> list[Any] | None:
-        cached_projets_ids = self.db.redis_client.get(f"convention:{self.convention_id}:projets")
+        cached_projets_ids = self.db.redis_client.get(redis_key(Convention.DATABASE_NAME.lower(), self.convention_id, "projets"))
         not_cached_projets = False
         if cached_projets_ids:
             projets_ids = json.loads(cached_projets_ids)
@@ -728,13 +1010,13 @@ class Convention(DBObject, _RowInitMixin):
             if len(projets) == len(projets_ids):
                 return projets  # Tous les projets étaient en cache
         if not_cached_projets or not cached_projets_ids:
-            cursor = self.db.execute("SELECT * FROM projets WHERE convention_id = ?", (self.convention_id,))
+            cursor = self.db.execute(f"SELECT * FROM {Projet.DATABASE_NAME} WHERE convention_id = ?", (self.convention_id,))
             rows = cursor.fetchall()
             projets = [Projet.from_db_row(self.db, row) for row in rows]
             cursor.close()
             # Mettre en cache les IDs des projets
             projets_ids = [projet.projet_id for projet in projets]
-            self.db.redis_client.setex(f"convention:{self.convention_id}:projets", 1_800, json.dumps(projets_ids))
+            self.db.redis_client.setex(redis_key(Convention.DATABASE_NAME.lower(), self.convention_id, "projets"), 1_800, json.dumps(projets_ids))
             return projets
         return None
 
@@ -783,10 +1065,10 @@ class Projet(DBObject, _RowInitMixin):
 
     @property
     def convention(self) -> Convention:
-        cached_convention = self.db.redis_client.get(f"convention:{self.convention_id}")
+        cached_convention = self.db.redis_client.get(redis_key(getattr(Convention, 'CACHE_PREFIX', None) or Convention.__name__.lower(), self.convention_id))
         if cached_convention:
             return Convention.from_db_row(self.db, json.loads(cached_convention))
-        cursor = self.db.execute("SELECT * FROM conventions WHERE convention_id = ?", (self.convention_id,))
+        cursor = self.db.execute(f"SELECT * FROM {Convention.DATABASE_NAME} WHERE convention_id = ?", (self.convention_id,))
         row = cursor.fetchone()
         cursor.close()
         if row:
@@ -796,7 +1078,7 @@ class Projet(DBObject, _RowInitMixin):
 
     @property
     def jalons(self) -> list[Any] | None:
-        cached_jalons_ids = self.db.redis_client.get(f"projet:{self.projet_id}:jalons")
+        cached_jalons_ids = self.db.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "jalons"))
         not_cached_jalons = False
         if cached_jalons_ids:
             jalons_ids = json.loads(cached_jalons_ids)
@@ -811,13 +1093,13 @@ class Projet(DBObject, _RowInitMixin):
             if len(jalons) == len(jalons_ids):
                 return jalons  # Tous les jalons étaient en cache
         if not_cached_jalons or not cached_jalons_ids:
-            cursor = self.db.execute("SELECT * FROM jalons WHERE projet_id = ?", (self.projet_id,))
+            cursor = self.db.execute(f"SELECT * FROM {Jalon.DATABASE_NAME} WHERE projet_id = ?", (self.projet_id,))
             rows = cursor.fetchall()
             jalons = [Jalon.from_db_row(self.db, row) for row in rows]
             cursor.close()
             # Mettre en cache les IDs des jalons
             jalons_ids = [jalon.jalon_id for jalon in jalons]
-            self.db.redis_client.setex(f"projet:{self.projet_id}:jalons", 1_800, json.dumps(jalons_ids))
+            self.db.redis_client.setex(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "jalons"), 1_800, json.dumps(jalons_ids))
             return jalons
         return None
 
@@ -827,7 +1109,7 @@ class Projet(DBObject, _RowInitMixin):
         Récupère les compétences associées au projet.
         :return: Liste des objets Compétence ou None si aucune compétence
         """
-        cached_competences_ids = self.db.redis_client.get(f"projet:{self.projet_id}:competences")
+        cached_competences_ids = self.db.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "competences"))
         not_cached_competences = False
         if cached_competences_ids:
             competences_ids = json.loads(cached_competences_ids)
@@ -851,7 +1133,7 @@ class Projet(DBObject, _RowInitMixin):
             cursor.close()
             # Mettre en cache les IDs des compétences
             competences_ids = [competence.competence_id for competence in competences]
-            self.db.redis_client.setex(f"projet:{self.projet_id}:competences", 1_800, json.dumps(competences_ids))
+            self.db.redis_client.setex(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "competences"), 1_800, json.dumps(competences_ids))
             return competences
         return None
 
@@ -866,7 +1148,7 @@ class Projet(DBObject, _RowInitMixin):
         # des objets Intervenant avec leur poste sans dupliquer la totalité des données utilisateur.
         cached = None
         try:
-            cached = self.db.redis_client.get(f"projet:{self.projet_id}:intervenants")
+            cached = self.db.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "intervenants"))
         except Exception:
             cached = None
 
@@ -942,7 +1224,7 @@ class Projet(DBObject, _RowInitMixin):
         # Mettre en cache la liste des intervenants (utilisateur_id + poste)
         if cache_entries:
             try:
-                self.db.redis_client.setex(f"projet:{self.projet_id}:intervenants", 1_800, json.dumps(cache_entries))
+                self.db.redis_client.setex(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "intervenants"), 1_800, json.dumps(cache_entries))
             except Exception:
                 pass
 
@@ -961,6 +1243,7 @@ class Competence(DBObject, _RowInitMixin):
     """
     FIELD_NAMES = ['competence_id', 'nom', 'competence_parent']
     DATABASE_NAME = "Competences"
+
     competence_id: int
     nom: str
     competence_parent: Optional[int]
@@ -973,10 +1256,10 @@ class Competence(DBObject, _RowInitMixin):
     def parent(self) -> Optional['Competence']:
         if self.competence_parent is None:
             return None
-        cached_competence = self.db.redis_client.get(f"competence:{self.competence_parent}")
+        cached_competence = self.db.redis_client.get(redis_key(getattr(Competence, 'CACHE_PREFIX', None) or Competence.__name__.lower(), self.competence_parent))
         if cached_competence:
             return Competence.from_db_row(self.db, json.loads(cached_competence))
-        cursor = self.db.execute("SELECT * FROM competences WHERE competence_id = ?", (self.competence_parent,))
+        cursor = self.db.execute(f"SELECT * FROM {Competence.DATABASE_NAME} WHERE competence_id = ?", (self.competence_parent,))
         row = cursor.fetchone()
         if row:
             competence = Competence.from_db_row(self.db, row)
@@ -1000,6 +1283,7 @@ class Jalon(DBObject, _RowInitMixin):
     """
     FIELD_NAMES = ['jalon_id', 'description', 'date_fin', 'est_complete', 'projet_id']
     DATABASE_NAME = "Jalons"
+
     jalon_id: int
     description: str
     date_fin: str
@@ -1012,13 +1296,8 @@ class Jalon(DBObject, _RowInitMixin):
 
     @property
     def projet(self) -> Projet:
-        cached_projet = self.db.redis_client.get(f"projet:{self.projet_id}")
-        if cached_projet:
-            return Projet.from_db_row(self.db, json.loads(cached_projet))
-        cursor = self.db.execute("SELECT * FROM projets WHERE projet_id = ?", (self.projet_id,))
-        row = cursor.fetchone()
-        if row:
-            projet = Projet.from_db_row(self.db, row)
+        projet = self.db.get_project_id(self.projet_id)
+        if projet:
             return projet
         raise ValueError(f"Projet with id {self.projet_id} not found")
 
@@ -1040,6 +1319,7 @@ class Interaction(DBObject, _RowInitMixin):
 
     FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'contenu', 'client_id', 'utilisateur_id']
     DATABASE_NAME = "Interactions"
+
     interaction_id: int
     date_time_interaction: str
     contenu: str
@@ -1052,26 +1332,14 @@ class Interaction(DBObject, _RowInitMixin):
 
     @property
     def client(self) -> Client:
-        cached_client = self.db.redis_client.get(f"client:{self.client_id}")
-        if cached_client:
-            return Client.from_db_row(self.db, json.loads(cached_client))
-        cursor = self.db.execute("SELECT * FROM clients WHERE client_id = ?", (self.client_id,))
-        row = cursor.fetchone()
-        cursor.close()
-        if row:
-            client = Client.from_db_row(self.db, row)
+        client = self.db.get_client_by_id(self.client_id)
+        if client:
             return client
         raise ValueError(f"Client with id {self.client_id} not found")
 
     @property
     def utilisateur(self) -> Utilisateur:
-        cached_user = self.db.redis_client.get(f"user:{self.utilisateur_id}")
-        if cached_user:
-            return Utilisateur.from_db_row(self.db, json.loads(cached_user))
-        cursor = self.db.execute("SELECT * FROM utilisateurs WHERE utilisateur_id = ?", (self.utilisateur_id,))
-        row = cursor.fetchone()
-        cursor.close()
-        if row:
-            user = Utilisateur.from_db_row(self.db, row)
+        user = self.db.get_user_by_id(self.utilisateur_id)
+        if user:
             return user
         raise ValueError(f"User with id {self.utilisateur_id} not found")
