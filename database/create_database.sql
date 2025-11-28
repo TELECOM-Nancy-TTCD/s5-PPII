@@ -29,9 +29,11 @@ CREATE TABLE Utilisateurs (
     utilisateur_id INTEGER PRIMARY KEY ,
     email VARCHAR UNIQUE NOT NULL,
     mot_de_passe_hashed VARCHAR NOT NULL,
+    mot_de_passe_expire DATE NULL, -- Date d'expiration du mot de passe, NULL si jamais expiré
     
     nom VARCHAR,
     prenom VARCHAR,
+    avatar VARCHAR, -- Lien vers l'avatar de l'utilisateur
     role_id INT,
     
     est_intervenant BOOLEAN, -- Savoir s'il est un intervenant selectable
