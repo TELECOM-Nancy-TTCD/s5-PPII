@@ -27,11 +27,8 @@ class User(UserMixin):
             
             c.execute("SELECT utilisateur_id, nom, prenom, role_id FROM Utilisateurs WHERE utilisateur_id = ?",(int(user_id), ))
             row = c.fetchone()
-
-            if row == None:
-                return None
             
-            return cls(row)
+            return cls(*row)
         except:
             return None
 
@@ -53,7 +50,7 @@ def hash_password(mdp : str):
     #Les 16 premiers octets sont le salt, le reste le mdp.
 
 
-def verify_password(mdp_entre, stored_hash):
+def verify_password(mdp_entre : str, stored_hash):
     
     octets_decodes = base64.b64decode(stored_hash) # bytes obtenus par décodage en B64
     
@@ -61,14 +58,14 @@ def verify_password(mdp_entre, stored_hash):
     mdp_hache_stocke = octets_decodes[16:]
     # Impossible de revenir au mdp depuis le hash, donc on hache l'entrée avec le même salt et on vérifie l'égalité
 
-    mdp_hache_entre = scrypt(mdp_entre.encode(), salt, 2**14, 8, 1) # hachage du mdp avec le salt
+    mdp_hache_entre = scrypt(mdp_entre.encode(), salt=salt, n=2**14, r=8, p=1) # hachage du mdp avec le salt
 
     return mdp_hache_entre == mdp_hache_stocke
 
 
 
 @login_manager.user_loader
-def load_user(uid):
+def load_user(uid : str):
     return User.get(uid)
 
 
@@ -101,10 +98,10 @@ def login():
                 login_user(load_user(to_login)) # On login l'utilisateur correspondant, identifié par son user id
 
                 next_page = request.args.get("next")
-                if next_page == None or next_page[0]=="/":
-                    return redirect(url_for("index"))
-                
-                return redirect(next)
+                if next_page == None:
+                    redirect(url_for("index"))
+                # TODO : Vérifier que l'URL next est safe
+                return redirect(next_page)
             
                 
         
@@ -150,13 +147,13 @@ def create_user():
         doc_rib = request.form["doc_rib"]
 
         role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
-        c.execute("INSERT INTO Utilisateurs VALUES (?)", (None, email, hmdp, nom, prenom, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib)) 
+        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (None, email, hmdp, nom, prenom, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib)) 
         get_db().commit()
         #Insertion de None = NULL dans la colonne primary key car elle se gère ainsi automatiquement
         user_added_successfully = True
 
     # Chargement de la page
-    roles_possibles =["a","b","d"] #c.execute("SELECT nom FROM Roles").fetchall() #Obtention des noms de rôles possibles
+    roles_possibles = c.execute("SELECT nom FROM Roles").fetchall() #Obtention des noms de rôles possibles
 
     return render_template("create_user.html", context={"success":user_added_successfully, "roles_possibles": roles_possibles})
 

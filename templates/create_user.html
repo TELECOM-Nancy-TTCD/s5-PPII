@@ -10,20 +10,23 @@
 
 <body>
     <h1> Création du compte d'un nouveau membre de TNS</h1>
+    {% if context.success %}
+    <h2 style="color: green;"> Utilisateur ajouté avec succès! </h2>
+    {% endif %}
     <br>
       <form method="post" style="display : flex; flex-direction: column; gap: 5px;">
-        <input name="E-mail" type="email" placeholder="e-mail" required>
+        <input name="e-mail" type="email" placeholder="e-mail" required>
         <input name="mdp" type="password" placeholder="Mot de passe" required>
         <input name="nom" type="text" placeholder="Nom">
         <input name="prenom" type="text" placeholder="Prénom">
         <select name="role" required>
             <option value=""> --Sélectionnez un rôle-- </option>
             {% for i in context.roles_possibles %}
-            <option value={{i}}> {{i}} </option>
+            <option value={{i[0]}}> {{i[0]}} </option>
             {% endfor %}
         </select>
         <div>
-            <input type="checkbox" name="est_intervenant" id="est_intervenant">
+            <input name="est_intervenant" type="checkbox" id="est_intervenant">
             <label for="est_intervenant">Le membre a le statut d'intervenant</label>
         </div>
         <div>
