@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -301,3 +302,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+=======
+schema.txt
+venv
+__pycache__
+>>>>>>> f12acd9 (Fixed database primary keys : INT PRIMARY KEY replaced by INTEGER PRIMARY KEY)
