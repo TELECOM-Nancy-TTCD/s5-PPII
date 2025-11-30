@@ -1,0 +1,75 @@
+<!doctype html>
+
+<html lang="fr">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link href="../static/styles.css" rel="stylesheet"/>
+    <link rel="shortcut icon" href="../data/logo.png" type="image/x-icon" />
+    <title>TNS : CONVENTION</title>
+  </head>
+
+  <body>
+
+    <header> 
+        
+        <img src="../data/logo.png" alt="Logo de Télécom Nancy Service" class="header_img" />
+
+        <nav> 
+
+            <div class="onglet">
+              <a href="https://youtube.com">Clients</a>
+            </div>
+            <div class="onglet">
+              <a href="https://google.com">Projets</a>
+            </div>
+
+              
+        </nav>
+
+    </header>
+
+    <main>
+
+        <h1>{{context.convention.nom}} </h1>
+
+        <p>{{context.convention.description}} </p>
+
+        <h2>Projet(s) lié(s) à la convention</h2>
+
+        {% for projet in context.projets %}
+
+         <div class="projet"> 
+          <h3>Projet numéro  {{projet.id}} : {{projet.nom_projet}}</h3>  
+          
+          <p>{{projet.description}}</p>
+        
+        </div>
+
+        {% endfor %}
+
+
+        <h2>Information sur le clients</h2>
+
+        <div class="client">
+          
+          <p> Le client est l'entreprise {{context.client.nom_entreprise}}. Le contact de TNS dans l'entreprise est 
+            {{context.client.contact_nom}} joignable via l'addresse email {{context.client.contact_email}}.  </p>
+
+        </div>
+
+        <a href="/conventions">Retour liste des conventions</a>
+
+
+
+
+    </main>
+
+    <footer>
+        <p> TNS - RGPD </p>
+    </footer>
+
+  </body>
+
+</html>

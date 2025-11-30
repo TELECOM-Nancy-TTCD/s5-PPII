@@ -1,0 +1,62 @@
+<!doctype html>
+
+<html lang="fr">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link href="../static/styles.css" rel="stylesheet"/>
+    <link rel="shortcut icon" href="../data/logo.png" type="image/x-icon" />
+    <title>TNS : CONVENTION</title>
+  </head>
+
+  <body>
+
+    <header> 
+        
+        <img src="../data/logo.png" alt="Logo de Télécom Nancy Service" class="header_img" />
+
+        <nav> 
+
+            <div class="onglet">
+              <a href="https://youtube.com">Clients</a>
+            </div>
+            <div class="onglet">
+              <a href="https://google.com">Projets</a>
+            </div>
+
+              
+        </nav>
+
+    </header>
+
+    <main>
+
+        <h1>Liste des conventions</h1>
+
+        <p>Voici toutes les conventions courantes ou passées signées par Telecom Nancy Service. </p>
+
+        {% for convention in context %}
+
+        <div class="convention"> 
+          <p> <b>Convention numéro {{convention.id}}</b>  : <a href="convention/{{convention.id}} ">{{convention.nom}}</a> </p>  
+        </div>
+
+
+        {% endfor %}
+
+
+        
+
+        
+
+
+    </main>
+
+    <footer>
+        <p> TNS - RGPD </p>
+    </footer>
+
+  </body>
+
+</html>
