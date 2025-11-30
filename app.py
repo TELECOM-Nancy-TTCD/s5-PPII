@@ -20,7 +20,7 @@ DATABASE= 'database/database.db'
 
 def get_clients():
     conn = sqlite3.connect('database/database.db')
-    conn.row_factory = sqlite3.Row 
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Clients")
     clients = cursor.fetchall()
@@ -29,7 +29,7 @@ def get_clients():
 
 def get_utilisateurs():
     conn = sqlite3.connect('database/database.db')
-    conn.row_factory = sqlite3.Row 
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Utilisateurs")
     clients = cursor.fetchall()
@@ -41,7 +41,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867' 
+app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867'
 # Clé pour l'encodage des cookies de session
 
 # Blueprints are registered here
@@ -53,15 +53,15 @@ def hash_password(mdp : str):
 
     mdp_hache = scrypt(mdp.encode(), salt=salt, n=2**14, r=8, p=1) # hachage du mdp avec le salt
 
-    return base64.b64encode(salt+mdp_hache).decode() 
+    return base64.b64encode(salt+mdp_hache).decode()
     # encodage en B64, et remise en forme texte pour stockage.
     #Les 16 premiers octets sont le salt, le reste le mdp.
 
 
 def verify_password(mdp_entre : str, stored_hash):
-    
+
     octets_decodes = base64.b64decode(stored_hash) # bytes obtenus par décodage en B64
-    
+
     salt = octets_decodes[:16]
     mdp_hache_stocke = octets_decodes[16:]
     # Impossible de revenir au mdp depuis le hash, donc on hache l'entrée avec le même salt et on vérifie l'égalité
@@ -86,7 +86,7 @@ def login():
         adressemail = request.form["Adresse e-mail"]
         mdp = request.form["Mot de passe"]
         c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
-        
+
         corresp = c.fetchone()
         print(corresp)
         has_failed_login = False
@@ -161,7 +161,7 @@ def create_user():
     return render_template("create_user.html", context={"success":user_added_successfully, "roles_possibles": roles_possibles})
 
 # Ici les pages du menus principales (vide) mais utile pour creer le menu
-@app.route("/")          
+@app.route("/")
 def accueil():
     return render_template("accueil.html")
 
@@ -189,7 +189,7 @@ def recherche_avance():
 @app.route("/utilisateurs", methods=["GET"])
 @login_required
 def utilisateurs():
-    recherche = request.args.get("q", "").lower() 
+    recherche = request.args.get("q", "").lower()
     utilisateurs_db = get_utilisateurs()
 
     if recherche:
@@ -235,12 +235,12 @@ def client_detail(client_id):
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    
+
     c.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
     client = c.fetchone()
     if client is None:
         abort(404)
- 
+
     c.execute("""
         SELECT p.* 
         FROM Projets p
@@ -248,9 +248,9 @@ def client_detail(client_id):
         WHERE c.client_id = ?
     """, (client_id,))
     projets = c.fetchall()
-    
+
     conn.close()
-    
+
     return render_template("Pages_speciales/clients_template.html", client=client, projets=projets)
 
 # Route pour servir explicitement les polices FontAwesome avec le bon MIME type
