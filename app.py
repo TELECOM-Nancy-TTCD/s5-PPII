@@ -129,7 +129,7 @@ def login():
         adressemail = request.form["Adresse e-mail"]
         mdp = request.form["Mot de passe"]
         c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
-        
+
         corresp = c.fetchone()
         print(corresp)
         has_failed_login = False
@@ -438,16 +438,13 @@ def terminer_projet(projet_id):
     except Exception:
         pass
 
+    return redirect(url_for("projet_detail", projet_id=projet_id))
 
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
     return redirect(url_for("accueil"))
-
-
-    return redirect(url_for("projet_detail", projet_id=projet_id))
-
 
 @app.post("/jalon/<int:jalon_id>/modifier")
 @login_required
@@ -680,11 +677,11 @@ def download_rgpd():
 
     cur.execute("SELECT nom_entreprise, contact_email, contact_telephone, address FROM Clients")
     clients = cur.fetchall()
-    
+
 
     cur.execute("""SELECT u.nom, u.prenom, u.email, r.nom as role_nom FROM Utilisateurs u LEFT JOIN Roles r ON u.role_id = r.role_id""")
     utilisateurs = cur.fetchall()
-    
+
     # Permt de mettre le délimiteur ";"
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
