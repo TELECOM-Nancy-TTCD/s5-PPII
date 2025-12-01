@@ -1,293 +1,96 @@
-from flask import Flask, session, render_template, request, redirect, url_for, g, abort, send_from_directory
-from flask_login import LoginManager, login_user, login_required, current_user, logout_user
-from hashlib import scrypt
-import os, base64, sqlite3
-import mimetypes
-from database import Database, Role, Utilisateur
-import redis
-from tools import get_db, has_permission
+from flask import Flask,render_template,send_file
+from flask import g
 
-# Assurer que .woff2 et .woff sont servis avec les bons types MIME
-mimetypes.add_type('font/woff2', '.woff2')
-mimetypes.add_type('font/woff', '.woff')
+import sqlite3
 
-# Importation des blueprints
-from interactions import interactions_bp
-from clients import clients_bp
-
-DATABASE= 'database/database.db'
-
-
-def get_clients():
-    conn = sqlite3.connect('database/database.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Clients")
-    clients = cursor.fetchall()
-    conn.close()
-    return clients
-
-def get_utilisateurs():
-    conn = sqlite3.connect('database/database.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Utilisateurs")
-    clients = cursor.fetchall()
-    conn.close()
-    return clients
+DATABASE = 'database/database.db'
 
 app = Flask(__name__)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = "login"
 
-app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867'
-# Clé pour l'encodage des cookies de session
+def get_db():
+    db = getattr(g,'_database', None)
+    if db is None :
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
 
-# Blueprints are registered here
-app.register_blueprint(interactions_bp)
-app.register_blueprint(clients_bp)
-
-def hash_password(mdp : str):
-    salt = os.urandom(16) # Génération d'un salt
-
-    mdp_hache = scrypt(mdp.encode(), salt=salt, n=2**14, r=8, p=1) # hachage du mdp avec le salt
-
-    return base64.b64encode(salt+mdp_hache).decode()
-    # encodage en B64, et remise en forme texte pour stockage.
-    #Les 16 premiers octets sont le salt, le reste le mdp.
-
-
-def verify_password(mdp_entre : str, stored_hash):
-
-    octets_decodes = base64.b64decode(stored_hash) # bytes obtenus par décodage en B64
-
-    salt = octets_decodes[:16]
-    mdp_hache_stocke = octets_decodes[16:]
-    # Impossible de revenir au mdp depuis le hash, donc on hache l'entrée avec le même salt et on vérifie l'égalité
-
-    mdp_hache_entre = scrypt(mdp_entre.encode(), salt=salt, n=2**14, r=8, p=1) # hachage du mdp avec le salt
-
-    return mdp_hache_entre == mdp_hache_stocke
-
-
-
-@login_manager.user_loader
-def load_user(uid : str):
-    return get_db().get_user_by_id(int(uid))
-
-
-@app.route("/login", methods = ["GET", "POST"])
-def login():
-    has_failed_login = False
-
-    if request.method == 'POST' :
-        c = get_db().cursor()
-        adressemail = request.form["Adresse e-mail"]
-        mdp = request.form["Mot de passe"]
-        c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
-
-        corresp = c.fetchone()
-        print(corresp)
-        has_failed_login = False
-        if corresp != None: # Si on trouve un utilisateur avec cet email
-            print("Utilisateur trouvé")
-            if verify_password(mdp, corresp[1]):
-
-                to_login = corresp[0]
-                # Récupérer explicitement l'instance Utilisateur via le wrapper Database
-                user = get_db().get_user_by_id(to_login)
-                if user is None:
-                    has_failed_login = True
-                else:
-                    login_user(user)  # On login l'utilisateur (instance compatible Flask-Login)
-
-                    # Redirection sûre : si `next` absent, aller à l'accueil
-                    next_page = request.args.get("next")
-                    if not next_page:
-                        return redirect(url_for("accueil"))
-                    # TODO: Rendre sage la redirection "next" pour éviter les attaques open redirect
-                    return redirect(next_page)
-
-            return redirect(url_for('index')) # TODO: Signaler à l'utilisateur que son login est réussi
-
-        has_failed_login = True # Si pas d'utilisateur avec ce mail ou que le mdp est faux, on a raté le login
-
-    # Pour un login échouant, on ré-affiche la page avec un message supplémentaire
-    # Pour le premier affichage, has_failed_login est à False.
-    return render_template('Pages_speciales/login_page.html', has_failed_login=has_failed_login)
-
-
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for("accueil"))
-
-
-@app.route("/users/create", methods=["GET", "POST"])
-@login_required
-def create_user():
-    if not has_permission(current_user, 'peut_gerer_utilisateurs'):
-        abort(403)
-
-    user_added_successfully= False
-    c = get_db().cursor()
-
-    if request.method == 'POST' :
-        email = request.form["e-mail"]
-        hmdp = hash_password(request.form["mdp"])
-        nom = request.form["nom"]
-        prenom = request.form["prenom"]
-        role_name = request.form["role"]
-        print(role_name)
-        est_intervenant = "est_intervenant" in request.form
-        heures_dispo = request.form["h_disp"]
-        doc_carte_vitale = request.form["doc_car"]
-        doc_cni = request.form["doc_cni"]
-        doc_adhesion = request.form["doc_adh"]
-        doc_rib = request.form["doc_rib"]
-
-        role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
-        # Fournir explicitement des valeurs None pour mot_de_passe_expire et avatar afin d'aligner avec le schéma
-        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (None, email, hmdp, None, nom, prenom, None, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
-        get_db().commit()
-        #Insertion de None = NULL dans la colonne primary key car elle se gère ainsi automatiquement
-        user_added_successfully = True
-
-    # Chargement de la page
-    roles_possibles = c.execute("SELECT nom FROM Roles").fetchall() #Obtention des noms de rôles possibles
-
-    return render_template("create_user.html", context={"success":user_added_successfully, "roles_possibles": roles_possibles})
-
-# Ici les pages du menus principales (vide) mais utile pour creer le menu
-@app.route("/")
-def accueil():
-    return render_template("accueil.html")
-
-@app.route("/contact")
-@login_required
-def contact():
-    return render_template("./Pages_speciales/contact.html")
-
-@app.route("/clients")
-@login_required
-def clients():
-    clients_db = get_db().get_all_clients()
-    return render_template("clients.html", clients_db=clients_db)
-
-@app.route("/projets")
-@login_required
-def projets():
-    return render_template("projets.html")
-
-@app.route("/recherche_avance")
-@login_required
-def recherche_avance():
-    return render_template("Page_recherche_avance.html")
-
-@app.route("/utilisateurs", methods=["GET"])
-@login_required
-def utilisateurs():
-    recherche = request.args.get("q", "").lower()
-    utilisateurs_db = get_utilisateurs()
-
-    if recherche:
-        utilisateurs_db = [
-            u for u in utilisateurs_db
-            if recherche in u["nom"].lower()
-            or recherche in u["prenom"].lower()
-            or recherche in u["email"].lower()
-        ]
-
-    return render_template("utilisateurs.html", utilisateurs_db=utilisateurs_db, recherche=recherche)
-
-# Ci-dessous les pages du pied de page, souvent seules.
-@app.route("/cgu")
-def cgu():
-    return render_template("./Pages_speciales/cgu.html")
-
-@app.route("/rgpd")
-@login_required
-def rgpd():
-    return render_template("./Pages_speciales/rgpd.html")
-
-@app.route("/utilisateur/<int:uid>")
-@login_required
-def utilisateur_detail(uid):
-    conn = sqlite3.connect('database/database.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM Utilisateurs WHERE utilisateur_id = ?", (uid,))
-    utilisateur = cursor.fetchone()
-    conn.close()
-
-    if utilisateur is None:
-        abort(404)
-
-    # Appelle le bon dossier + bon fichier
-    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur)
-
-@app.route("/client/<int:client_id>")
-@login_required
-def client_detail(client_id):
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-
-    c.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
-    client = c.fetchone()
-    if client is None:
-        abort(404)
-
-    c.execute("""
-        SELECT p.* 
-        FROM Projets p
-        JOIN Conventions c ON p.convention_id = c.convention_id
-        WHERE c.client_id = ?
-    """, (client_id,))
-    projets = c.fetchall()
-
-    conn.close()
-
-    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets)
-
-# Route pour servir explicitement les polices FontAwesome avec le bon MIME type
-@app.route('/static/fontawesome/webfonts/<path:filename>')
-def fontawesome_webfonts(filename):
-    # Détermine le mimetype en fonction de l'extension
-    if filename.lower().endswith('.woff2'):
-        mimetype = 'font/woff2'
-    elif filename.lower().endswith('.woff'):
-        mimetype = 'font/woff'
-    else:
-        mimetype = None
-
-    # Le dossier physique où sont stockées les polices
-    webfonts_dir = os.path.join(app.root_path, 'static', 'fontawesome', 'webfonts')
-
-    resp = send_from_directory(webfonts_dir, filename, mimetype=mimetype)
-    # Ajouter header CORS pour les polices (utile en dev ou si appelé depuis un autre origin)
-    resp.headers['Access-Control-Allow-Origin'] = '*'
-    return resp
-
-#Ici les pages d'erreur personalisé, elles ne sont pas encore toutes la mais il faut que je réfléchisse au quelles, je mets.
-@app.errorhandler(404)
-def page_not_found(error):
-    return render_template("errors/404.html"), 404
-
-@app.errorhandler(500)
-def serveur_error(error):
-    return render_template("errors/500.html"), 500
-
+with app.app_context():
+    print(get_db())
 
 @app.teardown_appcontext
 def close_connection(exception):
-    db = getattr(g, '_database', None)
+    db = getattr(g,'_database',None) 
     if db is not None:
         db.close()
 
+def liste_conventions():
+    c = get_db().cursor()
+    c.execute("SELECT * FROM Conventions")
+    conventions = []
+    for convention in c.fetchall():
+        conventions.append( {"id":convention[0],"nom":convention[1],
+                "description":convention[2],"date_debut":convention[3],
+                "date_fin":convention[4],"doc_contract":convention[5],
+                "client_id":convention[6]} )
+    print(conventions)
+    return conventions
 
-if __name__ == "__main__":
-    app.run(debug=True)
+def get_projets_by_convention(id_convention):
+    c = get_db().cursor()
+    c.execute("SELECT * FROM Projets WHERE convention_id="+str(id_convention))
+    projets = []
+    for projet in c.fetchall():
+        projets.append( {"id":projet[0],"convention_id":projet[1],
+                "nom_projet":projet[2],"description":projet[3],
+                "budget":projet[4],"date_debut":projet[5],
+                "date_fin":projet[6],"statut":projet[7],
+                "doc_dossier":projet[8]})
+    return projets
+
+def get_convention(id):
+    c = get_db().cursor()
+    c.execute("SELECT * FROM Conventions WHERE convention_id="+str(id))
+    for convention in c.fetchall():
+        return {"id":convention[0],"nom":convention[1],
+                "description":convention[2],"date_debut":convention[3],
+                "date_fin":convention[4],"doc_contract":convention[5],
+                "client_id":convention[6]}
+    return {}
+
+
+def get_client(id):
+    c = get_db().cursor()
+    c.execute("SELECT * FROM Clients WHERE client_id="+str(id))
+    for client in c.fetchall():
+        return {"id":client[0],"nom_entreprise":client[1],
+                "contact_nom":client[2],"contact_email":client[3],
+                "contact_telephone":client[4],"type_client":client[5],
+                "interlocuteur_principal":client[6],"localisation_lat":client[7],
+                "localisation_lng":client[8],"address":client[9]}
+    return {}
+
+def get_utilisateur(id):
+    c = get_db().cursor()
+    c.execute("SELECT utilisateur_id,nom,prenom FROM Utilisateurs WHERE utilisateur_id="+str(id))
+    for utilisateur in c.fetchall():
+        print(utilisateur)
+        return {"id":utilisateur[0],"nom":utilisateur[1],"prenom":utilisateur[2]}
+    return {}
+
+@app.route('/conventions')
+def index():
+    l = liste_conventions()
+    return render_template('liste_conventions.html',context=l)
+
+@app.route('/convention/<int:id>')
+def convention(id : int) :
+    conv =  get_convention(id)
+    print(get_projets_by_convention(id))
+    client = get_client( conv["client_id"] )
+    return render_template('convention.html',context={"convention":conv, 
+    "client":get_client( conv["client_id"] ) , "projets": get_projets_by_convention(id), "utilisateur" : get_utilisateur(client["interlocuteur_principal"]) } 
+    )
+
+@app.route('/data/<string:nom>')
+def contenu(nom : str):
+    print(nom)
+    return send_file('./data/'+nom)

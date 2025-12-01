@@ -3,10 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>{% block title %}TNS Lovers{% endblock %}</title>
-    <!-- Utiliser CDN FontAwesome (fallback local si vous restaurez les fichiers) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/svg" href="{{ url_for('static', filename='tns_logo_icon_couleur.svg')}}"/>
 </head>
 <body>
 
@@ -15,32 +12,12 @@
         <img class="main-menu-img" src="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}" alt="Logo TNS Lovers" width="60">
 
         <ul class="main-menu-items">
-            <li><a href="{{ url_for('accueil') }}">Accueil</a></li>
-            <li><a href="{{ url_for('clients') }}">Clients</a></li>
-            <li><a href="{{ url_for('projets') }}">Projets</a></li>
-            <li class="menu-dropdown">
-                <a href="{{ url_for('interactions.interactions_home') }}" class="dropbtn">Interactions</a>
-                <ul class="dropdown-content">
-                    <li><a href="{{ url_for('interactions.interactions_home') }}"><i class="fa-solid fa-list"></i> Liste interactions</a></li>
-                    <li><a href="{{ url_for('interactions.create_interaction') }}"><i class="fa-solid fa-plus"></i> Créer interaction</a></li>
-                </ul>
-            </li>
-
-            <li><a href="{{ url_for('utilisateurs') }}">Utilisateurs</a></li>
-            <li><a href="{{ url_for('recherche_avance') }}">Recherche</a></li>
+            <li><a href="">Accueil</a></li>
+            <li><a href="">Clients</a></li>
+            <li><a href="">Projets</a></li>
+            <li><a href="">Utilisateur</a></li>
+            <li><a href="">Recherche</a></li>
         </ul>
-
-        {% if current_user.is_authenticated %}
-        <div class="user-menu">
-            <span class="user-name">{{ current_user.prenom }} {{ current_user.nom }}</span>
-            <div class="user-menu-items">
-                <a href="#">Profil</a>
-                <a href="#">Paramètres</a>
-                <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
-            </div>
-        </div>
-        {% endif %}
-
     </nav>
 
     <!-- CONTENU VARIABLE DES PAGES -->
@@ -52,9 +29,9 @@
         <nav class="footer-menu">
         
             <ul class="footer-menu-items">
-                <li><a href="{{ url_for('cgu') }}">CGU</a></li>
-                <li><a href="{{ url_for('contact') }}">Contact</a></li>
-                <li><a href="{{ url_for('rgpd') }}">RGPD</a></li>
+                <li><a href="">CGU</a></li>
+                <li><a href="">Contact</a></li>
+                <li><a href="">RGPD</a></li>
                 
             </ul>
         </nav>

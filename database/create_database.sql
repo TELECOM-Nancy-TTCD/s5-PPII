@@ -3,13 +3,11 @@ CREATE TABLE Roles (
     nom VARCHAR,
     hierarchie INT, -- pour la modification de rôles, on ne peut destituer un individu d'un role plus haut
 
-    administrateur BOOLEAN DEFAULT false,
     peut_gerer_utilisateurs BOOLEAN DEFAULT false,
     peut_gerer_roles BOOLEAN DEFAULT false,
     
     peut_lire_clients BOOLEAN DEFAULT false,
-    peut_gerer_clients BOOLEAN DEFAULT false,
-    peut_creer_interactions BOOLEAN DEFAULT false,
+    peut_gerer_clients BOOLEAN DEFAULT false, 
     peut_gerer_interactions BOOLEAN DEFAULT false,
     
     peut_lire_projets BOOLEAN DEFAULT false,
@@ -32,7 +30,7 @@ CREATE TABLE Utilisateurs (
     email VARCHAR UNIQUE NOT NULL,
     mot_de_passe_hashed VARCHAR NOT NULL,
     mot_de_passe_expire DATE NULL, -- Date d'expiration du mot de passe, NULL si jamais expiré
-
+    
     nom VARCHAR,
     prenom VARCHAR,
     avatar VARCHAR, -- Lien vers l'avatar de l'utilisateur
@@ -59,11 +57,11 @@ CREATE TABLE Clients (
         CHECK (type_client IN ('Prospect', 'Actif', 'Ancien')),
 
     interlocuteur_principal_id INT, --La personne de TNS en contact avec l'entreprise
+    FOREIGN KEY (interlocuteur_principal_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL,
     localisation_lat FLOAT,
     localisation_lng FLOAT,
-    address VARCHAR,
-
-    FOREIGN KEY (interlocuteur_principal_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL
+    address VARCHAR
+    
 );
 
 CREATE TABLE Conventions (
@@ -118,11 +116,8 @@ CREATE TABLE Jalons (
 CREATE TABLE Interactions ( -- correspond au 'communique avec' du schéma mais avec le logging
     interaction_id INTEGER PRIMARY KEY,
     date_time_interaction DATETIME NOT NULL,
-    titre VARCHAR NOT NULL,
     contenu TEXT NOT NULL,
-    type_interaction_id TEXT NOT NULL
-        CHECK( type_interaction_id IN ('email', 'phone', 'meeting', 'textmessage', 'other')),
-
+    
     -- relations aux autres tables
 
     client_id INT,
