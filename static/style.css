@@ -15,7 +15,7 @@ body {
 
 main {
     flex: 1;
-    padding-top: 75px;
+    padding-top: 100px;
 }
 
 .page-desc {
@@ -41,7 +41,7 @@ main {
     width: 50%;
     margin: auto;
     max-width: 300px;
-    background: #1b1b1b;
+    background: #292929;
     padding: 2em;
     border-radius: 10px;
     box-shadow: 5px 5px 10px black ;
@@ -72,13 +72,14 @@ main {
     width: 100%;
     position: fixed;
     z-index: 2000;
-    height: 75px;
+    height: 100px;
     display: flex;
     flex-direction: lign-row;
     align-items: center;
     gap: 20px;
     list-style-type: square;
     background: linear-gradient(0deg, #1b1b1b, #475eab);
+    padding: -5px 0px;
 }
 
 .main-menu-items {
@@ -98,6 +99,7 @@ main {
     border: 1px solid;
     border-color: #757779;
     display: inline-block;
+    margin-top: -30px;
 }
 
 .main-menu-img {
@@ -109,6 +111,7 @@ main {
     padding-bottom: 2px;
     border-radius: 10px;
     background-color: #2a2d39;
+    margin-top: -15px;
 }
 
 .footer-menu {
@@ -178,7 +181,7 @@ main {
 }
 
 #en-tete-clients {
-    top: 75px;
+    top: 100px;
     position: sticky;
     background-color: #2b2b2b;
     font-weight: bold;
@@ -190,3 +193,13 @@ main {
     padding: 12px 15px;
 }
 
+.lien-erreur-retour {
+    text-decoration: none;
+    color: rgb(204, 204, 204);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid;
+    border-color: #757779;
+    display: inline-block;
+    margin-top: 20px;
+}

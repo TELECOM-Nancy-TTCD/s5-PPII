@@ -3,7 +3,7 @@
 {% block title %}Page introuvable{% endblock %}
 
 {% block content %}
-<h1>Erreur 404, XD, tu cherches le vide </h1>
-<p>La page que tu cherches n'existe pas.</p>
-<a href="{{ url_for('accueil') }}">Retour à l'accueil</a>
+<h1>Erreur 404, XD</h1>
+<p>La page n'existe pas.</p>
+<a class="lien-erreur-retour" href="{{ url_for('accueil') }}" >Retour à l'accueil</a>
 {% endblock %}

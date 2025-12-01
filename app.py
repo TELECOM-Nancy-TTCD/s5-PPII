@@ -5,7 +5,7 @@ import os, base64, sqlite3
 
 class User(UserMixin):
     def __init__(self, id):
-        self.id=id
+        self.id=str(id)
 
 DATABASE= 'database.db'
 
@@ -61,6 +61,8 @@ def load_user(uid):
 
 
 
+
+
 @app.route("/login", methods = ["GET", "POST"])
 def login():
     has_failed_login = False
@@ -87,7 +89,7 @@ def login():
     return render_template('Pages_speciales/login_page.html', has_failed_login=has_failed_login)
 
 
-# Ici les pages du menus principales (vide) mas utile pour creer le menu 
+# Ici les pages du menus principales (vide) mais utile pour creer le menu 
 @app.route("/")          
 def accueil():
     return render_template("accueil.html")
@@ -109,6 +111,9 @@ def projets():
 def recherche_avance():
     return render_template("Page_recherche_avance.html")
 
+@app.route("/utilisateurs")
+def utilisateurs():
+    return render_template("utilisateurs.html")
 
 
 # Ci dessous les pages du pied de page , souvent seules.
