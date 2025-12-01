@@ -4,7 +4,6 @@ import logging
 import sqlite3
 import unicodedata
 from typing import Any, List, Optional, cast, Sequence, Mapping, Dict, Tuple
-from flask_login import UserMixin
 
 
 def normalize_text(s: Optional[str]) -> str:
@@ -65,14 +64,9 @@ class Database:
             pass
 
     def close(self):
-        """Ferme la connexion SQLite associée à cette instance Database."""
         self.db.close()
 
     def commit(self):
-        """Valide la transaction courante sur la base SQLite.
-
-        Lève RuntimeError en cas d'erreur SQLite.
-        """
         try:
             self.db.commit()
         except sqlite3.Error as e:
@@ -1157,7 +1151,6 @@ class Client(DBObject, _RowInitMixin):
     address: Optional[str]
 
     def __init__(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]] = None):
-        """Initialise un objet Client depuis une ligne DB ou un dict."""
         super().__init__(db)
         self._init_from(db, data)
 
@@ -1635,7 +1628,7 @@ class Interaction(DBObject, _RowInitMixin):
     utilisateur_id: identifiant de l'utilisateur ayant effectué l'interaction (clé étrangère vers Utilisateur)
     """
 
-    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'titre', 'contenu', 'type_interaction_id', 'client_id', 'utilisateur_id']
+    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'contenu', 'client_id', 'utilisateur_id']
     DATABASE_NAME = "Interactions"
 
     types_names = {
