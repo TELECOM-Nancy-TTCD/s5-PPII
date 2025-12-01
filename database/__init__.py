@@ -772,7 +772,7 @@ class Utilisateur(DBObject, _RowInitMixin):
         raise ValueError(f"Role with id {self.role_id} not found")
 
     @property
-    def competences(self) -> list[Any] | None:
+    def competences(self) -> list['Competence'] | None:
         """
         Récupère les compétences associées à l'utilisateur.
         :return: Liste des objets Compétence ou None si aucune compétence
