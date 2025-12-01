@@ -1,62 +1,37 @@
-<!doctype html>
+{% extends "menu.html" %}
 
-<html lang="fr">
+{% block title %}Conventions{% endblock %}
 
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link href="../static/styles.css" rel="stylesheet"/>
-    <link rel="shortcut icon" href="../data/logo.png" type="image/x-icon" />
-    <title>TNS : CONVENTION</title>
-  </head>
+{% block content %}
 
-  <body>
-
-    <header> 
-        
-        <img src="../data/logo.png" alt="Logo de Télécom Nancy Service" class="header_img" />
-
-        <nav> 
-
-            <div class="onglet">
-              <a href="https://youtube.com">Clients</a>
-            </div>
-            <div class="onglet">
-              <a href="https://google.com">Projets</a>
-            </div>
-
-              
-        </nav>
-
-    </header>
-
-    <main>
 
         <h1>Liste des conventions</h1>
 
         <p>Voici toutes les conventions courantes ou passées signées par Telecom Nancy Service. </p>
 
+        <div class="clients-container">
+        <div class="client-row" id="en-tete-clients">
+            <span class="col">ID</span>
+            <span class="col">Nom de la convention</span>
+            <span class="col">Description</span>
+            <span class="col">Début de la convention</span>
+            <span class="col">Fin de la convention</span>
+        </div>
+
         {% for convention in context %}
 
-        <div class="convention"> 
-          <p> <b>Convention numéro {{convention.id}}</b>  : <a href="convention/{{convention.id}} ">{{convention.nom}}</a> </p>  
+        <div class="client-card">
+          <div class="client-row">
+            <span class="col">{{ convention.id }}</span>
+            <span class="col">{{ convention.nom }}</span>
+            <span class="col">{{ convention.description }}</span>
+            <span class="col">{{ convention.date_debut }}</span>
+            <span class="col">{{ convention.date_fin }}</span>
+          </div>
         </div>
 
 
         {% endfor %}
+      </div>
 
-
-        
-
-        
-
-
-    </main>
-
-    <footer>
-        <p> TNS - RGPD </p>
-    </footer>
-
-  </body>
-
-</html>
+{% endblock %}

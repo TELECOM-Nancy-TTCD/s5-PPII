@@ -24,10 +24,14 @@ def close_connection(exception):
 
 def liste_conventions():
     c = get_db().cursor()
-    c.execute("SELECT convention_id, nom_convention FROM Conventions")
+    c.execute("SELECT * FROM Conventions")
     conventions = []
     for convention in c.fetchall():
-        conventions.append( {"id":convention[0],"nom":convention[1]} )
+        conventions.append( {"id":convention[0],"nom":convention[1],
+                "description":convention[2],"date_debut":convention[3],
+                "date_fin":convention[4],"doc_contract":convention[5],
+                "client_id":convention[6]} )
+    print(conventions)
     return conventions
 
 def get_projets_by_convention(id_convention):
@@ -64,6 +68,14 @@ def get_client(id):
                 "localisation_lng":client[8],"address":client[9]}
     return {}
 
+def get_utilisateur(id):
+    c = get_db().cursor()
+    c.execute("SELECT utilisateur_id,nom,prenom FROM Utilisateurs WHERE utilisateur_id="+str(id))
+    for utilisateur in c.fetchall():
+        print(utilisateur)
+        return {"id":utilisateur[0],"nom":utilisateur[1],"prenom":utilisateur[2]}
+    return {}
+
 @app.route('/conventions')
 def index():
     l = liste_conventions()
@@ -73,8 +85,9 @@ def index():
 def convention(id : int) :
     conv =  get_convention(id)
     print(get_projets_by_convention(id))
+    client = get_client( conv["client_id"] )
     return render_template('convention.html',context={"convention":conv, 
-    "client":get_client( conv["client_id"] ) , "projets": get_projets_by_convention(id) } 
+    "client":get_client( conv["client_id"] ) , "projets": get_projets_by_convention(id), "utilisateur" : get_utilisateur(client["interlocuteur_principal"]) } 
     )
 
 @app.route('/data/<string:nom>')

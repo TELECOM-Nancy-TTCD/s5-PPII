@@ -1,5 +1,5 @@
 CREATE TABLE Roles (
-    role_id INT PRIMARY KEY,
+    role_id INTEGER PRIMARY KEY,
     nom VARCHAR,
     hierarchie INT, -- pour la modification de rôles, on ne peut destituer un individu d'un role plus haut
 
@@ -26,12 +26,14 @@ CREATE TABLE Roles (
 );
 
 CREATE TABLE Utilisateurs (
-    utilisateur_id INT PRIMARY KEY ,
+    utilisateur_id INTEGER PRIMARY KEY ,
     email VARCHAR UNIQUE NOT NULL,
     mot_de_passe_hashed VARCHAR NOT NULL,
+    mot_de_passe_expire DATE NULL, -- Date d'expiration du mot de passe, NULL si jamais expiré
     
     nom VARCHAR,
     prenom VARCHAR,
+    avatar VARCHAR, -- Lien vers l'avatar de l'utilisateur
     role_id INT,
     
     est_intervenant BOOLEAN, -- Savoir s'il est un intervenant selectable
@@ -46,7 +48,7 @@ CREATE TABLE Utilisateurs (
 );
 
 CREATE TABLE Clients (
-    client_id INT PRIMARY KEY ,
+    client_id INTEGER PRIMARY KEY ,
     nom_entreprise VARCHAR NOT NULL,
     contact_nom VARCHAR,
     contact_email VARCHAR,
@@ -54,7 +56,8 @@ CREATE TABLE Clients (
     type_client TEXT NOT NULL
         CHECK (type_client IN ('Prospect', 'Actif', 'Ancien')),
 
-    interlocuteur_principal VARCHAR, --La personne de TNS en contact avec l'entreprise
+    interlocuteur_principal_id INT, --La personne de TNS en contact avec l'entreprise
+    FOREIGN KEY (interlocuteur_principal_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL,
     localisation_lat FLOAT,
     localisation_lng FLOAT,
     address VARCHAR
@@ -62,7 +65,7 @@ CREATE TABLE Clients (
 );
 
 CREATE TABLE Conventions (
-    convention_id INT PRIMARY KEY ,
+    convention_id INTEGER PRIMARY KEY ,
     nom_convention VARCHAR NOT NULL,
     description TEXT,
     date_debut DATE,
@@ -75,7 +78,7 @@ CREATE TABLE Conventions (
 );
 
 CREATE TABLE Projets (
-    projet_id INT PRIMARY KEY ,
+    projet_id INTEGER PRIMARY KEY ,
     convention_id INT,
     nom_projet VARCHAR NOT NULL,
     description TEXT,
@@ -90,16 +93,16 @@ CREATE TABLE Projets (
 );
 
 CREATE TABLE Competences (
-    competence_id INT PRIMARY KEY ,
+    competence_id INTEGER PRIMARY KEY ,
     nom VARCHAR UNIQUE NOT NULL,
 
     -- sous-compétence (relation réflexive)
     competence_parent INT,
-    FOREIGN KEY (competence_parent) REFERENCES competence_id ON UPDATE CASCADE ON DELETE SET NULL
+    FOREIGN KEY (competence_parent) REFERENCES Competences(competence_id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE Jalons (
-    jalon_id INT PRIMARY KEY ,
+    jalon_id INTEGER PRIMARY KEY ,
     description VARCHAR NOT NULL,
     date_fin DATE,
     est_complete BOOLEAN DEFAULT false,
@@ -111,7 +114,7 @@ CREATE TABLE Jalons (
 --Tables de relations N-M
 
 CREATE TABLE Interactions ( -- correspond au 'communique avec' du schéma mais avec le logging
-    interaction_id INT PRIMARY KEY,
+    interaction_id INTEGER PRIMARY KEY,
     date_time_interaction DATETIME NOT NULL,
     contenu TEXT NOT NULL,
     
