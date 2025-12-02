@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="1ba6ef60-db63-460b-b9f7-6af92105b3d9" name="Changes" comment="fix: update competences type hint and exclude .idea from version control" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+    <option name="SCHEME" value="Project" />
+  </component>
+  <component name="FlaskConsoleOptions" custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass">
+    <envs>
+      <env key="FLASK_APP" value="app" />
+    </envs>
+    <option name="myCustomStartScript" value="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass" />
+    <option name="myEnvs">
+      <map>
+        <entry key="FLASK_APP" value="app" />
+      </map>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="Di Gallo Clément &lt;clement.di-gallo@telecomnancy.eu&gt;" />
+      </list>
+    </option>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="site_web" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MaliciousPackageCheckinHandlerState">
+    <option name="packageCheck" value="true" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="35F9tpeiPu7ooYpjaekKz4jSdHi" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "feature/TM",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "sqlite"
+    ]
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/database" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="groupe-07-ttcd" type="PythonConfigurationType" factoryName="Python">
+      <module name="groupe-07-ttcd" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/app.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-PY-252.28238.29" />
+        <option value="bundled-python-sdk-a101402ee41c-968fe969f28a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.28238.29" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="1ba6ef60-db63-460b-b9f7-6af92105b3d9" name="Changes" comment="" />
+      <created>1762695174942</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1762695174942</updated>
+      <workItem from="1762695181953" duration="1438000" />
+      <workItem from="1762696649118" duration="1426000" />
+      <workItem from="1763543991383" duration="720000" />
+      <workItem from="1763547706939" duration="1105000" />
+      <workItem from="1763573651657" duration="10199000" />
+      <workItem from="1763587306514" duration="4922000" />
+      <workItem from="1763592290209" duration="1688000" />
+      <workItem from="1764061808705" duration="2542000" />
+      <workItem from="1764321449713" duration="5884000" />
+      <workItem from="1764343219886" duration="1241000" />
+      <workItem from="1764344882328" duration="5187000" />
+      <workItem from="1764354721419" duration="2165000" />
+      <workItem from="1764407367762" duration="6345000" />
+      <workItem from="1764430032369" duration="951000" />
+      <workItem from="1764454627390" duration="1009000" />
+      <workItem from="1764580127722" duration="4084000" />
+    </task>
+    <task id="LOCAL-00001" summary="feat(docs): ajouter des modèles pour les demandes de fonctionnalités et les rapports de bugs">
+      <option name="closed" value="true" />
+      <created>1762697025504</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1762697025504</updated>
+    </task>
+    <task id="LOCAL-00002" summary="feat(docs): ajouter un guide de contribution dans CONTRIBUTING.md">
+      <option name="closed" value="true" />
+      <created>1762697037833</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1762697037833</updated>
+    </task>
+    <task id="LOCAL-00003" summary="feat: add initial project configuration files and .gitignore">
+      <option name="closed" value="true" />
+      <created>1762697049801</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1762697049801</updated>
+    </task>
+    <task id="LOCAL-00004" summary="feat: update project configuration and add requirements.txt">
+      <option name="closed" value="true" />
+      <created>1763548486820</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1763548486820</updated>
+    </task>
+    <task id="LOCAL-00005" summary="feat(database): add begin create database gestion and rename database files for better organization">
+      <option name="closed" value="true" />
+      <created>1763548519810</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1763548519810</updated>
+    </task>
+    <task id="LOCAL-00006" summary="feat(database): add database configuration files and update requirements for Redis support">
+      <option name="closed" value="true" />
+      <created>1763591964586</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1763591964586</updated>
+    </task>
+    <task id="LOCAL-00007" summary="feat(database): implement save and delete methods for database objects with Redis caching">
+      <option name="closed" value="true" />
+      <created>1763593970024</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1763593970024</updated>
+    </task>
+    <task id="LOCAL-00008" summary="feat(database): enhance database models with role and user expiration features, add Redis caching for roles and competencies">
+      <option name="closed" value="true" />
+      <created>1764324656385</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1764324656385</updated>
+    </task>
+    <task id="LOCAL-00009" summary="feat(database): add user retrieval methods with caching support for improved performance">
+      <option name="closed" value="true" />
+      <created>1764325044134</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1764325044135</updated>
+    </task>
+    <task id="LOCAL-00010" summary="feat(database): implement secondary indexing with Redis for improved query performance and caching">
+      <option name="closed" value="true" />
+      <created>1764349617323</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1764349617323</updated>
+    </task>
+    <task id="LOCAL-00011" summary="feat(database): update requirements and add Docker Compose for Redis integration">
+      <option name="closed" value="true" />
+      <created>1764410650818</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1764410650818</updated>
+    </task>
+    <task id="LOCAL-00012" summary="fix: update competences type hint and exclude .idea from version control">
+      <option name="closed" value="true" />
+      <created>1764582031203</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1764582031203</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="feature/database" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="feat(docs): ajouter des modèles pour les demandes de fonctionnalités et les rapports de bugs" />
+    <MESSAGE value="feat(docs): ajouter un guide de contribution dans CONTRIBUTING.md" />
+    <MESSAGE value="feat: add initial project configuration files and .gitignore" />
+    <MESSAGE value="feat: update project configuration and add requirements.txt" />
+    <MESSAGE value="feat(database): add begin create database gestion and rename database files for better organization" />
+    <MESSAGE value="feat(database): add database configuration files and update requirements for Redis support" />
+    <MESSAGE value="feat(database): implement save and delete methods for database objects with Redis caching" />
+    <MESSAGE value="feat(database): enhance database models with role and user expiration features, add Redis caching for roles and competencies" />
+    <MESSAGE value="feat(database): add user retrieval methods with caching support for improved performance" />
+    <MESSAGE value="feat(database): implement secondary indexing with Redis for improved query performance and caching" />
+    <MESSAGE value="feat(database): update requirements and add Docker Compose for Redis integration" />
+    <MESSAGE value="fix: update competences type hint and exclude .idea from version control" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix: update competences type hint and exclude .idea from version control" />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>
