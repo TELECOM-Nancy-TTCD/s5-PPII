@@ -2,6 +2,8 @@ from flask import Flask, session, render_template, request, redirect, url_for, g
 from flask_login import LoginManager, UserMixin, login_user
 from hashlib import scrypt
 import os, base64, sqlite3
+import database
+import redis
 
 class User(UserMixin):
     def __init__(self, id):
@@ -12,17 +14,11 @@ DATABASE= 'database.db'
 def get_db():
     db= getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
+        db = g._database = database.Database(
+            redis_client=redis.Redis(host='localhost', port=6379, db=0),
+            database=DATABASE
+        )
     return db
-
-def get_clients():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row 
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Clients")
-    clients = cursor.fetchall()
-    conn.close()
-    return clients
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -58,8 +54,6 @@ def verify_password(mdp_entre, stored_hash):
 @login_manager.user_loader
 def load_user(uid):
     return User.get(uid)
-
-
 
 
 
@@ -100,7 +94,7 @@ def contact():
 
 @app.route("/clients")
 def clients():
-    clients_db = get_clients()
+    clients_db = get_db().get_all_clients()
     return render_template("clients.html", clients_db=clients_db)
 
 @app.route("/projets")
