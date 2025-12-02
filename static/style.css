@@ -74,12 +74,12 @@ main {
     z-index: 2000;
     height: 100px;
     display: flex;
-    flex-direction: lign-row;
+    flex-direction: row;
     align-items: center;
     gap: 20px;
     list-style-type: square;
     background: linear-gradient(0deg, #1b1b1b, #475eab);
-    padding: -5px 0px;
+    padding: -5px 0;
 }
 
 .main-menu-items {
@@ -96,8 +96,7 @@ main {
     color: rgb(204, 204, 204);
     padding: 10px 15px;
     border-radius: 8px;
-    border: 1px solid;
-    border-color: #757779;
+    border: 1px solid #757779;
     display: inline-block;
     margin-top: -30px;
 }
@@ -143,8 +142,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 10px;
-    padding-top: 25px;
+    padding: 25px 10px 10px;
     position: relative;
 }
 
@@ -198,8 +196,7 @@ main {
     color: rgb(204, 204, 204);
     padding: 10px 15px;
     border-radius: 8px;
-    border: 1px solid;
-    border-color: #757779;
+    border: 1px solid #757779;
     display: inline-block;
     margin-top: 20px;
 }
