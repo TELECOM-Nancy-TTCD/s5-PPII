@@ -4,6 +4,30 @@
 
 {% block content %}
 <h1>Bienvenue sur la page des utilisateurs</h1>
+<p style="font-size: large;">Ici se trouve tous les utilisateurs répertoriés.</p>
 
+<div class="users-container">
+        <div class="user-row" id="en-tete-users">
+            <span class="col">ID</span>
+            <span class="col">Nom</span>
+            <span class="col">Prénom</span>
+            <span class="col">Email</span>
+            <span class="col">Intervenant</span>
+            <span class="col">Action</span>
+        </div>
+
+    {% for user in users %}
+    <div class="user-card">
+        <div class="client-row">
+            <span class="col">{{ user.id }}</span>
+            <span class="col">{{ user.nom }}</span>
+            <span class="col">{{ user.prenom }}</span>
+            <span class="col">{{ user.email }}</span>
+            <span class="col">Non</span>
+            <span class="col"><a href="{{url_for('/utilisateurs/' + str(user.id))}}">Voir</a></span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 
 {% endblock %}

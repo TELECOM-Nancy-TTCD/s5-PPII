@@ -107,7 +107,8 @@ def recherche_avance():
 
 @app.route("/utilisateurs")
 def utilisateurs():
-    return render_template("utilisateurs.html")
+    users = get_db().get_all_users()
+    return render_template("utilisateurs.html", users=users)
 
 
 # Ci dessous les pages du pied de page , souvent seules.
