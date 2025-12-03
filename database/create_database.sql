@@ -57,11 +57,11 @@ CREATE TABLE Clients (
         CHECK (type_client IN ('Prospect', 'Actif', 'Ancien')),
 
     interlocuteur_principal_id INT, --La personne de TNS en contact avec l'entreprise
-    FOREIGN KEY (interlocuteur_principal_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL,
     localisation_lat FLOAT,
     localisation_lng FLOAT,
-    address VARCHAR
-    
+    address VARCHAR,
+
+    FOREIGN KEY (interlocuteur_principal_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE Conventions (
