@@ -4,7 +4,7 @@ from hashlib import scrypt
 import os, base64, sqlite3
 
 
-DATABASE= 'database.db'
+DATABASE= 'database/database.db'
 
 def get_db():
     db= getattr(g, '_database', None)
