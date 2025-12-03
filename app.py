@@ -39,7 +39,6 @@ class User(UserMixin):
         except:
             return None
 
-
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -73,9 +72,8 @@ def verify_password(mdp_entre : str, stored_hash):
 
 
 @login_manager.user_loader
-def load_user(uid):
+def load_user(uid : str):
     return User.get(uid)
-
 
 
 
