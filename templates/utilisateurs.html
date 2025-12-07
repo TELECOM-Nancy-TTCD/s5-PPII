@@ -3,7 +3,25 @@
 {% block title %}Utilisateur{% endblock %}
 
 {% block content %}
-<h1>Bienvenue sur la page des utilisateurs</h1>
 
+<h1>Liste des utilisateurs</h1>
+
+<form class="search-form-utilisateurs" method="get" action="/utilisateurs" >
+    <input type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
+    <button type="submit">Rechercher</button>
+</form>
+
+
+<div class="grid-utilisateurs">
+    {% for utilisateur in utilisateurs_db %}
+    <div class="card-utilisateurs" onclick="window.location.href='/utilisateur/{{ utilisateur['utilisateur_id'] }}'">
+        <h3>{{ utilisateur.prenom }} {{ utilisateur.nom }}</h3>
+        <p>Rôle : {{ utilisateur.role.nom if utilisateur.role else 'Inconnu' }}</p>
+        {% if utilisateur.est_intervenant %}
+        <p>Intervenant</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
 
 {% endblock %}

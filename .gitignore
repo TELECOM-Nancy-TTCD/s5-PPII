@@ -2,6 +2,9 @@
 # Environnements virtuels
 venv/
 __pycache__
+ajout.py
+check.py 
+retrait.py
 
 # VS Code
 .vscode/

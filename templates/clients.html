@@ -21,7 +21,7 @@
         </div>
 
     {% for client in clients_db %}
-    <div class="client-card">
+    <div class="client-card" onclick="window.location.href='/client/{{ client['client_id'] }}'">
         <div class="client-row">
             <span class="col">{{ client['client_id'] }}</span>
             <span class="col">{{ client['nom_entreprise'] }}</span>
@@ -29,7 +29,7 @@
             <span class="col">{{ client['contact_email'] }}</span>
             <span class="col">{{ client['contact_telephone'] }}</span>
             <span class="col">{{ client['type_client'] }}</span>
-            <span class="col">{{ client['interlocuteur_principal'] }}</span>
+            <span class="col">{{ client['interlocuteur_principal_id'] }}</span>
             <span class="col">{{ client['address'] }}</span>
         </div>
     </div>

@@ -21,13 +21,33 @@ def get_db():
     return db
 
 def get_clients():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect('database/database.db')
     conn.row_factory = sqlite3.Row 
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Clients")
     clients = cursor.fetchall()
     conn.close()
     return clients
+
+class User(UserMixin):
+    def __init__(self, id, nom, prenom, role_id):
+        self.id=id
+        self.nom = nom
+        self.prenom = prenom
+        self.role_id = role_id
+
+    
+    @classmethod
+    def get(cls, user_id : str):
+        try:
+            c = get_db().cursor()
+            
+            c.execute("SELECT utilisateur_id, nom, prenom, role_id FROM Utilisateurs WHERE utilisateur_id = ?",(int(user_id), ))
+            row = c.fetchone()
+            
+            return cls(*row)
+        except:
+            return None
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -172,11 +192,21 @@ def projets():
 def recherche_avance():
     return render_template("Page_recherche_avance.html")
 
-@app.route("/utilisateurs")
+@app.route("/utilisateurs", methods=["GET"])
 @login_required
 def utilisateurs():
-    return render_template("utilisateurs.html")
+    recherche = request.args.get("q", "").lower() 
+    utilisateurs_db = get_utilisateurs()
 
+    if recherche:
+        utilisateurs_db = [
+            u for u in utilisateurs_db
+            if recherche in u["nom"].lower()
+            or recherche in u["prenom"].lower()
+            or recherche in u["email"].lower()
+        ]
+
+    return render_template("utilisateurs.html", utilisateurs_db=utilisateurs_db, recherche=recherche)
 
 # Ci dessous les pages du pied de page , souvent seules.
 @app.route("/cgu")
@@ -184,8 +214,53 @@ def cgu():
     return render_template("./Pages_speciales/cgu.html")
 
 @app.route("/rgpd")
+@login_required
 def rgpd():
     return render_template("./Pages_speciales/rgpd.html")
+
+@app.route("/utilisateur/<int:uid>")
+@login_required
+def utilisateur_detail(uid):
+    conn = sqlite3.connect('database/database.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM Utilisateurs WHERE utilisateur_id = ?", (uid,))
+    utilisateur = cursor.fetchone()
+    conn.close()
+
+    if utilisateur is None:
+        abort(404)
+
+    # Appelle le bon dossier + bon fichier
+    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur)
+
+@app.route("/client/<int:client_id>")
+@login_required
+def client_detail(client_id):
+    # Connexion avec row_factory pour accéder aux colonnes par nom
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    
+    # Récupération du client
+    c.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
+    client = c.fetchone()
+    if client is None:
+        abort(404)
+
+    # Récupération des projets liés via les conventions
+    c.execute("""
+        SELECT p.* 
+        FROM Projets p
+        JOIN Conventions c ON p.convention_id = c.convention_id
+        WHERE c.client_id = ?
+    """, (client_id,))
+    projets = c.fetchall()
+    
+    conn.close()
+    
+    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets)
 
 #Ici les pages d'erruer personalisé, elle ne sont pas encore toute la mais il faut que je réflechisse auquelles je met.
 @app.errorhandler(404)
