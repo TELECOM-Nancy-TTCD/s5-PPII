@@ -29,6 +29,15 @@ def get_clients():
     conn.close()
     return clients
 
+def get_utilisateurs():
+    conn = sqlite3.connect('database/database.db')
+    conn.row_factory = sqlite3.Row 
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Utilisateurs")
+    clients = cursor.fetchall()
+    conn.close()
+    return clients
+
 class User(UserMixin):
     def __init__(self, id, nom, prenom, role_id):
         self.id=id
