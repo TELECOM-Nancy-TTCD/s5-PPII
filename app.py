@@ -238,18 +238,15 @@ def utilisateur_detail(uid):
 @app.route("/client/<int:client_id>")
 @login_required
 def client_detail(client_id):
-    # Connexion avec row_factory pour accéder aux colonnes par nom
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
     
-    # Récupération du client
     c.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
     client = c.fetchone()
     if client is None:
         abort(404)
-
-    # Récupération des projets liés via les conventions
+ 
     c.execute("""
         SELECT p.* 
         FROM Projets p
