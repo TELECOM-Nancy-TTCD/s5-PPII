@@ -268,7 +268,7 @@ def client_detail(client_id):
     
     return render_template("Pages_speciales/clients_template.html", client=client, projets=projets)
 
-#Ici les pages d'erruer personalisé, elle ne sont pas encore toute la mais il faut que je réflechisse auquelles je met.
+#Ici les pages d'erreur personalisé, elles ne sont pas encore toutes la mais il faut que je réfléchisse au quelles, je mets.
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("errors/404.html"), 404
