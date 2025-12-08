@@ -39,8 +39,9 @@ major:
 
 
 lance:
+	. docker compose up
 	. venv/bin/activate && python3 app.py
-	@echo "Ouvrir l'url : http://127.0.0.1:5000/""
+	@echo "Ouvrir l'url : http://127.0.0.1:5000/"
 
 
 
