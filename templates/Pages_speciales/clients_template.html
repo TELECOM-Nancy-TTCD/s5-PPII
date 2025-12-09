@@ -1,0 +1,39 @@
+{% extends "menu.html" %}
+
+{% block title %}Client {{ client['nom_entreprise'] }}{% endblock %}
+
+{% block content %}
+<h1>{{ client['nom_entreprise'] }}</h1>
+<p><strong>Contact :</strong> {{ client['contact_nom'] }}</p>
+<p><strong>Email :</strong> {{ client['contact_email'] }}</p>
+<p><strong>Téléphone :</strong> {{ client['contact_telephone'] }}</p>
+<p><strong>Type :</strong> {{ client['type_client'] }}</p>
+<p><strong>Interlocuteur principal :</strong> {{ client['interlocuteur_principal_id'] }}</p>
+<p><strong>Adresse :</strong> {{ client['address'] }}</p>
+
+<p>-----</p>
+
+<h2>Projets liés</h2>
+{% if projets %}
+    <div class="clients-projets-liste">
+        <div class="clients-projets-entete">
+            <span>Nom du projet</span>
+            <span>Statut</span>
+            <span>Budget</span>
+        </div>
+        <ul>
+            {% for projet in projets %}
+            <li>
+                <span>{{ projet.nom_projet }}</span>
+                <span>{{ projet.statut }}</span>
+                <span>{{ projet.budget }} €</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+{% else %}
+    <p>Aucun projet associé.</p>
+{% endif %}
+
+{% endblock %}

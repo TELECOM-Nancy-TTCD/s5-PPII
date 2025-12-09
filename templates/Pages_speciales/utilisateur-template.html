@@ -1,0 +1,50 @@
+{% extends "menu.html" %}
+
+{% block content %}
+
+<h1>{{utilisateur['prenom']}} {{utilisateur['nom']}}</h1>
+
+<p>Email : {{utilisateur['email']}}</p>
+
+<p>Intervenant : {{ 'Oui' if utilisateur['est_intervenant'] else 'Non' }}</p>
+
+<p>Nombre d'heure disponible (par semaine) : {{utilisateur['heures_dispo_semaine']}}</p>
+<p>-----</p>
+<h2>Documents</h2>
+
+<div class="documents-users">
+
+    {% if utilisateur.doc_carte_vitale %}
+        <a href="{{ utilisateur.doc_carte_vitale }}" class="documents-bouton-users" download>
+            Accès Carte Vitale
+        </a>
+    {% else %}
+        <p>Carte Vitale : <span class="none">Pas de document disponible</span></p>
+    {% endif %}
+
+    {% if utilisateur.doc_cni %}
+        <a href="{{ utilisateur.doc_cni }}" class="documents-bouton-users" download>
+            Accès CNI
+        </a>
+    {% else %}
+        <p>CNI : <span class="none">Pas de document disponible</span></p>
+    {% endif %}
+
+    {% if utilisateur.doc_adhesion %}
+        <a href="{{ utilisateur.doc_adhesion }}" class="documents-bouton-users" download>
+            Accès Attestation d'adhésion
+        </a>
+    {% else %}
+        <p>Attestation d'adhésion : <span class="none">Pas de document disponible</span></p>
+    {% endif %}
+
+    {% if utilisateur.doc_rib %}
+        <a href="{{ utilisateur.doc_rib }}" class="documents-bouton-users" download>
+            Accès RIB
+        </a>
+    {% else %}
+        <p>RIB : <span class="none">Pas de document disponible</span></p>
+    {% endif %}
+</div>
+
+{% endblock %}

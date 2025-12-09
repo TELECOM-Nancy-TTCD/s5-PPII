@@ -2,15 +2,41 @@ from flask import Flask, session, render_template, request, redirect, url_for, g
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
 from hashlib import scrypt
 import os, base64, sqlite3
+import database
+import redis
 
+class User(UserMixin):
+    def __init__(self, id):
+        self.id=str(id)
 
 DATABASE= 'database/database.db'
 
 def get_db():
     db= getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
+        db = g._database = database.Database(
+            redis_client=redis.Redis(host='localhost', port=6379, db=0),
+            database=DATABASE
+        )
     return db
+
+def get_clients():
+    conn = sqlite3.connect('database/database.db')
+    conn.row_factory = sqlite3.Row 
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Clients")
+    clients = cursor.fetchall()
+    conn.close()
+    return clients
+
+def get_utilisateurs():
+    conn = sqlite3.connect('database/database.db')
+    conn.row_factory = sqlite3.Row 
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Utilisateurs")
+    clients = cursor.fetchall()
+    conn.close()
+    return clients
 
 class User(UserMixin):
     def __init__(self, id, nom, prenom, role_id):
@@ -69,14 +95,6 @@ def load_user(uid : str):
     return User.get(uid)
 
 
-@app.route("/")
-@app.route("/index")
-@login_required
-def index():
-
-
-    return render_template('index.html', user=current_user)
-
 
 
 @app.route("/login", methods = ["GET", "POST"])
@@ -99,11 +117,11 @@ def login():
 
                 next_page = request.args.get("next")
                 if next_page == None:
-                    redirect(url_for("index"))
+                    redirect(url_for("accueil"))
                 # TODO : Vérifier que l'URL next est safe
                 return redirect(next_page)
             
-                
+                return redirect(url_for('index')) # TODO: Signaler à l'utilisateur que son login est réussi
         
         has_failed_login = True # Si pas d'utilisateur avec ce mail ou que le mdp est faux, on a raté le login
 
@@ -115,11 +133,11 @@ def login():
 def can_manage_users(us : User):
     c = get_db().cursor()
     c.execute('SELECT peut_gerer_utilisateurs FROM Roles WHERE role_id = ?', (us.role_id,))
-    
+
     r = c.fetchone()
     if r == None or r[0] == False:
         return False
-    
+
     return True
 
 
@@ -128,7 +146,7 @@ def can_manage_users(us : User):
 def create_user():
     if not can_manage_users(current_user):
         abort(403)
-    
+
     user_added_successfully= False
     c = get_db().cursor()
 
@@ -147,7 +165,7 @@ def create_user():
         doc_rib = request.form["doc_rib"]
 
         role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
-        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (None, email, hmdp, nom, prenom, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib)) 
+        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (None, email, hmdp, nom, prenom, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
         get_db().commit()
         #Insertion de None = NULL dans la colonne primary key car elle se gère ainsi automatiquement
         user_added_successfully = True
@@ -157,6 +175,107 @@ def create_user():
 
     return render_template("create_user.html", context={"success":user_added_successfully, "roles_possibles": roles_possibles})
 
+# Ici les pages du menus principales (vide) mais utile pour creer le menu
+@app.route("/")          
+def accueil():
+    return render_template("accueil.html")
+
+@app.route("/contact")
+@login_required
+def contact():
+    return render_template("./Pages_speciales/contact.html")
+
+@app.route("/clients")
+@login_required
+def clients():
+    clients_db = get_db().get_all_clients()
+    return render_template("clients.html", clients_db=clients_db)
+
+@app.route("/projets")
+@login_required
+def projets():
+    return render_template("projets.html")
+
+@app.route("/recherche_avance")
+@login_required
+def recherche_avance():
+    return render_template("Page_recherche_avance.html")
+
+@app.route("/utilisateurs", methods=["GET"])
+@login_required
+def utilisateurs():
+    recherche = request.args.get("q", "").lower() 
+    utilisateurs_db = get_utilisateurs()
+
+    if recherche:
+        utilisateurs_db = [
+            u for u in utilisateurs_db
+            if recherche in u["nom"].lower()
+            or recherche in u["prenom"].lower()
+            or recherche in u["email"].lower()
+        ]
+
+    return render_template("utilisateurs.html", utilisateurs_db=utilisateurs_db, recherche=recherche)
+
+# Ci dessous les pages du pied de page , souvent seules.
+@app.route("/cgu")
+def cgu():
+    return render_template("./Pages_speciales/cgu.html")
+
+@app.route("/rgpd")
+@login_required
+def rgpd():
+    return render_template("./Pages_speciales/rgpd.html")
+
+@app.route("/utilisateur/<int:uid>")
+@login_required
+def utilisateur_detail(uid):
+    conn = sqlite3.connect('database/database.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM Utilisateurs WHERE utilisateur_id = ?", (uid,))
+    utilisateur = cursor.fetchone()
+    conn.close()
+
+    if utilisateur is None:
+        abort(404)
+
+    # Appelle le bon dossier + bon fichier
+    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur)
+
+@app.route("/client/<int:client_id>")
+@login_required
+def client_detail(client_id):
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    
+    c.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
+    client = c.fetchone()
+    if client is None:
+        abort(404)
+ 
+    c.execute("""
+        SELECT p.* 
+        FROM Projets p
+        JOIN Conventions c ON p.convention_id = c.convention_id
+        WHERE c.client_id = ?
+    """, (client_id,))
+    projets = c.fetchall()
+    
+    conn.close()
+    
+    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets)
+
+#Ici les pages d'erruer personalisé, elle ne sont pas encore toute la mais il faut que je réflechisse auquelles je met.
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("errors/404.html"), 404
+
+@app.errorhandler(500)
+def serveur_error(error):
+    return render_template("errors/500.html"), 500
 
 
 @app.teardown_appcontext
@@ -164,3 +283,8 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
