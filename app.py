@@ -264,9 +264,18 @@ def client_detail(client_id):
     """, (client_id,))
     projets = c.fetchall()
     
+    c.execute("""
+        SELECT i.*, u.nom || ' ' || u.prenom AS utilisateur_nom
+        FROM Interactions i
+        JOIN Utilisateurs u ON i.utilisateur_id = u.utilisateur_id
+        WHERE i.client_id = ?
+        ORDER BY i.date_time_interaction DESC
+    """, (client_id,))
+    
+    interactions = c.fetchall()
     conn.close()
     
-    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets)
+    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets, interactions=interactions)
 
 #Ici les pages d'erreur personalisé, elles ne sont pas encore toutes la mais il faut que je réfléchisse au quelles, je mets.
 @app.errorhandler(404)
