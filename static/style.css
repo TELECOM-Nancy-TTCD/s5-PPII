@@ -325,7 +325,7 @@ main {
 .interactions-container {
     display: flex;
     flex-direction: column;
-    align-items: center; /* centre toutes les cartes */
+    align-items: center; 
 }
 
 .interaction-card {
@@ -335,19 +335,19 @@ main {
     margin-bottom: 15px;
     border-radius: 8px;
     max-width: 800px;
-    width: 100%; /* pour que flex-box fonctionne */
+    width: 100%; 
     word-wrap: break-word;
 }
 
-/* Header avec date à gauche et utilisateur à droite */
+
 .interaction-header {
     display: flex;
-    justify-content: space-between; /* date à gauche, utilisateur à droite */
+    justify-content: space-between; 
     font-weight: bold;
     margin-bottom: 8px;
 }
 
-/* Bloc texte réduit de base */
+
 .interaction-text {
     overflow: hidden;
     transition: max-height 0.4s ease;
@@ -356,13 +356,13 @@ main {
     word-break: break-word;
 }
 
-/* collapsed = petit bloc */
+
 .interaction-text.collapsed {
     max-height: 80px;
     position: relative;
 }
 
-/* Dégradé en bas */
+
 .interaction-text.collapsed::after {
     content: "";
     position: absolute;
@@ -373,7 +373,7 @@ main {
     background: linear-gradient(to bottom, transparent, #2c2c2c);
 }
 
-/* bouton */
+
 .interaction-toggle {
     margin-top: 10px;
     padding: 6px 12px;
