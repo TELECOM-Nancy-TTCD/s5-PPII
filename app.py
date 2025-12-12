@@ -31,11 +31,17 @@ import os, base64, sqlite3
 import database
 import redis
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class User(UserMixin):
     def __init__(self, id):
         self.id=str(id)
 
-DATABASE= 'database/database.db'
+DATABASE= os.getenv('DATABASE')
 
 def get_db():
     db= getattr(g, '_database', None)
@@ -230,7 +236,7 @@ def recherche_avance():
 @app.route("/utilisateurs", methods=["GET"])
 @login_required
 def utilisateurs():
-    recherche = request.args.get("q", "").lower() 
+    recherche = request.args.get("q", "").lower()
     utilisateurs_db = get_utilisateurs()
 
     if recherche:
