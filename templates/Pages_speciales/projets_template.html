@@ -1,0 +1,27 @@
+{% extends "menu.html" %}
+
+{% block title %}Projet {{p.nom_projet}}{% endblock %}
+
+{% block content %}
+<h1>{{p.nom_projet}}</h1>
+<p>Statut du projet : {{p.statut}}</p>
+{% if p.statut == 'En attente'%}
+<p> Date de début prévue : {{p.date_debut}} </p>
+{% else %}
+<p> Date de début: {{p.date_debut}} </p>
+{% endif %}
+
+{% if p.statut == 'Terminé'%}
+<p> Date de fin : {{p.date_fin}} </p>
+{% elif p.statut != 'Annulé' && p.date_fin != None %}
+<p> Date de fin prévue : {{p.date_fin}} </p>
+{% endif %}
+
+<p> Budget : {{p.budget}} € </p>
+<a href={{p.doc_dossier}}> Documents associés au projet </a>
+
+
+
+<!-- cette page va servir à afficher un détail de projet lors d'un clic sur le projet associé après dépliage de la convention à laquelle il est associé dans 
+ la page conventions, à supposer qu'on aie même besoin d'une page pour ça. Bref s'inspirer de ce qui est fait côté utilisateurs -->
+{% endblock %}

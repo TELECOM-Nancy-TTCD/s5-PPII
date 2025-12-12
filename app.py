@@ -141,7 +141,7 @@ def can_manage_users(us : User):
     return True
 
 
-@app.route("/users/create", methods=["GET", "POST"])
+@app.route("/utilisateur/create", methods=["GET", "POST"])
 @login_required
 def create_user():
     if not can_manage_users(current_user):
@@ -267,6 +267,21 @@ def client_detail(client_id):
     conn.close()
     
     return render_template("Pages_speciales/clients_template.html", client=client, projets=projets)
+
+
+@app.route("/projet/<int:projet_id>")
+@login_required
+def projet_detail(projet_id):
+    proj = database.get_project_id(projet_id)
+    
+
+    if proj == None: 
+        abort(404)
+    
+    # Page à faire sur le modèle de clients_template.html
+    # Va falloir aller chercher
+    return render_template("Pages_speciales/projets_template.html", p = proj)
+
 
 #Ici les pages d'erruer personalisé, elle ne sont pas encore toute la mais il faut que je réflechisse auquelles je met.
 @app.errorhandler(404)
