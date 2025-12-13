@@ -1,0 +1,96 @@
+{% extends "menu.html" %}
+
+{% block title %}Client {{ client['nom_entreprise'] }}{% endblock %}
+
+{% block content %}
+<h1>{{ client['nom_entreprise'] }}</h1>
+<p><strong>Contact :</strong> {{ client['contact_nom'] }}</p>
+<p><strong>Email :</strong> {{ client['contact_email'] }}</p>
+<p><strong>Téléphone :</strong> {{ client['contact_telephone'] }}</p>
+<p><strong>Type :</strong> {{ client['type_client'] }}</p>
+<p><strong>Interlocuteur principal :</strong> {{ client['interlocuteur_principal_id'] }}</p>
+<p><strong>Adresse :</strong> {{ client['address'] }}</p>
+
+<p>-----</p>
+
+<h2>Projets liés</h2>
+{% if projets %}
+    <div class="clients-projets-liste">
+        <div class="clients-projets-entete">
+            <span>Nom du projet</span>
+            <span>Statut</span>
+            <span>Budget</span>
+        </div>
+        <ul>
+            {% for projet in projets %}
+            <li>
+                <span>{{ projet.nom_projet }}</span>
+                <span>{{ projet.statut }}</span>
+                <span>{{ projet.budget }} €</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+{% else %}
+    <p>Aucun projet associé.</p>
+{% endif %}
+
+<p>-----</p>
+
+
+<h2>Dernières interactions</h2>
+
+{% if interactions %}
+<div class="interactions-container">
+
+    {% for interaction in interactions %}
+    {% set is_long = interaction.contenu|length > 200 %}
+
+    <div class="interaction-card">
+
+        <div class="interaction-header">
+            <span>{{ interaction.date_time_interaction }}</span>
+            <span>Utilisateur : {{ interaction.utilisateur_nom }}</span>
+        </div>
+
+        <!-- Bloc texte -->
+        <div id="interaction-{{ loop.index }}" class="interaction-text {% if is_long %}collapsed{% endif %}">
+            {{ interaction.contenu }}
+        </div>
+
+        {% if is_long %}
+        <button id="btn-{{ loop.index }}" class="interaction-toggle"
+                onclick="toggleInteraction({{ loop.index }})">
+            Voir plus
+        </button>
+        {% endif %}
+
+    </div>
+    {% endfor %}
+
+</div>
+{% else %}
+<p>Aucune interaction.</p>
+{% endif %}
+
+<script>
+function toggleInteraction(id) {
+    const textBlock = document.getElementById("interaction-" + id);
+    const btn = document.getElementById("btn-" + id);
+
+    if (textBlock.classList.contains("collapsed")) {
+        const fullHeight = textBlock.scrollHeight + "px";
+        textBlock.style.maxHeight = fullHeight;
+        textBlock.classList.remove("collapsed");
+        btn.textContent = "Voir moins";
+    } else {
+        textBlock.style.maxHeight = "80px";
+        textBlock.classList.add("collapsed");
+        btn.textContent = "Voir plus";
+    }
+}
+</script>
+
+{% endblock %}
+

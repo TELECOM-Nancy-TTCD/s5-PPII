@@ -39,18 +39,22 @@ class Database:
         :param redis_client: instance du client Redis utilisée pour le caching et index secondaires
         :param database: chemin vers le fichier SQLite ou bytes pour un in-memory DB
         :param kwargs: arguments optionnels passés à sqlite3.connect
-        :raises ValueError: si redis_client ou test_database est invalide
+
+        :raises ValueError: si redis_client ou database est invalide
+>>>>>>> origin/site_web
         :raises RuntimeError: si la connexion SQLite échoue
         """
         if not redis_client:
             raise ValueError("A valid redis_client must be provided")
         if not database:
-            raise ValueError("A valid test_database path must be provided")
+            raise ValueError("A valid database path must be provided")
+>>>>>>> origin/site_web
         self.redis_client = redis_client
         try:
             self.db = sqlite3.connect(database, **kwargs)
         except sqlite3.Error as e:
-            raise RuntimeError(f"Failed to connect to test_database: {e}") from e
+            raise RuntimeError(f"Failed to connect to database: {e}") from e
+>>>>>>> origin/site_web
 
     def close(self):
         """Ferme la connexion SQLite associée à cette instance Database."""
@@ -364,36 +368,7 @@ class Database:
             return role
         return None
 
-    def get_all_roles(self, limit: int = 0, *, key=lambda x: True) -> List['Role']:
-        """Récupère tous les rôles
-
-        :param limit: nombre maximum de rôles à récupérer (0 = aucun)
-        :param key: fonction de filtrage optionnelle
-        :return: liste d'objets Role
-        """
-        cached_roles = self.redis_client.get(redis_key(Role.DATABASE_NAME.lower(), None, "all"))
-        if cached_roles:
-            all_roles_id = json.loads(cached_roles)
-            roles = [self.get_role_by_id(cid) for cid in all_roles_id]
-            roles = [role for role in roles if role is not None and key(role)]
-            if limit > 0:
-                return roles[:limit]
-            return roles
-        cursor = self.execute(f"SELECT * FROM {Role.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""),
-                              (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
-        rows = cursor.fetchall()
-        cursor.close()
-
-        if limit == 0:
-            # Mettre en cache les IDs des roles
-            all_roles_id = [row[0] for row in rows]  # Supposant que l'ID est dans la première colonne
-            self.redis_client.setex(redis_key(Convention.DATABASE_NAME.lower(), None, "all"), 1_800,
-                                    json.dumps(all_roles_id))
-
-        roles = [Role.from_db_row(self, row) for row in rows]
-        roles = [role for role in roles if key(role)]
-        return roles
-
+>>>>>>> origin/site_web
     def get_project_id(self, project_id: int) -> Optional['Projet']:
         """Récupère un projet par son identifiant.
 
@@ -702,7 +677,8 @@ class _RowInitMixin:
         database_name = getattr(self, 'DATABASE_NAME', None)
         if database_name is None:
             database_name = self.__class__.__name__ + "s"  # Pluriel simple par défaut
-            logging.warning("Using default DATABASE_NAME '%s' for class %s. It's recommended to explicitly set DATABASE_NAME.", database_name, self.__class__.__name__)
+            logging.warn("Using default DATABASE_NAME '%s' for class %s. It's recommended to explicitly set DATABASE_NAME.", database_name, self.__class__.__name__)
+>>>>>>> origin/site_web
         # Sauvegarde l'objet dans la base de données
         fields = ', '.join(self.FIELD_NAMES)
         placeholders = ', '.join(['?'] * len(self.FIELD_NAMES))
@@ -954,7 +930,9 @@ class Utilisateur(DBObject, _RowInitMixin):
             if isinstance(self.mot_de_passe_expire, str):
                 self.mot_de_passe_expire = datetime.datetime.strptime(self.mot_de_passe_expire, '%Y-%m-%d').date()
             else:
-                logging.warning(f"Invalid mot_de_passe_expire for user {self.utilisateur_id} (v={self.mot_de_passe_expire}), setting to None")
+
+                logging.warn(f"Invalid mot_de_passe_expire for user {self.utilisateur_id} (v={self.mot_de_passe_expire}), setting to None")
+>>>>>>> origin/site_web
                 self.mot_de_passe_expire = None
         if not isinstance(self.role_id, int):
             self.role_id = int(self.role_id)
@@ -1006,8 +984,10 @@ class Utilisateur(DBObject, _RowInitMixin):
         if not_cached_competences or not cached_competences_ids:
             cursor = self.db.execute(
                 "SELECT c.* FROM competences c "
-                "JOIN Intervenant_competences uc ON c.competence_id = uc.competence_id "
-                "WHERE uc.intervenant_id = ?", (self.utilisateur_id,))
+
+                "JOIN utilisateur_competences uc ON c.competence_id = uc.competence_id "
+                "WHERE uc.utilisateur_id = ?", (self.utilisateur_id,))
+>>>>>>> origin/site_web
             rows = cursor.fetchall()
             competences = [Competence.from_db_row(self.db, row) for row in rows]
             cursor.close()
