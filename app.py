@@ -1,24 +1,17 @@
 from flask import Flask, session, render_template, request, redirect, url_for, g, abort
-from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
+from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 from hashlib import scrypt
 import os, base64, sqlite3
-import database
+from database import Database, Role, Utilisateur
 import redis
+from tools import get_db, has_permission
 
-class User(UserMixin):
-    def __init__(self, id):
-        self.id=str(id)
+# Importation des blueprints
+from interactions import interactions_bp
+from clients import clients_bp
 
 DATABASE= 'database/database.db'
 
-def get_db():
-    db= getattr(g, '_database', None)
-    if db is None:
-        db = g._database = database.Database(
-            redis_client=redis.Redis(host='localhost', port=6379, db=0),
-            database=DATABASE
-        )
-    return db
 
 def get_clients():
     conn = sqlite3.connect('database/database.db')
@@ -38,26 +31,6 @@ def get_utilisateurs():
     conn.close()
     return clients
 
-class User(UserMixin):
-    def __init__(self, id, nom, prenom, role_id):
-        self.id=id
-        self.nom = nom
-        self.prenom = prenom
-        self.role_id = role_id
-
-    
-    @classmethod
-    def get(cls, user_id : str):
-        try:
-            c = get_db().cursor()
-            
-            c.execute("SELECT utilisateur_id, nom, prenom, role_id FROM Utilisateurs WHERE utilisateur_id = ?",(int(user_id), ))
-            row = c.fetchone()
-            
-            return cls(*row)
-        except:
-            return None
-
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -65,6 +38,10 @@ login_manager.login_view = "login"
 
 app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867' 
 # Clé pour l'encodage des cookies de session
+
+# Blueprints are registered here
+app.register_blueprint(interactions_bp)
+app.register_blueprint(clients_bp)
 
 def hash_password(mdp : str):
     salt = os.urandom(16) # Génération d'un salt
@@ -92,37 +69,43 @@ def verify_password(mdp_entre : str, stored_hash):
 
 @login_manager.user_loader
 def load_user(uid : str):
-    return User.get(uid)
-
-
+    return get_db().get_user_by_id(int(uid))
 
 
 @app.route("/login", methods = ["GET", "POST"])
 def login():
     has_failed_login = False
 
-    if request.method == 'POST' : 
-        
+    if request.method == 'POST' :
         c = get_db().cursor()
-
         adressemail = request.form["Adresse e-mail"]
         mdp = request.form["Mot de passe"]
         c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
         
         corresp = c.fetchone()
+        print(corresp)
+        has_failed_login = False
         if corresp != None: # Si on trouve un utilisateur avec cet email
+            print("Utilisateur trouvé")
             if verify_password(mdp, corresp[1]):
-                to_login = corresp[0]
-                login_user(load_user(to_login)) # On login l'utilisateur correspondant, identifié par son user id
 
-                next_page = request.args.get("next")
-                if next_page == None:
-                    redirect(url_for("accueil"))
-                # TODO : Vérifier que l'URL next est safe
-                return redirect(next_page)
-            
-                return redirect(url_for('index')) # TODO: Signaler à l'utilisateur que son login est réussi
-        
+                to_login = corresp[0]
+                # Récupérer explicitement l'instance Utilisateur via le wrapper Database
+                user = get_db().get_user_by_id(to_login)
+                if user is None:
+                    has_failed_login = True
+                else:
+                    login_user(user)  # On login l'utilisateur (instance compatible Flask-Login)
+
+                    # Redirection sûre : si `next` absent, aller à l'accueil
+                    next_page = request.args.get("next")
+                    if not next_page:
+                        return redirect(url_for("accueil"))
+                    # TODO: Rendre sage la redirection "next" pour éviter les attaques open redirect
+                    return redirect(next_page)
+
+            return redirect(url_for('index')) # TODO: Signaler à l'utilisateur que son login est réussi
+
         has_failed_login = True # Si pas d'utilisateur avec ce mail ou que le mdp est faux, on a raté le login
 
     # Pour un login échouant, on ré-affiche la page avec un message supplémentaire
@@ -130,21 +113,17 @@ def login():
     return render_template('Pages_speciales/login_page.html', has_failed_login=has_failed_login)
 
 
-def can_manage_users(us : User):
-    c = get_db().cursor()
-    c.execute('SELECT peut_gerer_utilisateurs FROM Roles WHERE role_id = ?', (us.role_id,))
-
-    r = c.fetchone()
-    if r == None or r[0] == False:
-        return False
-
-    return True
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("accueil"))
 
 
 @app.route("/users/create", methods=["GET", "POST"])
 @login_required
 def create_user():
-    if not can_manage_users(current_user):
+    if not has_permission(current_user, 'peut_gerer_utilisateurs'):
         abort(403)
 
     user_added_successfully= False
@@ -165,7 +144,8 @@ def create_user():
         doc_rib = request.form["doc_rib"]
 
         role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
-        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (None, email, hmdp, nom, prenom, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
+        # Fournir explicitement des valeurs None pour mot_de_passe_expire et avatar afin d'aligner avec le schéma
+        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (None, email, hmdp, None, nom, prenom, None, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
         get_db().commit()
         #Insertion de None = NULL dans la colonne primary key car elle se gère ainsi automatiquement
         user_added_successfully = True
@@ -217,7 +197,7 @@ def utilisateurs():
 
     return render_template("utilisateurs.html", utilisateurs_db=utilisateurs_db, recherche=recherche)
 
-# Ci dessous les pages du pied de page , souvent seules.
+# Ci-dessous les pages du pied de page, souvent seules.
 @app.route("/cgu")
 def cgu():
     return render_template("./Pages_speciales/cgu.html")

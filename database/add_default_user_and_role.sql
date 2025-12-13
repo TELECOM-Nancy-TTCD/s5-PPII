@@ -1,5 +1,5 @@
-INSERT INTO Roles VALUES (NULL, "admin", 0, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
-INSERT INTO Roles VALUES (NULL, "membre", 5, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false);
+INSERT INTO Roles VALUES (NULL, 'admin', 0, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
+INSERT INTO Roles VALUES (NULL, 'membre', 5, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false);
 PRAGMA table_info(Roles);
 SELECT role_id, nom FROM Roles;
 
