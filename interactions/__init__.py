@@ -1,3 +1,4 @@
+import redis
 from flask import Blueprint, request, render_template, abort, jsonify
 import os
 from datetime import datetime, date
@@ -10,6 +11,7 @@ from database import Interaction
 interactions_bp = Blueprint('interactions', __name__, template_folder="templates/interactions", static_folder="static", url_prefix="/interactions")
 
 DATABASE= os.getenv('DATABASE')
+
 
 # Helper validator
 def validate_interaction_form(form):

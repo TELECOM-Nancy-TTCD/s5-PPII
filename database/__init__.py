@@ -4,6 +4,7 @@ import logging
 import sqlite3
 import unicodedata
 from typing import Any, List, Optional, cast, Sequence, Mapping, Dict, Tuple
+from flask_login import UserMixin
 
 
 def normalize_text(s: Optional[str]) -> str:
@@ -1579,7 +1580,7 @@ class Interaction(DBObject, _RowInitMixin):
     utilisateur_id: identifiant de l'utilisateur ayant effectué l'interaction (clé étrangère vers Utilisateur)
     """
 
-    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'contenu', 'client_id', 'utilisateur_id']
+    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'titre', 'contenu', 'type_interaction_id', 'client_id', 'utilisateur_id']
     DATABASE_NAME = "Interactions"
 
     types_names = {
