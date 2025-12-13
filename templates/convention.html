@@ -1,7 +1,7 @@
 
 {% extends "menu.html" %}
 
-{% block title %}Conventions{% endblock %}
+{% block title %}Convention {{context.convention.nom}}{% endblock %}
 
 {% block content %}
 
@@ -10,33 +10,42 @@
 
         <p>{{context.convention.description}} </p>
 
-         <h2>Information sur le clients</h2>
+         <h2>Informations sur le client</h2>
 
-        <div class="client">
-          
-          <p> Le client est l'entreprise {{context.client.nom_entreprise}}. Le contact de TNS dans l'entreprise est 
-            {{context.client.contact_nom}} joignable via l'addresse email {{context.client.contact_email}} ou via le numéro
-            de téléphone {{context.client.contact_telephone}}.   </p>
-          <p> Le membre de TNS qui en relation avec l'entreprise est {{context.utilisateur.prenom}} {{context.utilisateur.nom}}</p>
-
-        </div>
+        <p> <strong>Nom :</strong> {{context.client.nom_entreprise}} </p>
+        <p> <strong>Contact :</strong> {{context.client.contact_nom}}</p>
+        <p> <strong>Email :</strong> {{context.client.contact_email}}</p>
+        <p> <strong>Telephone :</strong> {{context.client.contact_telephone}} </p>
+        <p> <strong>Type :</strong> {{context.client.type_client}}</p>
+        <p> <strong>Interlocuteur principal :</strong> {{context.utilisateur.nom}} </p>
+        <p> <strong>Adresse :</strong> {{context.client.addresse}}</p>
 
         
 
 
         <h2>Projet(s) lié(s) à la convention</h2>
 
-        {% for projet in context.projets %}
+        {% if context.projets %}
+          <div class="clients-projets-liste">
+              <div class="clients-projets-entete">
+                  <span>Nom du projet</span>
+                  <span>Statut</span>
+                  <span>Budget</span>
+              </div>
+              <ul>
+            {% for projet in context.projets %}
+            <li>
+                <span>{{ projet.nom_projet }}</span>
+                <span>{{ projet.statut }}</span>
+                <span>{{ projet.budget }} €</span>
+            </li>
+            {% endfor %}
+        </ul>
 
-         <div class="projet"> 
-          <h3>Projet numéro  {{projet.id}} : {{projet.nom_projet}}</h3>  
-          
-          <p>{{projet.description}}</p>
-        
-        </div>
-
-        {% endfor %}
-
-
+          </div>
+        {% else %}
+          <p> Aucun projet associé à cette convention</p>
+        {% endif %}
+ 
 
 {% endblock %}
