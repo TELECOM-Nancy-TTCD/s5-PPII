@@ -4,6 +4,7 @@ import logging
 import sqlite3
 import unicodedata
 from typing import Any, List, Optional, cast, Sequence, Mapping, Dict, Tuple
+from flask_login import UserMixin
 
 
 def normalize_text(s: Optional[str]) -> str:
@@ -47,7 +48,6 @@ class Database:
             raise ValueError("A valid redis_client must be provided")
         if not database:
             raise ValueError("A valid database path must be provided")
-
         self.redis_client = redis_client
         try:
             self.db = sqlite3.connect(database, **kwargs)
@@ -1102,7 +1102,6 @@ class Utilisateur(UserMixin, DBObject, _RowInitMixin):
         if not_cached_competences or not cached_competences_ids:
             cursor = self.db.execute(
                 "SELECT c.* FROM competences c "
-
                 "JOIN Intervenant_competences uc ON c.competence_id = uc.competence_id "
                 "WHERE uc.intervenant_id = ?", (self.utilisateur_id,))
             rows = cursor.fetchall()
@@ -1663,7 +1662,7 @@ class Interaction(DBObject, _RowInitMixin):
     utilisateur_id: identifiant de l'utilisateur ayant effectué l'interaction (clé étrangère vers Utilisateur)
     """
 
-    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'contenu', 'client_id', 'utilisateur_id']
+    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'titre', 'contenu', 'type_interaction_id', 'client_id', 'utilisateur_id']
     DATABASE_NAME = "Interactions"
 
     types_names = {
