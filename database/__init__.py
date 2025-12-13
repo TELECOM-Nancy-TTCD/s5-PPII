@@ -4,6 +4,7 @@ import logging
 import sqlite3
 import unicodedata
 from typing import Any, List, Optional, cast, Sequence, Mapping, Dict, Tuple
+from flask_login import UserMixin
 
 
 def normalize_text(s: Optional[str]) -> str:
@@ -39,18 +40,18 @@ class Database:
         :param redis_client: instance du client Redis utilisée pour le caching et index secondaires
         :param database: chemin vers le fichier SQLite ou bytes pour un in-memory DB
         :param kwargs: arguments optionnels passés à sqlite3.connect
-        :raises ValueError: si redis_client ou test_database est invalide
+        :raises ValueError: si redis_client ou database est invalide
         :raises RuntimeError: si la connexion SQLite échoue
         """
         if not redis_client:
             raise ValueError("A valid redis_client must be provided")
         if not database:
-            raise ValueError("A valid test_database path must be provided")
+            raise ValueError("A valid database path must be provided")
         self.redis_client = redis_client
         try:
             self.db = sqlite3.connect(database, **kwargs)
         except sqlite3.Error as e:
-            raise RuntimeError(f"Failed to connect to test_database: {e}") from e
+            raise RuntimeError(f"Failed to connect to database: {e}") from e
 
     def close(self):
         """Ferme la connexion SQLite associée à cette instance Database."""
@@ -533,6 +534,8 @@ class _RowInitMixin:
     # Champs à indexer dans Redis pour recherche exacte (secondary indexes)
     SECONDARY_INDEX_FIELDS: List[str] = []
 
+    db: Optional[Database]
+
     def _init_from(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]]):
         """Initialise les attributs d'une instance à partir d'une ligne (tuple/list) ou d'un dict.
 
@@ -577,6 +580,57 @@ class _RowInitMixin:
         """
         # Cast cls to Any so static analyzers won't complain about varying __init__ signatures
         return cast(Any, cls)(db, row)
+
+    @classmethod
+    def from_dict(cls, db: Database, data: Dict[str, Any]):
+        """Constructeur de classe alternatif à partir d'un dictionnaire.
+
+        :param db: instance de Database
+        :param data: dictionnaire contenant les valeurs des champs
+        :return: instance de la classe
+        """
+        # Cast cls to Any so static analyzers won't complain about varying __init__ signatures
+        return cast(Any, cls)(db, data)
+
+    @classmethod
+    def get_by_id(cls, db: 'Database', id: int) -> Optional[Any]:
+        """Récupère une instance de la classe par son identifiant.
+
+        Essaie d'abord d'utiliser le cache Redis (si présent), sinon effectue une requête SQL
+        sur la table déterminée par `DATABASE_NAME` et le champ d'identifiant trouvé dans `FIELD_NAMES`.
+        :param db: instance de Database
+        :param id: identifiant à rechercher
+        :return: instance de la classe ou None si non trouvé
+        :raises ValueError: si aucun champ d'identifiant n'est défini pour la classe
+        """
+        # Tenter le cache Redis si disponible
+        cache_prefix = getattr(cls, 'CACHE_PREFIX', None) or cls.__name__.lower()
+        try:
+            cached = getattr(db, 'redis_client', None)
+            if cached is not None:
+                payload = db.redis_client.get(redis_key(cache_prefix, id))
+                if payload:
+                    return cls.from_db_row(db, json.loads(payload))
+        except Exception:
+            # Ne pas bloquer en cas d'erreur cache
+            pass
+
+        # Déterminer le champ d'identifiant (ex: 'user_id', 'client_id', ...)
+        id_field = next((f for f in getattr(cls, 'FIELD_NAMES', []) if isinstance(f, str) and f.endswith('_id')), None)
+        if id_field is None:
+            raise ValueError(f"No ID field defined for class {cls.__name__}")
+
+        # Déterminer le nom de la table
+        database_name = getattr(cls, 'DATABASE_NAME', None)
+        if database_name is None:
+            database_name = cls.__name__ + 's'
+
+        cursor = db.execute(f"SELECT * FROM {database_name} WHERE {id_field} = ?", (id,))
+        row = cursor.fetchone()
+        cursor.close()
+        if row:
+            return cls.from_db_row(db, row)
+        return None
 
     def to_dict(self) -> Dict[str, Any]:
         """Sérialise l'objet en dictionnaire en ne conservant que les champs listés dans FIELD_NAMES."""
@@ -871,7 +925,7 @@ class Role(DBObject, _RowInitMixin):
         return users
 
 
-class Utilisateur(DBObject, _RowInitMixin):
+class Utilisateur(UserMixin, DBObject, _RowInitMixin):
     """
     Représente un utilisateur du site. Il peut être intervenant ou membre de TNS.
 
@@ -905,7 +959,7 @@ class Utilisateur(DBObject, _RowInitMixin):
     """
     FIELD_NAMES = [
         'utilisateur_id', 'email', 'mot_de_passe_hashed', 'mot_de_passe_expire',
-        'nom', 'prenom', 'role_id',
+        'nom', 'prenom', 'avatar', 'role_id',
         'est_intervenant', 'heures_dispo_semaine',
         'doc_carte_vitale', 'doc_cni', 'doc_adhesion', 'doc_rib'
     ]
@@ -918,6 +972,7 @@ class Utilisateur(DBObject, _RowInitMixin):
     mot_de_passe_expire: Optional[datetime.date]
     nom: str
     prenom: str
+    avatar: Optional[str]
     role_id: int
     est_intervenant: bool
     heures_dispo_semaine: Optional[int]
@@ -942,6 +997,31 @@ class Utilisateur(DBObject, _RowInitMixin):
             self._try_cache()
         except Exception:
             pass
+
+    # Méthodes attendues par Flask-Login
+    def get_id(self) -> str:
+        """Retourne l'identifiant utilisateur sous forme de chaîne pour Flask-Login."""
+        return str(getattr(self, 'utilisateur_id', ''))
+
+    @property
+    def is_active(self) -> bool:
+        """Compte actif (toujours True ici, ajuster si vous avez un champ de désactivation)."""
+        return True
+
+    @property
+    def is_authenticated(self) -> bool:
+        """Indique si l'utilisateur est authentifié (True pour instances chargées)."""
+        return True
+
+    @property
+    def is_anonymous(self) -> bool:
+        """Indique si c'est un utilisateur anonyme (toujours False pour nos objets)."""
+        return False
+
+    @classmethod
+    def get_by_id(cls, db: Database, id: int) -> Optional['Utilisateur']:
+        """Récupère un utilisateur par id (cache Redis puis SQL)."""
+        return db.get_user_by_id(id)
 
     def _patch(self):
         """Normalise et convertit certains champs (dates, entiers, booléens, chemins) après lecture de la BDD.
@@ -1567,11 +1647,28 @@ class Interaction(DBObject, _RowInitMixin):
     utilisateur_id: identifiant de l'utilisateur ayant effectué l'interaction (clé étrangère vers Utilisateur)
     """
 
-    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'contenu', 'client_id', 'utilisateur_id']
+    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'titre', 'contenu', 'type_interaction_id', 'client_id', 'utilisateur_id']
     DATABASE_NAME = "Interactions"
 
+    types_names = {
+        "email": "Email",
+        "phone": "Appel téléphonique",
+        "meeting": "Réunion",
+        "textmessage": "Message texte",
+        "other": "Autre",
+        "Email": "email",
+        "Appel téléphonique": "phone",
+        "Réunion": "meeting",
+        "Message texte": "textmessage",
+        "Autre": "other"
+    }
+
+    interactions_types = ['email', 'phone', 'meeting', 'textmessage', 'other']
+
     interaction_id: int
-    date_time_interaction: str
+    date_time_interaction: datetime.datetime
+    type_interaction_id: str # ('email', 'phone', 'meeting', 'textmessage', 'other')
+    titre: str
     contenu: str
     client_id: int
     utilisateur_id: int
@@ -1579,6 +1676,26 @@ class Interaction(DBObject, _RowInitMixin):
     def __init__(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]] = None):
         super().__init__(db)
         self._init_from(db, data)
+        self._patch()
+        # Après patch, mettre en cache l'objet si possible
+        try:
+            self._try_cache()
+        except Exception:
+            pass
+
+    def _patch(self):
+        """Valide le type d'interaction avant de sauvegarder."""
+        if self.type_interaction_id not in self.interactions_types:
+            raise ValueError(f"Invalid interaction type: {self.type_interaction_id}. Must be one of {self.interactions_types}")
+        if isinstance(self.date_time_interaction, str):
+            self.date_time_interaction = datetime.datetime.strptime(self.date_time_interaction, '%Y-%m-%d')
+        if isinstance(self.date_time_interaction, datetime.date) and not isinstance(self.date_time_interaction, datetime.datetime):
+            self.date_time_interaction = datetime.datetime.combine(self.date_time_interaction, datetime.time.min)
+
+    @classmethod
+    def get_by_id(cls, db: Database, id: int) -> Optional['Interaction']:
+        """Récupère une interaction par id (cache Redis puis SQL)."""
+        return db.get_interaction_by_id(id)
 
     @property
     def client(self) -> Client:
@@ -1603,3 +1720,13 @@ class Interaction(DBObject, _RowInitMixin):
         if user:
             return user
         raise ValueError(f"User with id {self.utilisateur_id} not found")
+
+    @property
+    def type_interaction(self) -> str:
+        """Retourne le type d'interaction associé à cette interaction.
+
+        :raises ValueError: si le type d'interaction n'existe pas
+        :return: instance InteractionType
+        """
+        return self.types_names.get(self.type_interaction_id, "Inconnu")
+

@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <title>{% block title %}TNS Lovers{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/svg" href="static/tns_logo_icon_couleur.svg"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}">
+    <link rel="icon" type="image/svg" href="{{ url_for('static', filename='tns_logo_icon_couleur.svg')}}"/>
 </head>
 <body>
 
@@ -16,10 +17,23 @@
             <li><a href="{{ url_for('accueil') }}">Accueil</a></li>
             <li><a href="{{ url_for('clients') }}">Clients</a></li>
             <li><a href="{{ url_for('projets') }}">Projets</a></li>
+            <li><a href="{{ url_for('interactions.interactions_home') }}">Interactions</a></li>
             <li><a href="{{ url_for('utilisateurs') }}">Utilisateurs</a></li>
             <li><a href="{{ url_for('conventions.index')}}">Conventions</a></li>
             <li><a href="{{ url_for('recherche_avance') }}">Recherche</a></li>
         </ul>
+
+        {% if current_user %}
+        <div class="user-menu">
+            <span class="user-name">{{ current_user.prenom }} {{ current_user.nom }}</span>
+            <div class="user-menu-items">
+                <a href="#">Profil</a>
+                <a href="#">Paramètres</a>
+                <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+            </div>
+        </div>
+        {% endif %}
+
     </nav>
 
     <!-- CONTENU VARIABLE DES PAGES -->
