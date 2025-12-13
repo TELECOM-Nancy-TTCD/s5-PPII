@@ -1,3 +1,5 @@
+from flask import Flask, session, render_template, request, redirect, url_for, g, abort
+from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, session
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
 
@@ -12,37 +14,14 @@ import sqlite3, csv, io, redis, os, base64, database
 load_dotenv()
 DATABASE= os.getenv('DATABASE')
 
+import os, base64, sqlite3
+from tools import get_db, has_permission
 
-class User(UserMixin):
-    '''Définit la classe de l'utilisateur'''
-    def __init__(self, id, nom, prenom, role_id):
-        self.id=id
-        self.nom = nom
-        self.prenom = prenom
-        self.role_id = role_id
-    
-    @classmethod
-    def get(cls, user_id : str):
-        try:
-            c = get_db().cursor()
-            
-            c.execute("SELECT utilisateur_id, nom, prenom, role_id FROM Utilisateurs WHERE utilisateur_id = ?",(int(user_id), ))
-            row = c.fetchone()
-            
-            return cls(*row)
-        except:
-            return None
+# Importation des blueprints
+from interactions import interactions_bp
+from clients import clients_bp
 
 
-def get_db():
-    '''Permet de récuperer la DB'''
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = database.Database(
-            redis_client=redis.Redis(host='localhost', port=6379, db=0),
-            database=DATABASE
-        )
-    return db
 
 def get_clients():
     '''Fonction qui renvoie tout les clients de la DB'''
@@ -82,7 +61,7 @@ def can_manage_users(us : User):
 def format_date(date_value):
     '''Fonction qui change le format de la date en un format date classique sous forme de str'''
     if not date_value:
-        return "" 
+        return ""
     if isinstance(date_value, str):
         try:
             return datetime.fromisoformat(date_value).strftime("%d/%m/%Y")
@@ -90,21 +69,24 @@ def format_date(date_value):
             return datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y")
     if isinstance(date_value, (datetime,)):
         return date_value.strftime("%d/%m/%Y")
-    
+
     return str(date_value)
 
 
 app = Flask(__name__)
-# Enregistrer le blueprint des conventions sur l'instance unique 'app'
-app.register_blueprint(conventions_bp)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
 # Clé pour l'encodage des cookies de session
-app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867' 
+app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867'
 
+
+# Blueprints are registered here
+app.register_blueprint(conventions_bp)
+app.register_blueprint(interactions_bp)
+app.register_blueprint(clients_bp)
 
 def hash_password(mdp : str):
     '''Fonction qui hash et sale le mot de passe,
@@ -114,13 +96,13 @@ def hash_password(mdp : str):
     mdp_hache = scrypt(mdp.encode(), salt=salt, n=2**14, r=8, p=1) # Hachage du mdp avec le salt
 
     # Encodage en B64, et remise en forme texte pour stockage.
-    return base64.b64encode(salt+mdp_hache).decode() 
-    
+    return base64.b64encode(salt+mdp_hache).decode()
+
 def verify_password(mdp_entre : str, stored_hash):
     '''Fonction qui vérifie le mot de passe avec le hashé. \n
     Il est impossible de revenir au mdp depuis le hash,donc on hache l'entrée avec le même salt et on vérifie l'égalité \n
     Le résultat est un booléen'''
-    
+
     octets_decodes = base64.b64decode(stored_hash) # Bytes obtenus par décodage en B64
     salt = octets_decodes[:16]
 
@@ -134,9 +116,7 @@ def verify_password(mdp_entre : str, stored_hash):
 @login_manager.user_loader
 def load_user(uid : str):
     '''Fonction qui charge l'utilisateur'''
-    return User.get(uid)
-
-
+    return get_db().get_user_by_id(int(uid))
 
 @app.route("/login", methods = ["GET", "POST"])
 def login():
@@ -144,28 +124,35 @@ def login():
     Renvoie les page pour le login et vérifie le mdp'''
     has_failed_login = False
 
-    if request.method == 'POST' : 
-        
+    if request.method == 'POST' :
         c = get_db().cursor()
-
         adressemail = request.form["Adresse e-mail"]
         mdp = request.form["Mot de passe"]
         c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
         
         corresp = c.fetchone()
+        print(corresp)
+        has_failed_login = False
         if corresp != None: # Si on trouve un utilisateur avec cet email
+            print("Utilisateur trouvé")
             if verify_password(mdp, corresp[1]):
+
                 to_login = corresp[0]
-                login_user(load_user(to_login)) # On login l'utilisateur correspondant, identifié par son user id
+                # Récupérer explicitement l'instance Utilisateur via le wrapper Database
+                user = get_db().get_user_by_id(to_login)
+                if user is None:
+                    has_failed_login = True
+                else:
+                    login_user(user)  # On login l'utilisateur (instance compatible Flask-Login)
 
-                next_page = request.args.get("next")
+                    # Redirection sûre : si `next` absent, aller à l'accueil
+                    next_page = request.args.get("next")
+                    if not next_page:
+                        return redirect(url_for("accueil"))
+                    # TODO: Rendre sage la redirection "next" pour éviter les attaques open redirect
+                    return redirect(next_page)
 
-                if next_page == None:
-                    redirect(url_for("accueil"))
 
-                # TODO : Vérifier que l'URL next est safe
-                return redirect(next_page)
-        
         has_failed_login = True # Si pas d'utilisateur avec ce mail ou que le mdp est faux, on a raté le login
 
     # Pour un login échouant, on ré-affiche la page avec un message supplémentaire
@@ -173,7 +160,7 @@ def login():
     return render_template('Pages_speciales/login_page.html', has_failed_login=has_failed_login)
 
 
-@app.route("/")          
+@app.route("/")
 def accueil():
     '''Fonction pour la route / \n
     C'est la fonction de la page d'accueil'''
@@ -195,7 +182,7 @@ def clients():
     cursor.execute("SELECT * FROM Clients")
     clients_db = cursor.fetchall()
     conn.close()
-    
+
     # Pour match tout les attribut qui pourraient coller dans la barre de recherche
     if recherche_clients:
         clients_db = [
@@ -217,21 +204,21 @@ def client_detail(client_id):
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    
+
     c.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
     client = c.fetchone()
     if client is None:
         abort(404)
- 
+
     c.execute("""SELECT p.* FROM Projets p JOIN Conventions c ON p.convention_id = c.convention_id WHERE c.client_id = ?""", (client_id,))
 
-    
+
     projets_raw = c.fetchall()
 
     # Calcul du pourcentage de jalon terminés
     projets = []
     for p in projets_raw:
-        
+
         c.execute("SELECT est_complete FROM Jalons WHERE projet_id = ?", (p["projet_id"],))
         jalons = c.fetchall()
         total_jalons = len(jalons)
@@ -242,7 +229,7 @@ def client_detail(client_id):
             "projet_id": p["projet_id"],
             "nom_projet": p["nom_projet"],
             "statut": p["statut"],
-            "progress": progress 
+            "progress": progress
         })
 
     c.execute("""
@@ -250,10 +237,10 @@ def client_detail(client_id):
         JOIN Utilisateurs u ON i.utilisateur_id = u.utilisateur_id WHERE i.client_id = ?
         ORDER BY i.date_time_interaction DESC
     """, (client_id,))
-    
+
     interactions = c.fetchall()
     conn.close()
-    
+
     return render_template("Pages_speciales/clients_template.html", client=client, projets=projets, interactions=interactions)
 
 
@@ -264,7 +251,7 @@ def import_clients():
     Cette focntion gère les erreur de csv, et import dans la db les données du csv si elle sont correctes'''
 
     fichier = request.files.get("fichier")
-    
+
     if not fichier:
         return "Aucun fichier sélectionné", 400
 
@@ -388,7 +375,7 @@ def export_clients():
 
     output.seek(0)
 
-    # Télécharge le fichier 
+    # Télécharge le fichier
     return send_file(
         io.BytesIO(output.getvalue().encode("utf-8")),
         mimetype="text/csv; charset=utf-8",
@@ -405,9 +392,9 @@ def projet_detail(projet_id):
 
     projet = get_db().get_project_id(projet_id)
 
-    if projet == None: 
+    if projet == None:
         abort(404)
-    
+
     # Conversion des dates vers le format usuel
     projet.date_debut = format_date(projet.date_debut)
     projet.date_fin = format_date(projet.date_fin)
@@ -427,9 +414,9 @@ def terminer_projet(projet_id):
 
     projet = get_db().get_project_id(projet_id)
 
-    if projet == None: 
+    if projet == None:
         abort(404)
-    
+
     # Conversion des dates vers le format usuel
     projet.date_debut = format_date(projet.date_debut)
     projet.date_fin = format_date(projet.date_fin)
@@ -450,6 +437,14 @@ def terminer_projet(projet_id):
 
     except Exception:
         pass
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("accueil"))
+
 
     return redirect(url_for("projet_detail", projet_id=projet_id))
 
@@ -507,7 +502,7 @@ def creer_jalon():
 
     db.commit()
     db.invalidate_project(projet_id)
-     
+
     return redirect(url_for("projet_detail", projet_id=projet_id))
 
 
@@ -568,13 +563,13 @@ def utilisateurs_detail(uid):
 def create_user():
     '''Fonction pour la route /utilisateurs/create \n
     C'est la page pour creer un nouvel utilisateur'''
-    if not can_manage_users(current_user):
+    if not has_permission(current_user, 'peut_gerer_utilisateurs'):
         abort(403)
 
     user_added_successfully= False
     c = get_db().cursor()
 
-    
+
     if request.method == 'POST' :
         email = request.form["e-mail"]
         hmdp = hash_password(request.form["mdp"])
@@ -591,12 +586,12 @@ def create_user():
         doc_rib = request.form["doc_rib"]
 
         role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
-        
+
         #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                  (None, email, hmdp, date_expiration_mdp, nom, prenom, avatar, role_id, est_intervenant, heures_dispo_semaine, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
         get_db().commit()
-        
+
         user_added_successfully = True
 
     #Obtention des noms de rôles possibles
@@ -613,14 +608,14 @@ def supprimer_utilisateur(user_id):
 
     # On vérifier que la personne est bien un ADMIN
     if getattr(current_user, 'role_id', None) != 1:
-        abort(403) 
+        abort(403)
 
     user = get_db().get_user_by_id(user_id)
     if not user:
         abort(404)
 
     try:
-        user.delete()  
+        user.delete()
         flash("Utilisateur supprimé avec succès.", "success")
     except Exception as e:
         flash(f"Erreur lors de la suppression: {str(e)}", "danger")
@@ -665,7 +660,7 @@ def rgpd():
     c = get_db().cursor()
     c.execute("SELECT peut_exporter_csv FROM Roles WHERE role_id = ?", (current_user.role_id,))
     droit = c.fetchone()
-    
+
     if not (droit and droit[0]):
         abort(403)
 
@@ -682,7 +677,7 @@ def download_rgpd():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    
+
     cur.execute("SELECT nom_entreprise, contact_email, contact_telephone, address FROM Clients")
     clients = cur.fetchall()
     
@@ -693,9 +688,9 @@ def download_rgpd():
     # Permt de mettre le délimiteur ";"
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
-    
+
     writer.writerow(["Type", "Nom", "Prénom", "Email", "Téléphone/Adresse", "Rôle"])
-    
+
     for cl in clients:
         writer.writerow([
             "Client",
@@ -705,7 +700,7 @@ def download_rgpd():
             f"{cl['contact_telephone']} / {cl['address']}",
             ""
         ])
-    
+
     for u in utilisateurs:
         writer.writerow([
             "Utilisateur",
@@ -715,12 +710,12 @@ def download_rgpd():
             "",
             u["role_nom"]
         ])
-    
+
     conn.close()
     output.seek(0)
 
     csv_data = '\ufeff' + output.getvalue()
-    
+
     # Télécharge le fichier csv
     return Response(
         csv_data,

@@ -1,0 +1,53 @@
+<!-- From Uiverse.io by mi-series -->
+  <section class="container">
+    <div class="actions" style="justify-content: flex-end; gap:8px;">
+      <button id="expand-modal" type="button" class="create-button icon-button" aria-label="Ouvrir la page complète">
+        <!-- expand icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M3 3h7v2H5v5H3V3zm18 0v7h-2V5h-5V3h7zM3 21v-7h2v5h5v2H3zm18 0h-7v-2h5v-5h2v7z" fill="currentColor"></path>
+        </svg>
+      </button>
+      <button id="close-modal" type="button" class="create-button icon-button" aria-label="Fermer">
+        <!-- close icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.71 2.88 18.3 9.19 12 2.88 5.71 4.29 4.29 10.59 10.6 16.88 4.29z" fill="currentColor"></path>
+        </svg>
+      </button>
+    </div>
+    <header>Ajout d'une interaction</header>
+    <h2 class="success-message hidden"> Interaction ajoutée avec succès ! </h2>
+
+
+    <form class="form" id="interaction-form">
+        <div class="column">
+
+            <div class="input-box">
+              <label for="interaction-type">Support</label>
+            <div class="select-box">
+              <select name="type" id="interaction-type">
+                <option hidden>Type</option>
+                  {% for t in Interaction.interactions_types %}
+                <option value="{{ t }}">{{ Interaction.types_names.get(t, 'Inconnu') }}</option>
+                  {% endfor %}
+              </select>
+            </div>
+            </div>
+            <div class="input-box">
+              <label for="interaction-date">Date de l'interaction</label>
+              <input name="interaction-date" required placeholder="Date interaction" type="date" id="interaction-date">
+            </div>
+        </div>
+
+        {% include 'components/search_client.html' %}
+
+        <div class="input-box">
+            <label for="title">Titre</label>
+            <input name="title" required placeholder="Objet de l'interaction" type="text" id="title">
+        </div>
+        <div class="input-box">
+            <label for="content">Contenu</label>
+            <textarea name="content" required placeholder="Détails de l'interaction..." id="content"></textarea>
+        </div>
+        <button type="submit">Enregistrer</button>
+    </form>
+  </section>

@@ -6,7 +6,7 @@
 
 <h1>Liste des utilisateurs</h1>
 
-<form class="search-form-utilisateurs" method="get" action="/utilisateurs" >
+<form class="search-form" method="get" action="/utilisateurs" >
     <input type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
     <button type="submit">Rechercher</button>
 </form>

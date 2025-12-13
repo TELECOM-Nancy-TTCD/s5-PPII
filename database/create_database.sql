@@ -116,8 +116,11 @@ CREATE TABLE Jalons (
 CREATE TABLE Interactions ( -- correspond au 'communique avec' du schéma mais avec le logging
     interaction_id INTEGER PRIMARY KEY,
     date_time_interaction TEXT NOT NULL,
+    titre VARCHAR NOT NULL,
     contenu TEXT NOT NULL,
-    
+    type_interaction_id TEXT NOT NULL
+        CHECK( type_interaction_id IN ('email', 'phone', 'meeting', 'textmessage', 'other')),
+
     -- relations aux autres tables
 
     client_id INT,

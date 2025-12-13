@@ -1,0 +1,64 @@
+{% extends "menu.html" %}
+
+{% block title %}Interaction{% endblock %}
+
+{% block content %}
+
+
+    <h1>Liste des Interaction</h1>
+    <p style="font-size: large;">Ici se trouve toutes les interactions répertoriées.</p>
+
+    <div class="actions">
+
+        <form class="search-form" method="get" action="/interactions">
+            <input type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
+            <button type="submit">Rechercher</button>
+        </form>
+
+        <button class="create-button" id="create-interaction">
+          <span>
+            <i class="fa-solid fa-plus"></i>
+            Create
+          </span>
+        </button>
+    </div>
+
+
+
+    <div class="clients-container">
+        <div class="client-row" id="en-tete-clients">
+            <span class="col">ID</span>
+            <span class="col">Nom entreprise</span>
+            <span class="col">Interlocuteur</span>
+            <span class="col">Titre</span>
+            <span class="col">Moyen de contact</span>
+            <span class="col">Date</span>
+            <span class="col">Actions</span>
+        </div>
+
+        {% if interactions != [] %}
+            {% for interaction in interactions %}
+                <div class="client-card" onclick="window.location.href='/interactions/{{ interaction.interaction_id }}'">
+                    <div class="client-row">
+                        <span class="col">{{ interaction.interaction_id }}</span>
+                        <span class="col">{{ interaction.client.nom_entreprise }}</span>
+                        <span class="col">{{ interaction.utilisateur.nom }} {{ interaction.utilisateur.prenom }}</span>
+                        <span class="col">{{ interaction.titre }}</span>
+                        <span class="col">{{ interaction.type_interaction }}</span>
+                        <span class="col">{{ interaction.date_time_interaction.strftime('%d/%m/%Y') }}</span>
+                        <span class="col">Button</span>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>Aucune interaction trouvée.</p>
+        {% endif %}
+    </div>
+
+    <dialog id="create-interaction-dialog">
+        {% include 'interactions/create_interaction_content.html' %}
+    </dialog>
+
+    <script src="/static/scripts/interactions.js"></script>
+
+{% endblock %}
