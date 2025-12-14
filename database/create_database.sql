@@ -29,7 +29,7 @@ CREATE TABLE Utilisateurs (
     utilisateur_id INTEGER PRIMARY KEY ,
     email VARCHAR UNIQUE NOT NULL,
     mot_de_passe_hashed VARCHAR NOT NULL,
-    mot_de_passe_expire DATE NULL, -- Date d'expiration du mot de passe, NULL si jamais expiré
+    mot_de_passe_expire TEXT NULL, -- Date d'expiration du mot de passe, NULL si jamais expiré
     
     nom VARCHAR,
     prenom VARCHAR,
@@ -60,16 +60,16 @@ CREATE TABLE Clients (
     localisation_lat FLOAT,
     localisation_lng FLOAT,
     address VARCHAR,
+
     FOREIGN KEY (interlocuteur_principal_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL
-    
 );
 
 CREATE TABLE Conventions (
     convention_id INTEGER PRIMARY KEY ,
     nom_convention VARCHAR NOT NULL,
     description TEXT,
-    date_debut DATE,
-    date_fin DATE,
+    date_debut TEXT,
+    date_fin TEXT,
     doc_contrat VARCHAR,
 
     client_id INT,
@@ -83,8 +83,8 @@ CREATE TABLE Projets (
     nom_projet VARCHAR NOT NULL,
     description TEXT,
     budget FLOAT,
-    date_debut DATE,
-    date_fin DATE,
+    date_debut TEXT,
+    date_fin TEXT,
     statut TEXT NOT NULL
         CHECK( statut IN ('En attente', 'En cours', 'Terminé', 'Annulé')),
     doc_dossier VARCHAR, --Lien vers un dossier contenant tous les documents du projet
@@ -104,7 +104,7 @@ CREATE TABLE Competences (
 CREATE TABLE Jalons (
     jalon_id INTEGER PRIMARY KEY ,
     description VARCHAR NOT NULL,
-    date_fin DATE,
+    date_fin TEXT,
     est_complete BOOLEAN DEFAULT false,
 
     projet_id INT,
@@ -115,7 +115,7 @@ CREATE TABLE Jalons (
 
 CREATE TABLE Interactions ( -- correspond au 'communique avec' du schéma mais avec le logging
     interaction_id INTEGER PRIMARY KEY,
-    date_time_interaction DATETIME NOT NULL,
+    date_time_interaction TEXT NOT NULL,
     contenu TEXT NOT NULL,
     
     -- relations aux autres tables
