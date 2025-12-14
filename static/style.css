@@ -42,6 +42,16 @@ main {
     padding-top: 100px;
 }
 
+a {
+    color: var(--text-main);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
 .hidden {
     display: none;
 }
@@ -107,6 +117,7 @@ main {
     list-style-type: square;
     background: linear-gradient(0deg, var(--bg-dark), var(--primary));
     font-family: Golos, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: visible; /* ensure dropdowns are not clipped */
 }
 
 .main-menu-items {
@@ -116,6 +127,7 @@ main {
     display: flex;
     gap: 25px;
     font-family: Golos, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: visible; /* ensure child absolute elements are visible */
 }
 
 .main-menu-items a {
@@ -123,27 +135,109 @@ main {
     color: var(--text-light);
     padding: 5px 5px;
     display: inline-block;
-    margin-top: -30px;
+    /* retirer la marge négative qui décale les éléments et cause la superposition */
+    margin-top: 0;
 }
 
 .main-menu-img {
     display: block;
-    float: left;
+    /* utiliser l'alignement via flexbox du parent plutôt que float qui complique le positionnement */
+    float: none;
     margin-right: 10px;
     margin-left: 15px;
     padding-top: 2px;
     padding-bottom: 2px;
     border-radius: 10px;
     background-color: var(--menu-img-bg);
-    margin-top: -15px;
+    margin-top: 0;
 }
 
-/* Aligne le menu utilisateur à droite et gestion d'un dropdown */
+.main-menu-items .menu-dropdown {
+    display: inline-block;
+    position: relative; /* base pour le positionnement absolu du dropdown */
+}
+
+/* Dropdown container: caché par défaut, visible au hover */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 100%; /* align directly under parent to preserve hover when moving pointer */
+    background-color: var(--surface);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    border-radius: 8px;
+    padding: 6px 0;
+    min-width: 160px;
+    white-space: nowrap;
+    z-index: 8000; /* suffisamment haut pour être au-dessus du contenu */
+    list-style: none;
+    margin: 0;
+}
+
+/* Items: chaque lien est un bloc flexible, centré verticalement, taille minimale assurée */
+.dropdown-content li a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 16px !important;
+    min-height: 40px !important; /* évite tout chevauchement vertical */
+    height: 40px !important; /* forcer une hauteur stable */
+    line-height: 40px !important; /* forcer line-height pour éviter superposition */
+    color: var(--text-light) !important;
+    text-decoration: none !important;
+    font-size: 15px !important;
+    box-sizing: border-box !important;
+}
+
+.dropdown-content li {
+    pointer-events: auto;
+}
+
+.dropdown-content li:hover > a,
+.dropdown-content li:focus-within > a {
+    background-color: var(--primary) !important;
+    color: var(--white) !important;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.dropdown-content li a {
+    pointer-events: auto !important;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.dropdown-content li a:hover {
+    background-color: var(--primary) !important;
+    color: var(--white) !important;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.dropdown-content li a:hover i,
+.dropdown-content li a:hover .svg-inline--fa,
+.dropdown-content li a:hover svg {
+    color: var(--white) !important;
+    fill: var(--white) !important;
+    stroke: var(--white) !important;
+}
+
+/* afficher au survol du parent */
+.menu-dropdown:hover .dropdown-content,
+.menu-dropdown:focus-within .dropdown-content {
+    display: block;
+}
+
+/* Remonter le parent durant le hover pour éviter d'être recouvert */
+.menu-dropdown:hover,
+.menu-dropdown:focus-within {
+    z-index: 8100;
+}
+
 .main-menu .user-menu {
     margin-left: auto;
     margin-right: 15px;
-    float: right;
     display: inline-block;
+    /* positionné pour que .user-menu-items s'aligne correctement */
+    position: relative;
+    float: none; /* retirer float pour que le flux flex gère l'alignement */
 }
 
 .user-menu .user-name {
@@ -158,14 +252,18 @@ main {
 .user-menu .user-menu-items {
     display: none;
     position: absolute;
-    right: 15px;
+    /* align the user menu under its parent, anchored to the right edge */
+    right: 0;
+    top: 100%;
+    margin-top: 8px;
     background-color: var(--surface);
-    box-shadow: 0 4px 8px var(--shadow-2);
+    box-shadow: 0 6px 12px var(--shadow-2);
     border-radius: 8px;
-    margin-top: 5px;
     list-style: none;
-    padding: 10px 0;
-    z-index: 3000;
+    padding: 6px 0;
+    z-index: 4000;
+    min-width: 160px;
+    white-space: nowrap;
 }
 
 .user-menu .user-menu-items a {
@@ -176,9 +274,11 @@ main {
     text-align: left;
 }
 
+/* Assurer aussi un hover propre pour le menu utilisateur */
 .user-menu .user-menu-items a:hover {
     background-color: var(--primary);
-    color: var(--white);
+    color: var(--white) !important;
+    transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .user-menu:hover .user-menu-items {
@@ -190,7 +290,8 @@ main {
 }
 
 .user-menu .logout:hover {
-    color: var(--danger-hover) !important;
+    color: var(--white) !important;
+    background-color: var(--danger-hover) !important;
 }
 
 
@@ -474,7 +575,7 @@ main {
     gap: 10px;
 }
 
-.create-button {
+.primary-button {
     background-color: var(--primary);
     border: none;
     border-radius: 0.9em;
@@ -482,21 +583,21 @@ main {
     padding: 0.8em 1.2em 0.8em 1em;
     transition: all ease-in-out 0.2s;
     font-size: 16px;
+    color: var(--white);
 }
 
-.create-button span {
+.primary-button span {
     display: flex;
     justify-content: center;
     align-items: center;
-    color: var(--white);
     font-weight: 600;
 }
 
-.create-button:hover {
+.primary-button:hover {
     background-color: var(--primary-variant);
 }
 
-.create-button a {
+.primary-button a {
     text-decoration: none;
     color: var(--white);
 }
@@ -509,6 +610,7 @@ main {
     padding: 0.8em 1.2em 0.8em 1em;
     transition: all ease-in-out 0.2s;
     font-size: 16px;
+    color: var(--white);
 }
 
 .danger-button span {
@@ -521,6 +623,28 @@ main {
 
 .danger-button:hover {
     background-color: var(--danger-hover);
+}
+
+.secondary-button {
+    background-color: var(--muted);
+    border: none;
+    border-radius: 0.9em;
+    cursor: pointer;
+    padding: 0.8em 1.2em 0.8em 1em;
+    transition: all ease-in-out 0.2s;
+    font-size: 16px;
+    color: var(--white);
+}
+
+.secondary-button span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+}
+
+.secondary-button:hover {
+    background-color: var(--text-light);
 }
 
 /* From Uiverse.io by mi-series */
@@ -933,3 +1057,29 @@ dialog .container .actions {
 }
 /* Partie du CSS générée avec aide d'une IA */
 
+
+
+/* Rendre le lien parent du dropdown (ex: Interactions) réactif au hover/focus */
+.main-menu-items .menu-dropdown > a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: var(--text-light);
+    text-decoration: none;
+}
+
+.main-menu-items .menu-dropdown > a:hover,
+.menu-dropdown:focus-within > a {
+    background-color: rgba(71,94,171,0.12); /* léger surlignage */
+    color: var(--white);
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+/* Si on veut un effet plus marqué quand le dropdown est ouvert */
+.menu-dropdown:hover > a,
+.menu-dropdown:focus-within > a {
+    background-color: rgba(71,94,171,0.18);
+    color: var(--white);
+}
