@@ -58,7 +58,7 @@ if (expandModalButton && modal) {
 }
 
 // Submit form inside modal using ajax
-const submitModalButton = document.getElementById('submit');
+const submitModalButton = document.getElementById('submit-create-interaction');
 const successMessage = document.querySelector(".success-message")
 if (submitModalButton) {
     submitModalButton.addEventListener('click', async (evt) => {
@@ -71,7 +71,7 @@ if (submitModalButton) {
 
         const formData = new FormData(form);
         const action = form.action || '/interactions/create';
-        const method = form.method || 'POST';
+        const method = form.method || 'PUT';
 
         try {
             const response = await fetch(action, {
@@ -93,6 +93,62 @@ if (submitModalButton) {
             } else {
                 const errorText = await response.text();
                 alert('Error submitting form: ' + errorText);
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+        }
+    });
+}
+
+// Delete interaction button
+const deleteButtons = document.getElementById("delete-interaction");
+if (deleteButtons) {
+    deleteButtons.addEventListener('click', async (evt) => {
+        evt.preventDefault();
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette interaction ?')) {
+            return;
+        }
+
+        const id = deleteButtons.getAttribute('data-id');
+        try {
+            const response = await fetch(`/interactions/${id}/delete`, {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                alert('Interaction supprimée avec succès !.');
+                window.location.href = '/interactions';
+            } else {
+                const errorText = await response.text();
+                alert('Une erreur est apparue pendant la suppression: ' + errorText);
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+        }
+    });
+}
+
+// Save the edit form using ajax
+const saveEditButton = document.getElementById("edit-interaction-form");
+if (saveEditButton) {
+    saveEditButton.addEventListener('submit', async (evt) => {
+        evt.preventDefault();
+        const form = evt.target;
+        const formData = new FormData(form);
+        const action = window.location.href;
+        const method = 'POST';
+
+        try {
+            const response = await fetch(action, {
+                method: method,
+                body: formData,
+            });
+
+            if (response.ok) {
+                alert('Interaction modifiée avec succès.');
+                window.location.href = window.location.href.replace('/edit', '');
+            } else {
+                const errorText = await response.text();
+                alert("Une erreur est apparue durant l'enregistrement: " + errorText);
             }
         } catch (error) {
             alert('Network error: ' + error.message);

@@ -147,5 +147,15 @@
     // Initialisation
     loadClients().then(r => {});
 
-})();
+    // Si le champ de recherche contient un id pré-sélectionné (data-selected-id), remplir le hidden
+    (function initPreselected(){
+        try{
+            const preId = searchInput.getAttribute('data-selected-id');
+            if (preId && preId.trim()){
+                hiddenId.value = preId;
+            }
+        }catch(e){/* ignore */}
+    })();
+
+ })();
 
