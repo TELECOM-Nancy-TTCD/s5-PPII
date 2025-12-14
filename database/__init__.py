@@ -1285,7 +1285,7 @@ class Projet(DBObject, _RowInitMixin):
 
     @property
     def jalons(self) -> list[Any] | None:
-        """Liste des jalons du projet (utilise cache si possible)."""
+        """Liste des jalons du projet par ordre de date de fin descendante (montre les jalons en cours d'abord) (utilise cache si possible)."""
         cached_jalons_ids = self.db.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "jalons"))
         not_cached_jalons = False
         if cached_jalons_ids:
@@ -1301,7 +1301,7 @@ class Projet(DBObject, _RowInitMixin):
             if len(jalons) == len(jalons_ids):
                 return jalons  # Tous les jalons étaient en cache
         if not_cached_jalons or not cached_jalons_ids:
-            cursor = self.db.execute(f"SELECT * FROM {Jalon.DATABASE_NAME} WHERE projet_id = ?", (self.projet_id,))
+            cursor = self.db.execute(f"SELECT * FROM {Jalon.DATABASE_NAME} WHERE projet_id = ? ORDER BY date(date_fin) DESC NULLS FIRST", (self.projet_id,))
             rows = cursor.fetchall()
             jalons = [Jalon.from_db_row(self.db, row) for row in rows]
             cursor.close()
