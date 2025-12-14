@@ -4,6 +4,7 @@ from hashlib import scrypt
 import os, base64, sqlite3
 import database
 import redis
+from datetime import datetime
 
 import os
 from dotenv import load_dotenv
@@ -291,14 +292,17 @@ def client_detail(client_id):
 @app.route("/projet/<int:projet_id>")
 @login_required
 def projet_detail(projet_id):
-    proj = database.get_project_id(projet_id)
-
+    proj = get_db().get_project_id(projet_id)
 
     if proj == None:
         abort(404)
 
-    # Page à faire sur le modèle de clients_template.html
-    # Va falloir aller chercher
+    # Conversion des dates vers le format usuel
+    proj.date_debut = datetime.fromisoformat(proj.date_debut).strftime("%d/%m/%Y")
+    proj.date_fin = datetime.fromisoformat(proj.date_fin).strftime("%d/%m/%Y")
+    for j, u in enumerate(proj.jalons):
+        if u.date_fin!= None :
+            proj.jalons[j].date_fin = datetime.fromisoformat(u.date_fin).strftime("%d/%m/%Y")
     return render_template("Pages_speciales/projets_template.html", p = proj)
 
 
