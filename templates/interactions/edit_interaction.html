@@ -7,26 +7,21 @@
   <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
     <h1 style="flex:1">Modifier l'interaction</h1>
 
-    <form action="/interactions/{{ interaction.interaction_id }}/delete" method="POST" style="display:inline;">
-      <button type="submit" class="create-button icon-button" aria-label="Supprimer">
+    <form data-id="{{ interaction.interaction_id }}" style="display:inline;" id="delete-interaction">
+      <button type="submit" class="primary-button icon-button" aria-label="Supprimer">
         <!-- trash icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M6 7h12v13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7zm3-4h6l1 1H8l1-1z" fill="currentColor"></path>
-        </svg>
+        <i class="fa-solid fa-trash"></i>
       </button>
     </form>
 
-    <a href="/interactions/{{ interaction.interaction_id }}" class="create-button icon-button" aria-label="Annuler">
+    <a href="/interactions/{{ interaction.interaction_id }}" class="primary-button icon-button" aria-label="Annuler">
       <!-- arrow-left / cancel icon -->
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="currentColor"></path>
-      </svg>
+      <i class="fa-solid fa-arrow-left"></i>
     </a>
   </div>
 
   <section class="container" style="margin-top:12px;">
-    <form class="form" action="/interactions/{{ interaction.interaction_id }}/edit" method="POST">
-
+    <form class="form" id="edit-interaction-form">
       <div class="column">
 
         <div class="input-box">
@@ -35,7 +30,7 @@
             <select name="type" id="interaction-type">
               <option hidden>Type</option>
               {% for t in Interaction.interactions_types %}
-                <option value="{{ t }}" {% if interaction.type_interaction == t %}selected{% endif %}>{{ Interaction.types_names.get(t, 'Inconnu') }}</option>
+                <option value="{{ t }}" {% if interaction.type_interaction_id == t %}selected{% endif %}>{{ Interaction.types_names.get(t, 'Inconnu') }}</option>
               {% endfor %}
             </select>
           </div>
@@ -47,6 +42,8 @@
         </div>
       </div>
 
+      {% set preselected_client_id = interaction.client.client_id if interaction.client is defined else (interaction.client_id if interaction.client_id is defined else '') %}
+      {% set preselected_client_name = interaction.client.nom_entreprise if interaction.client is defined else '' %}
       {% include 'components/search_client.html' %}
 
       <div class="input-box">
@@ -60,24 +57,19 @@
       </div>
 
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
-        <button type="submit" class="create-button" aria-label="Enregistrer" title="Enregistrer">
+        <button type="submit" class="primary-button" aria-label="Enregistrer" title="Enregistrer" id="submit-edit-interaction">
           <!-- save icon -->
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zM12 19a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm3-11H6V5h9v3z" fill="currentColor"></path>
-          </svg>
+          <i class="fa-solid fa-floppy-disk"></i>
         </button>
 
-        <a href="/interactions/{{ interaction.interaction_id }}" class="create-button icon-button" aria-label="Annuler">
+        <a href="/interactions/{{ interaction.interaction_id }}" class="primary-button icon-button" aria-label="Annuler">
           <!-- close / cancel icon -->
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.71 2.88 18.3 9.19 12 2.88 5.71 4.29 4.29 10.59 10.6 16.88 4.29z" fill="currentColor"></path>
-          </svg>
+          <i class="fa-solid fa-xmark"></i>
         </a>
-
       </div>
-
     </form>
   </section>
 
-{% endblock %}
+    <script src="/static/scripts/interactions.js"></script>
 
+{% endblock %}

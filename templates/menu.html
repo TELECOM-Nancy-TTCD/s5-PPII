@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <title>{% block title %}TNS'app{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/svg" href="{{ url_for('static', filename='tns_logo_icon_couleur.svg')}}"/>
 </head>
 <body>
@@ -15,13 +15,19 @@
         <ul class="main-menu-items">
             <li><a href="{{ url_for('accueil') }}">Accueil</a></li>
             <li><a href="{{ url_for('clients') }}">Clients</a></li>
-            <li><a href="{{ url_for('interactions.interactions_home') }}">Interactions</a></li>
+            <li class="menu-dropdown">
+                <a href="{{ url_for('interactions.interactions_home') }}" class="dropbtn">Interactions</a>
+                <ul class="dropdown-content">
+                    <li><a href="{{ url_for('interactions.interactions_home') }}"><i class="fa-solid fa-list"></i> Liste</a></li>
+                    <li><a href="{{ url_for('interactions.create_interaction') }}"><i class="fa-solid fa-plus"></i> Créer</a></li>
+                </ul>
+            </li>
             <li><a href="{{ url_for('utilisateurs') }}">Utilisateurs</a></li>
             <li><a href="{{ url_for('conventions.index')}}">Conventions</a></li>
             <li><a href="{{ url_for('recherche_avance') }}">Recherche</a></li>
         </ul>
 
-        {% if current_user %}
+        {% if current_user.is_authenticated %}
         <div class="user-menu">
             <span class="user-name">{{ current_user.prenom }} {{ current_user.nom }}</span>
             <div class="user-menu-items">

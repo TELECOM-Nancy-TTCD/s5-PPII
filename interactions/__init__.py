@@ -50,6 +50,8 @@ def edit_interaction(interaction_id):
 
      # Gestion du formulaire soumis
     if request.method == 'POST':
+        interaction.client_id = request.form['client-id']
+        interaction.utilisateur_id = current_user.utilisateur_id
         interaction.type_interaction_id = request.form['type']
         interaction.date_time_interaction = request.form['interaction-date']
         interaction.contenu = request.form['content']
@@ -74,7 +76,7 @@ def delete_interaction(interaction_id):
     interaction.delete()
     return "Interaction deleted successfully", 200
 
-@interactions_bp.route('/interactions/create', methods=['GET', 'POST'])
+@interactions_bp.route('/interactions/create', methods=['GET', 'PUT'])
 @login_required
 def create_interaction():
     if not has_permission(current_user, 'peut_gerer_interactions'):

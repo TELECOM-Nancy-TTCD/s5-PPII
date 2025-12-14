@@ -1,17 +1,13 @@
 <!-- From Uiverse.io by mi-series -->
   <section class="container">
     <div class="actions" style="justify-content: flex-end; gap:8px;">
-      <button id="expand-modal" type="button" class="create-button icon-button" aria-label="Ouvrir la page complète">
+      <button id="expand-modal" type="button" class="primary-button icon-button" aria-label="Ouvrir la page complète">
         <!-- expand icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M3 3h7v2H5v5H3V3zm18 0v7h-2V5h-5V3h7zM3 21v-7h2v5h5v2H3zm18 0h-7v-2h5v-5h2v7z" fill="currentColor"></path>
-        </svg>
+        <i class="fa-solid fa-expand"></i>
       </button>
-      <button id="close-modal" type="button" class="create-button icon-button" aria-label="Fermer">
+      <button id="close-modal" type="button" class="primary-button icon-button" aria-label="Fermer">
         <!-- close icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M18.3 5.71L12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.71 2.88 18.3 9.19 12 2.88 5.71 4.29 4.29 10.59 10.6 16.88 4.29z" fill="currentColor"></path>
-        </svg>
+        <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
     <header>Ajout d'une interaction</header>
@@ -48,6 +44,6 @@
             <label for="content">Contenu</label>
             <textarea name="content" required placeholder="Détails de l'interaction..." id="content"></textarea>
         </div>
-        <button type="submit">Enregistrer</button>
+        <button type="submit" id="submit-create-interaction">Enregistrer</button>
     </form>
   </section>

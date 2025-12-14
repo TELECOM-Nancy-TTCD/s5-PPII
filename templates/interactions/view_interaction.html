@@ -7,12 +7,12 @@
   <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
     <h1 style="flex:1">Détails de l'interaction</h1>
 
-    <a href="/interactions/{{ interaction.interaction_id }}/edit" class="create-button icon-button" aria-label="Modifier">
+    <a href="/interactions/{{ interaction.interaction_id }}/edit" class="primary-button icon-button" aria-label="Modifier">
       <!-- pencil / edit icon -->
       <i class="fa-solid fa-pen"></i>
     </a>
 
-    <form action="/interactions/{{ interaction.interaction_id }}/delete" method="POST" style="display:inline;">
+    <form id="delete-interaction" data-id="{{ interaction.interaction_id }}" style="display:inline;">
       <button type="submit" class="danger-button icon-button" aria-label="Supprimer" title="Supprimer">
         <!-- trash icon -->
         <i class="fa-solid fa-trash"></i>
@@ -25,8 +25,9 @@
         <h2>{{ interaction.titre }}</h2>
         <p><strong>Type d'interaction :</strong> {{ interaction.type_interaction }}</p>
         <p><strong>Date :</strong> {{ interaction.date_time_interaction.strftime('%d/%m/%Y') }}</p>
-        <p><strong>Client :</strong> {{ interaction.client.nom_entreprise }} (ID: {{ interaction.client.client_id }})</p>
-        <p><strong>Interlocuteur :</strong> {{ interaction.utilisateur.prenom }} {{ interaction.utilisateur.nom }} (ID: {{ interaction.utilisateur.utilisateur_id }})</p>
+{#        TODO: uniformiser les routes flask clients/id, users - utilisateur#}
+        <p><strong>Client :</strong> <a href="/client/{{ interaction.client_id }}">{{ interaction.client.nom_entreprise }} (ID: {{ interaction.client.client_id }}) <i class="fa-solid fa-up-right-from-square"></i></a></p>
+        <p><strong>Interlocuteur :</strong> <a href="/utilisateur/{{ interaction.utilisateur_id }}">{{ interaction.utilisateur.prenom }} {{ interaction.utilisateur.nom }} (ID: {{ interaction.utilisateur.utilisateur_id }}) <i class="fa-solid fa-up-right-from-square"></i></a></p>
         <h3>Contenu de l'interaction :</h3>
         <p class="content">{{ interaction.contenu or interaction.content or 'Aucun contenu disponible.' }}</p>
     </div>
