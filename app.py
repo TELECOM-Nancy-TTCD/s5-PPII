@@ -65,6 +65,9 @@ class User(UserMixin):
             return None
 
 app = Flask(__name__)
+# Enregistrer le blueprint des conventions sur l'instance unique `app`
+app.register_blueprint(conventions_bp)
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -302,4 +305,3 @@ def close_connection(exception):
 
 if __name__ == "__main__":
     app.run(debug=True)
-

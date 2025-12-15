@@ -1,41 +1,192 @@
-
+import os
 import sqlite3
+import hashlib
+import base64
+from hashlib import scrypt
 
-DATABASE = 'database/database.db'
+DB_PATH = "database/database.db"
 
-db = sqlite3.connect(DATABASE)
+def hash_password(mdp : str):
+    salt = os.urandom(16) # Génération d'un salt
 
-cur = db.cursor()
+    mdp_hache = scrypt(mdp.encode(), salt=salt, n=2**14, r=8, p=1) # hachage du mdp avec le salt
 
-print("oui")
+    return base64.b64encode(salt+mdp_hache).decode()
+    # encodage en B64, et remise en forme texte pour stockage.
+    #Les 16 premiers octets sont le salt, le reste le mdp.
 
-cur.execute("""INSERT INTO conventions VALUES(1,'projets algorithmiques',
-            'ensemble de projets consistant à implémenter des algorithmes',
-            '01/01/2025','01/01/2026','https://google.com',1)""")
+def main():
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
 
-cur.execute("""INSERT INTO conventions VALUES(2,'oneshot : site web',
-            'commande pour un site web',
-            '01/01/2025','01/01/2026','https://google.com',2)""")
+    # ==========================
+    #   AJOUT DES RÔLES
+    # ==========================
+    print("➤ Ajout des rôles...")
 
-cur.execute("""INSERT INTO Clients VALUES(1,'Université de Lorraine','Monsieur Martin',
-            'martin@email.com','0301052124','Prospect',1,11,10.5,'7 chemin du bois, Nancy')""")
+    cur.execute("""
+        INSERT INTO Roles VALUES (
+            NULL, 'Admin', 0,
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+        );
+    """)
+    cur.execute("""
+        INSERT INTO Roles VALUES (
+            NULL, 'Admin', 5,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        );
+    """)
+    print("   ✔ Rôles ajoutés.\n")
 
-cur.execute("""INSERT INTO Clients VALUES(2,'Mairie de Nancy','Monsieur Dupont',
-            'dupont@email.com','0157485963','Actif',1,10,10,'10 rue de la Mairie, Nancy')""")
+    # ==========================
+    #   AJOUT UTILISATEURS
+    # ==========================
+    print("➤ Ajout des utilisateurs...")
 
-cur.execute("""INSERT INTO Projets VALUES(1,1,'Dijkstra',"implementation de l'algorithme susnommé",
-            100,'01/01/2025','01/01/2026','En cours','https://google.com')""")
+    users = [
+        ("john@admin.tns.com", "superadmin", "ADMIN", "John TNS", 0, 169, None, None, None, None),
+        ("bob@tns.com", "bob", "Bob", "Client", 0, 0, None, None, None, None),
+        ("bob2@tns.com", "bob", "BobDoc", "Client", 0, 12,
+         "https://drive.google.com/file/d/1PzE1K6lxY1Yiqr1kLwApwygojMHcDOgK/view?usp=sharing",
+         None, None, None)
+    ]
 
-cur.execute("""INSERT INTO Projets VALUES(2,1,'A*','implementation de lalgorithme susnommé',
-            150,'01/06/2025','01/01/2026','Terminé','https://google.com')""")
+    for u in users:
+        cur.execute("""
+            INSERT INTO Utilisateurs(
+                utilisateur_id, email, mot_de_passe_hashed,
+                nom, prenom, est_intervenant, heures_dispo_semaine,
+                doc_carte_vitale, doc_cni, doc_adhesion, doc_rib
+            ) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            u[0], hash_password(u[1]), u[2], u[3], u[4], u[5], u[6], u[7], u[8], u[9]
+        ))
+    print("   ✔ Utilisateurs ajoutés.\n")
 
-cur.execute("""INSERT INTO Projets VALUES(3,2,'Site Mairie','Création dun site pour la mairie de Nancy',
-            250,'01/09/2025','01/08/2026','Annulé','https://google.com')""")
+    # ==========================
+    #   AJOUT CLIENTS
+    # ==========================
+    print("➤ Ajout des clients...")
 
-cur.execute("""INSERT INTO Utilisateurs VALUES(1,'email@email.com','1','DUPOUT',
-            'Oui','Oscar','https://google.com','1',true,10,'','')""")
+    clients = [
+        ("TechCorp", "Alice Martin", "alice@techcorp.com", "0601020304", "Actif", 1, 48.6921, 6.1844, "12 Rue de la République, Nancy"),
+        ("GreenSolutions", "Bruno Petit", "bruno@greensol.fr", "0605060708", "Actif", 1, 48.6738, 6.1560, "8 Avenue du Général Leclerc, Nancy"),
+        ("Boulangerie Dupont", "Claire Dupont", "contact@dupont-boulangerie.fr", "0677889900", "Prospect", 1, 48.7002, 6.1740, "5 Rue des Carmes, Nancy"),
+        ("AutoPlus Garage", "David Leroy", "david@autoplus.fr", "0655443322", "Actif", 1, 48.6930, 6.2000, "23 Rue Stanislas, Nancy"),
+        ("ImmoCity", "Eva Lambert", "eva@immocity.fr", "0611223344", "Ancien", 1, 48.6800, 6.1700, "41 Boulevard d'Haussonville, Nancy")
+    ]
 
-db.commit()
+    for c in clients:
+        cur.execute("""
+            INSERT INTO Clients (
+                client_id, nom_entreprise, contact_nom, contact_email, contact_telephone,
+                type_client, interlocuteur_principal_id, localisation_lat, localisation_lng, address
+            ) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, c)
+    print("   ✔ Clients ajoutés.\n")
+
+    # ==========================
+    #   AJOUT CONVENTIONS ET PROJETS
+    # ==========================
+    print("➤ Ajout de conventions et projets...")
+
+    conventions = [
+        {"nom": "Convention Alpha", "description": "Projet Alpha pour TechCorp", "client_email": "alice@techcorp.com"},
+        {"nom": "Convention Beta", "description": "Projet Beta pour GreenSolutions", "client_email": "bruno@greensol.fr"},
+    ]
+
+    for conv in conventions:
+        cur.execute("SELECT client_id FROM Clients WHERE contact_email = ?", (conv["client_email"],))
+        result = cur.fetchone()
+        if result is None:
+            print(f"Client avec email {conv['client_email']} introuvable, convention ignorée !")
+            continue
+        client_id = result[0]
+
+        cur.execute("""
+            INSERT INTO Conventions (convention_id, nom_convention, description, date_debut, date_fin, doc_contrat, client_id)
+            VALUES (NULL, ?, ?, NULL, NULL, NULL, ?)
+        """, (conv["nom"], conv["description"], client_id))
+        convention_id = cur.lastrowid
+
+        for i in range(1, 3):
+            cur.execute("""
+                INSERT INTO Projets (projet_id, convention_id, nom_projet, description, budget, date_debut, date_fin, statut, doc_dossier)
+                VALUES (NULL, ?, ?, ?, ?, NULL, NULL, ?, NULL)
+            """, (
+                convention_id,
+                f"Projet {conv['nom'].split()[1]} {i}",
+                f"Description du projet {i} pour {conv['nom']}",
+                10000 * i,
+                "En cours"
+            ))
+
+    print("   ✔ Conventions et projets ajoutés.")
+
+        # ==========================
+    #   AJOUT INTERACTIONS
+    # ==========================
+    print("➤ Ajout des interactions...")
+
+    # Récupération de tous les clients
+    cur.execute("SELECT client_id FROM Clients")
+    all_clients = [row[0] for row in cur.fetchall()]
+
+    # Récupération des utilisateurs pour attribuer les interactions
+    cur.execute("SELECT utilisateur_id FROM Utilisateurs")
+    all_users = [row[0] for row in cur.fetchall()]
+
+    interactions_examples = [
+        "Appel rapide pour valider l’avancement.nf jsdfizjbdfijzbdfijbdviohbjqdiovbjifvbbvzpiubzpiubpiuzrbgpiuzbgpijabfpijbpiuvzUDHzouhvpjbefpivuhrpuvbqifjbvpiubfvpiuzbivpbifugbzpirubgipubfvipjbfivubipufn liehshqifhbid",
+        "Envoi d’un mail contenant des documents complémentaires.",
+        "Discussion sur le cahier des charges.",
+        "Relance client concernant la signature.",
+        "Point technique sur les contraintes du projet.",
+        "Retour du client au sujet du devis.",
+        "Organisation d’un rendez-vous de suivi.",
+        "Échange informel sur les prochaines étapes."
+    ]
+
+    import random
+    from datetime import datetime, timedelta
+
+    for client_id in all_clients:
+        # Ajouter entre 2 et 5 interactions par client
+        for _ in range(random.randint(2, 5)):
+            contenu = random.choice(interactions_examples)
+            utilisateur = random.choice(all_users)
+
+            # Date aléatoire dans les 60 derniers jours
+            date = datetime.now() - timedelta(days=random.randint(0, 60))
+            date_str = date.strftime("%Y-%m-%d %H:%M:%S")
+
+            cur.execute("""
+                INSERT INTO Interactions (
+                    interaction_id, date_time_interaction, contenu, client_id, utilisateur_id
+                ) VALUES (NULL, ?, ?, ?, ?)
+            """, (
+                date_str,
+                contenu,
+                client_id,
+                utilisateur
+            ))
+
+    print("   ✔ Interactions ajoutées.")
 
 
-db.close()
+    # ==========================
+    #   FIN
+    # ==========================
+    conn.commit()
+    conn.close()
+
+    print("\n🎉 Import terminé !")
+    print("Données disponibles :")
+    print("  - Admin John : john@admin.tns.com / superadmin")
+    print("  - Membre Bob : bob@tns.com / bob")
+    print("  - BobDoc : bob2@tns.com / bob (avec doc GDrive)")
+    print("  - 5 clients ajoutés")
+    print("  - Conventions et projets ajoutés")
+
+if __name__ == "__main__":
+    main()
