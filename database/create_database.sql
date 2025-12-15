@@ -104,7 +104,7 @@ CREATE TABLE Competences (
 CREATE TABLE Jalons (
     jalon_id INTEGER PRIMARY KEY ,
     description VARCHAR NOT NULL,
-    date_fin TEXT,
+    date_fin TEXT NOT NULL,
     est_complete BOOLEAN DEFAULT false,
 
     projet_id INT,

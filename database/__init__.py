@@ -1301,7 +1301,7 @@ class Projet(DBObject, _RowInitMixin):
             if len(jalons) == len(jalons_ids):
                 return jalons  # Tous les jalons étaient en cache
         if not_cached_jalons or not cached_jalons_ids:
-            cursor = self.db.execute(f"SELECT * FROM {Jalon.DATABASE_NAME} WHERE projet_id = ? ORDER BY date(date_fin) DESC NULLS FIRST", (self.projet_id,))
+            cursor = self.db.execute(f"SELECT * FROM {Jalon.DATABASE_NAME} WHERE projet_id = ? ORDER BY date(date_fin) DESC", (self.projet_id,))
             rows = cursor.fetchall()
             jalons = [Jalon.from_db_row(self.db, row) for row in rows]
             cursor.close()
