@@ -405,6 +405,7 @@ class Database:
         roles = [role for role in roles if key(role)]
         return roles
 
+
     def get_project_id(self, project_id: int) -> Optional['Projet']:
         """Récupère un projet par son identifiant.
 
