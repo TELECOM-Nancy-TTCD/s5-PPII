@@ -1,0 +1,1 @@
+SELECT Utilisateurs.role_id FROM Utilisateurs

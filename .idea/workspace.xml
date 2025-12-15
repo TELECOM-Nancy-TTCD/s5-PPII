@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="1fadeb48-4d3f-4b49-839c-d9244334aac0" name="Changes" comment="feat(database): add scripts for listing and resetting database tables" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+        <option value="JavaScript File" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FlaskConsoleOptions" custom-start-script="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass">
+    <envs>
+      <env key="FLASK_APP" value="app" />
+    </envs>
+    <option name="myCustomStartScript" value="import sys; print('Python %s on %s' % (sys.version, sys.platform)); sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo, NoAppException&#10;for module in [&quot;main.py&quot;, &quot;wsgi.py&quot;, &quot;app.py&quot;]:&#10;    try: locals().update(ScriptInfo(app_import_path=module, create_app=None).load_app().make_shell_context()); print(&quot;\nFlask App: %s&quot; % app.import_name); break&#10;    except NoAppException: pass" />
+    <option name="myEnvs">
+      <map>
+        <entry key="FLASK_APP" value="app" />
+      </map>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="feature/interactions" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="36IXl0kjopq4stArNXzr5Zq6icS" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "feature/projets",
+    "last_opened_file_path": "/mnt/files/Documents/Post-bac/2025-2026 - Télécom Nancy/PPII-1/groupe-07-ttcd/templates",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.github.copilot.settings.customization.CustomizationConfigurable",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "sqlite"
+    ]
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/templates" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tests/database" />
+      <recent name="$PROJECT_DIR$/tests/__init__.py" />
+      <recent name="$PROJECT_DIR$/templates/interactions" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Flask server.groupe-07-ttcd">
+    <configuration name="groupe-07-ttcd" type="PythonConfigurationType" factoryName="Python">
+      <module name="groupe-07-ttcd" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/app.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="groupe-07-ttcd" type="Python.FlaskServer">
+      <module name="groupe-07-ttcd" />
+      <option name="target" value="$PROJECT_DIR$/app.py" />
+      <option name="targetType" value="PATH" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="launchJavascriptDebuger" value="false" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-c7e53b3be11b-JavaScript-PY-253.28294.336" />
+        <option value="bundled-python-sdk-0978a7220b69-9867c7d4c0a4-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.28294.336" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="1fadeb48-4d3f-4b49-839c-d9244334aac0" name="Changes" comment="" />
+      <created>1764695212904</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1764695212904</updated>
+      <workItem from="1764695219881" duration="2392000" />
+      <workItem from="1764917887402" duration="4349000" />
+      <workItem from="1765184788978" duration="3432000" />
+      <workItem from="1765215692601" duration="164000" />
+      <workItem from="1765215930763" duration="4623000" />
+      <workItem from="1765235717135" duration="92000" />
+      <workItem from="1765555526128" duration="13227000" />
+      <workItem from="1765614722945" duration="17943000" />
+      <workItem from="1765635121188" duration="5479000" />
+      <workItem from="1765662990850" duration="597000" />
+      <workItem from="1765704087561" duration="3897000" />
+      <workItem from="1765749646082" duration="2223000" />
+      <workItem from="1765789204172" duration="1931000" />
+      <workItem from="1765791273543" duration="1806000" />
+    </task>
+    <task id="LOCAL-00001" summary="feat(database): enrichir la documentation des méthodes de la classe Database">
+      <option name="closed" value="true" />
+      <created>1764695927307</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1764695927307</updated>
+    </task>
+    <task id="LOCAL-00002" summary="fix(menu, style): correct typos and improve CSS properties">
+      <option name="closed" value="true" />
+      <created>1764696337122</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1764696337122</updated>
+    </task>
+    <task id="LOCAL-00003" summary="feat(database): integrate Redis for improved database management">
+      <option name="closed" value="true" />
+      <created>1764696707841</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1764696707841</updated>
+    </task>
+    <task id="LOCAL-00004" summary="feat(utilisateurs): display list of users with details on the utilisateurs page">
+      <option name="closed" value="true" />
+      <created>1764697157673</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1764697157673</updated>
+    </task>
+    <task id="LOCAL-00005" summary="feat(docker): add Redis and Redis Commander services for caching support">
+      <option name="closed" value="true" />
+      <created>1764697532752</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1764697532752</updated>
+    </task>
+    <task id="LOCAL-00006" summary="feat(docker): update Makefile to enable Docker and run containers in detached mode&#10;feat(app): load database configuration from environment variables&#10;chore(requirements): pin package versions and add python-dotenv for environment variable management">
+      <option name="closed" value="true" />
+      <created>1765555777930</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1765555777930</updated>
+    </task>
+    <task id="LOCAL-00007" summary="feat(tests): add unit tests for database interactions and caching mechanisms">
+      <option name="closed" value="true" />
+      <created>1765562204465</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1765562204465</updated>
+    </task>
+    <task id="LOCAL-00008" summary="feat(database): enhance error handling and add role retrieval with caching">
+      <option name="closed" value="true" />
+      <created>1765562224160</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1765562224160</updated>
+    </task>
+    <task id="LOCAL-00009" summary="feat(interactions): implement interaction management features and UI components">
+      <option name="closed" value="true" />
+      <created>1765643466331</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1765643466331</updated>
+    </task>
+    <task id="LOCAL-00010" summary="feat(interactions): enhance interaction forms and UI components with AJAX support">
+      <option name="closed" value="true" />
+      <created>1765751342327</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1765751342327</updated>
+    </task>
+    <task id="LOCAL-00011" summary="feat(interactions): update menu labels for clarity in interactions section">
+      <option name="closed" value="true" />
+      <created>1765751455042</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1765751455043</updated>
+    </task>
+    <task id="LOCAL-00012" summary="feat(interactions): update menu labels for clarity in interactions section">
+      <option name="closed" value="true" />
+      <created>1765789919231</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1765789919231</updated>
+    </task>
+    <task id="LOCAL-00013" summary="feat(database): implement user, role, client, and convention data insertion">
+      <option name="closed" value="true" />
+      <created>1765792878242</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1765792878243</updated>
+    </task>
+    <task id="LOCAL-00014" summary="feat(database): add scripts for listing and resetting database tables">
+      <option name="closed" value="true" />
+      <created>1765792890945</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1765792890945</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="feat(database): enrichir la documentation des méthodes de la classe Database" />
+    <MESSAGE value="fix(menu, style): correct typos and improve CSS properties" />
+    <MESSAGE value="feat(database): integrate Redis for improved database management" />
+    <MESSAGE value="feat(utilisateurs): display list of users with details on the utilisateurs page" />
+    <MESSAGE value="feat(docker): add Redis and Redis Commander services for caching support" />
+    <MESSAGE value="feat(docker): update Makefile to enable Docker and run containers in detached mode&#10;feat(app): load database configuration from environment variables&#10;chore(requirements): pin package versions and add python-dotenv for environment variable management" />
+    <MESSAGE value="feat(tests): add unit tests for database interactions and caching mechanisms" />
+    <MESSAGE value="feat(database): enhance error handling and add role retrieval with caching" />
+    <MESSAGE value="feat(interactions): implement interaction management features and UI components" />
+    <MESSAGE value="feat(interactions): enhance interaction forms and UI components with AJAX support" />
+    <MESSAGE value="feat(interactions): update menu labels for clarity in interactions section" />
+    <MESSAGE value="feat(database): implement user, role, client, and convention data insertion" />
+    <MESSAGE value="feat(database): add scripts for listing and resetting database tables" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(database): add scripts for listing and resetting database tables" />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>
