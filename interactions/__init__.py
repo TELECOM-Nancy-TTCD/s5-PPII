@@ -84,7 +84,7 @@ def create_interaction():
 
      # Gestion du formulaire soumis
     db = get_db()
-    if request.method == 'POST':
+    if request.method == 'PUT':
         interaction_data = {
             'client_id': request.form['client-id'],
             'utilisateur_id': current_user.utilisateur_id,
