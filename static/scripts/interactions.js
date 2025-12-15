@@ -70,8 +70,8 @@ if (submitModalButton) {
         }
 
         const formData = new FormData(form);
-        const action = form.action || '/interactions/create';
-        const method = form.method || 'PUT';
+        const action = '/interactions/create';
+        const method = 'PUT';
 
         try {
             const response = await fetch(action, {
