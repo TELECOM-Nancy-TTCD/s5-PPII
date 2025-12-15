@@ -7,23 +7,6 @@ import sqlite3
 
 
 
-app = Flask(__name__)
-
-app.register_blueprint(conventions_bp)
-
-
-#@app.teardown_appcontext
-#def close_connection(exception):
-#    db = getattr(g,'_database',None) 
-#    if db is not None:
-#        db.close()
-
-
-@app.route('/data/<string:nom>')
-def contenu(nom : str):
-    print(nom)
-    return send_file('./data/'+nom)
-
 from flask import Flask, session, render_template, request, redirect, url_for, g, abort
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
 from hashlib import scrypt
@@ -91,6 +74,9 @@ class User(UserMixin):
             return None
 
 app = Flask(__name__)
+# Enregistrer le blueprint des conventions sur l'instance unique `app`
+app.register_blueprint(conventions_bp)
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -328,4 +314,3 @@ def close_connection(exception):
 
 if __name__ == "__main__":
     app.run(debug=True)
-
