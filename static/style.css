@@ -339,14 +339,12 @@ main {
     word-wrap: break-word;
 }
 
-
 .interaction-header {
     display: flex;
     justify-content: space-between; 
     font-weight: bold;
     margin-bottom: 8px;
 }
-
 
 .interaction-text {
     overflow: hidden;
@@ -356,12 +354,10 @@ main {
     word-break: break-word;
 }
 
-
 .interaction-text.collapsed {
     max-height: 80px;
     position: relative;
 }
-
 
 .interaction-text.collapsed::after {
     content: "";
@@ -373,10 +369,52 @@ main {
     background: linear-gradient(to bottom, transparent, #2c2c2c);
 }
 
-
 .interaction-toggle {
     margin-top: 10px;
     padding: 6px 12px;
     cursor: pointer;
     border-radius: 6px;
 }
+
+
+.timeline_jalons {
+  position: relative;
+  max-width: 800px;
+  margin: 2rem auto;
+  padding-left: 3rem;
+}
+
+.timeline_jalons::before {
+  content: "";
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  bottom: 0;
+  border-left: 2px dotted #475eab;
+
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 2.5rem;
+}
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -2.4rem;
+  top: 1rem;
+  width: 12px;
+  height: 12px;
+  background-color: #1b1b1b;
+  border: 2px solid #475eab;
+  border-radius: 50%;
+
+}
+
+.timeline-card {
+  background-color: #292929;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+

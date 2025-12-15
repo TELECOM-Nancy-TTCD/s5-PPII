@@ -13,6 +13,7 @@ from hashlib import scrypt
 import os, base64, sqlite3
 import database
 import redis
+from datetime import datetime
 
 import os
 from dotenv import load_dotenv
@@ -159,7 +160,7 @@ def can_manage_users(us : User):
     return True
 
 
-@app.route("/users/create", methods=["GET", "POST"])
+@app.route("/utilisateur/create", methods=["GET", "POST"])
 @login_required
 def create_user():
     if not can_manage_users(current_user):
@@ -295,7 +296,26 @@ def client_detail(client_id):
     
     return render_template("Pages_speciales/clients_template.html", client=client, projets=projets, interactions=interactions)
 
-#Ici les pages d'erreur personalisé, elles ne sont pas encore toutes la mais il faut que je réfléchisse au quelles, je mets.
+
+@app.route("/projet/<int:projet_id>")
+@login_required
+def projet_detail(projet_id):
+    proj = get_db().get_project_id(projet_id)
+
+    if proj == None: 
+        abort(404)
+    
+    # Conversion des dates vers le format usuel
+    proj.date_debut = datetime.fromisoformat(proj.date_debut).strftime("%d/%m/%Y")
+    proj.date_fin = datetime.fromisoformat(proj.date_fin).strftime("%d/%m/%Y")
+    for j, u in enumerate(proj.jalons):
+        if u.date_fin!= None :
+            proj.jalons[j].date_fin = datetime.fromisoformat(u.date_fin).strftime("%d/%m/%Y")
+
+    return render_template("Pages_speciales/projets_template.html", p = proj)
+
+
+#Ici les pages d'erreur personalisées, elle ne sont pas encore toutes là mais il faut que je réfléchisse auxquelles je mets.
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("errors/404.html"), 404

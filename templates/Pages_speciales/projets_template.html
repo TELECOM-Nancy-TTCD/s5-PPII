@@ -1,0 +1,50 @@
+{% extends "menu.html" %}
+
+{% block title %}{{p.nom_projet}}{% endblock %}
+
+{% block content %}
+<h1>{{p.nom_projet}}</h1>
+<p>Statut du projet : {{p.statut}}</p>
+{% if p.statut == 'En attente'%}
+<p> Date de début prévue : {{p.date_debut}} </p>
+{% else %}
+<p> Date de début: {{p.date_debut}} </p>
+{% endif %}
+
+{% if p.statut == 'Terminé'%}
+<p> Date de fin : {{p.date_fin}} </p>
+{% elif p.statut == 'Annulé' and p.date_fin != None %}
+<p> Date d'abandon : {{p.date_fin}} </p>
+{% elif p.statut != 'Annulé' and p.date_fin != None %}
+<p> Date de fin prévue : {{p.date_fin}} </p>
+
+{% endif %}
+
+<p> Budget : {{p.budget}} € </p>
+<a href={{p.doc_dossier}}> Documents associés au projet </a>
+
+<p>-----</p>
+
+<h2>Jalons du projet</h2>
+
+<section class="timeline_jalons">
+    {% for j in p.jalons%}
+    <div class="timeline-item">
+        <div class="timeline-card">
+            <p>{{j.description}}</p>
+            {% if j.est_complete %}
+                <p style="color: green; font-weight:bold"> Terminé le {{j.date_fin}}</p>
+            {% else %}
+                {% if j.date_fin == None %}
+                <p style="color: red; font-weight:bold"> En cours</p>
+                {% else %}
+                <p style="color: red; font-weight:bold"> Abandonné le {{j.date_fin}}</p>
+                {% endif %}
+            {% endif %}
+            
+        </div>
+    </div>
+  {% endfor %}
+</section>
+
+{% endblock %}
