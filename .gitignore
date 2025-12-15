@@ -319,3 +319,5 @@ __marimo__/
 
 schema.txt
 venv
+__pycache__
+schema.txt
