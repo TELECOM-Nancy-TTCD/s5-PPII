@@ -41,20 +41,19 @@ class Database:
         :param kwargs: arguments optionnels passés à sqlite3.connect
 
         :raises ValueError: si redis_client ou database est invalide
->>>>>>> origin/site_web
         :raises RuntimeError: si la connexion SQLite échoue
         """
         if not redis_client:
             raise ValueError("A valid redis_client must be provided")
         if not database:
             raise ValueError("A valid database path must be provided")
->>>>>>> origin/site_web
+
         self.redis_client = redis_client
         try:
             self.db = sqlite3.connect(database, **kwargs)
         except sqlite3.Error as e:
             raise RuntimeError(f"Failed to connect to database: {e}") from e
->>>>>>> origin/site_web
+
 
     def close(self):
         """Ferme la connexion SQLite associée à cette instance Database."""
@@ -368,7 +367,7 @@ class Database:
             return role
         return None
 
->>>>>>> origin/site_web
+
     def get_project_id(self, project_id: int) -> Optional['Projet']:
         """Récupère un projet par son identifiant.
 
@@ -678,7 +677,7 @@ class _RowInitMixin:
         if database_name is None:
             database_name = self.__class__.__name__ + "s"  # Pluriel simple par défaut
             logging.warn("Using default DATABASE_NAME '%s' for class %s. It's recommended to explicitly set DATABASE_NAME.", database_name, self.__class__.__name__)
->>>>>>> origin/site_web
+
         # Sauvegarde l'objet dans la base de données
         fields = ', '.join(self.FIELD_NAMES)
         placeholders = ', '.join(['?'] * len(self.FIELD_NAMES))
@@ -932,7 +931,7 @@ class Utilisateur(DBObject, _RowInitMixin):
             else:
 
                 logging.warn(f"Invalid mot_de_passe_expire for user {self.utilisateur_id} (v={self.mot_de_passe_expire}), setting to None")
->>>>>>> origin/site_web
+
                 self.mot_de_passe_expire = None
         if not isinstance(self.role_id, int):
             self.role_id = int(self.role_id)
@@ -985,9 +984,9 @@ class Utilisateur(DBObject, _RowInitMixin):
             cursor = self.db.execute(
                 "SELECT c.* FROM competences c "
 
-                "JOIN utilisateur_competences uc ON c.competence_id = uc.competence_id "
-                "WHERE uc.utilisateur_id = ?", (self.utilisateur_id,))
->>>>>>> origin/site_web
+                "JOIN Intervenant_competences uc ON c.competence_id = uc.competence_id "
+                "WHERE uc.intervenant_id = ?", (self.utilisateur_id,))
+
             rows = cursor.fetchall()
             competences = [Competence.from_db_row(self.db, row) for row in rows]
             cursor.close()
