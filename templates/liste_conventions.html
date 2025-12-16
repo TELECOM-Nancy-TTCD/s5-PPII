@@ -4,62 +4,63 @@
 
 {% block content %}
 
-  <h1>Liste des conventions</h1>
+<h1>Liste des conventions</h1>
 
-  <p>Ici se trouvent toutes les conventions courantes ou passées signées par Telecom Nancy Services. </p>
+<p>Ici se trouvent toutes les conventions courantes ou passées signées par Telecom Nancy Services.</p>
 
-  <div class="clients-container">
-  <div class="client-row" id="en-tete-clients">
-      <div class="button-col"></div>
-      <div class="col">ID</div>
-      <div class="col">Nom de la convention</div>
-      <div class="col">Clients liés à la convention</div>
-      <div class="col">Début de la convention</div>
-      <div class="col">Fin de la convention</div>
-  </div>
+<div class="clients-container">
 
-  {% for convention in context %}
-  <div class="client-card" onclick="window.location.href='/conventions/{{ convention.id }}'">
-    <div class="client-row">
-      <div class="button-col"><button type="button" class="collapseur" onclick="show_projets(this, event)"> Pj_as </button></div>
-      <div class="col">{{ convention.id }}</div>
-      <div class="col">{{ convention.nom }}</div>
-      <div class="col">{{ convention.nom_client }}</div>
-      <div class="col">{{ convention.date_debut }}</div>
-      <div class="col">{{ convention.date_fin }}</div>
+    <div class="convention-row", id="en-tete-conventions">
+        <div class="button-col"></div>
+        <div class="col">ID</div>
+        <div class="col">Nom de la convention</div>
+        <div class="col">Clients liés à la convention</div>
+        <div class="col">Début de la convention</div>
+        <div class="col">Fin de la convention</div>
     </div>
-    
-    <div class="collapsed-row"> <!-- élément affiché/caché par le bouton-->
-    
-    {% for p in convention.projets %}
-    <div class="client-row" onclick="window.location.href='/projet/{{ p.projet_id }}'"> <!-- cliquer sur un projet emmène à sa page-->
-      <div class="col"></div> 
-      <div class="col">{{ p.convention_id }}</div>
-      <div class="col">{{ p.nom_projet }}</div>
-      <div class="col">{{ p.budget }} €</div>
-      <div class="col">{{ p.date_debut }}</div>
-      <div class="col">{{ p.date_fin }}</div>
+
+    {% for convention in context %}
+    <div class="client-card" onclick="window.location.href='/conventions/{{ convention.id }}'">
+
+        <div class="convention-row">
+            <div class="button-col">
+                <button type="button" class="collapseur" onclick="show_projets(this, event)">Pj_as</button>
+            </div>
+
+            <div class="col">{{ convention.id }}</div>
+            <div class="col">{{ convention.nom }}</div>
+            <div class="col">{{ convention.nom_client }}</div>
+            <div class="col">{{ convention.date_debut }}</div>
+            <div class="col">{{ convention.date_fin }}</div>
+        </div>
+
+        <div class="collapsed-row">
+            {% for p in convention.projets %}
+            <div class="convention-row" onclick="window.location.href='/projet/{{ p.projet_id }}'">
+                <div class="button-col"></div>
+                <div class="col">{{ p.convention_id }}</div>
+                <div class="col">{{ p.nom_projet }}</div>
+                <div class="col">{{ p.budget }} €</div>
+                <div class="col">{{ p.date_debut }}</div>
+                <div class="col">{{ p.date_fin }}</div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% endfor %}
-    </div>
-  </div>
-
-
-  {% endfor %}
-
+</div>
 
 <script>
-  function show_projets(btn, event) {
-  event.stopPropagation()
-  const content = btn.closest(".client-card").querySelector(".collapsed-row");
-  
-  if(content.style.display == "none"){
-   content.style.display="block"
-  }
-  else{
-    content.style.display="none"
-  }
-  }
+function show_projets(btn, event) {
+    event.stopPropagation()
+    const content = btn.closest(".client-card").querySelector(".collapsed-row");
+
+    if (content.style.display === "none" || content.style.display === "") {
+        content.style.display = "block";
+    } else {
+        content.style.display = "none";
+    }
+}
 </script>
 
 {% endblock %}
