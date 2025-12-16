@@ -155,6 +155,7 @@ main {
     padding: 12px 15px;   
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);
     transition: transform 0.2s, box-shadow 0.2s;
+    flex-direction: column;
 }
 
 .client-card:hover {
@@ -176,6 +177,37 @@ main {
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 4px 0;
+}
+
+
+.button-col {
+    flex:0.01;
+    min-width: 20px;
+}
+
+
+
+.collapseur {
+    height:30px;
+    width: 30px;
+    border-color: #475eab;
+    border-width: 1px;
+    border-radius: 1px;
+    background-color: #292929;
+}
+
+.collapseur:hover {
+    background-color: #475eab;
+}
+
+.collapsed-row {
+    flex: 1;
+    min-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 4px 0;
+    display: none;
 }
 
 #en-tete-clients {
