@@ -170,25 +170,20 @@ main {
     align-items: center;
 }
 
-.client-row .col {
+.convention-row .col {
     flex: 1;
     min-width: 80px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     padding: 4px 0;
 }
 
-
 .button-col {
-    flex:0.01;
-    min-width: 5px;
+    width: 60px;
+    display: flex;
+    justify-content: center;
 }
 
-
-
 .collapseur {
-    height:30px;
+    height: 30px;
     width: auto;
     border-color: #475eab;
     border-width: 1px;
@@ -200,28 +195,42 @@ main {
     background-color: #475eab;
 }
 
-.collapsed-row {
+.convention-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.col {
     flex: 1;
     min-width: 80px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 4px 0;
+}
+
+.collapsed-row {
+    flex: 1; 
+    min-width: 80px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    padding: 4px 0;
     display: none;
 }
 
-#en-tete-clients {
+#en-tete-clients, #en-tete-conventions {
     top: 100px;
     position: sticky;
     background-color: #2b2b2b;
     font-weight: bold;
     box-shadow: 0 2px 5px rgba(0,0,0,0.4);
     z-index: 10;
-    display: flex;
-    gap: 15px;
     border-radius: 10px 10px 0 0;
     padding: 12px 15px;
 }
+
 
 .lien-erreur-retour {
     text-decoration: none;
