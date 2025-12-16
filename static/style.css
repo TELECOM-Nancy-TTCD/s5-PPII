@@ -182,14 +182,14 @@ main {
 
 .button-col {
     flex:0.01;
-    min-width: 20px;
+    min-width: 5px;
 }
 
 
 
 .collapseur {
     height:30px;
-    width: 30px;
+    width: auto;
     border-color: #475eab;
     border-width: 1px;
     border-radius: 1px;
