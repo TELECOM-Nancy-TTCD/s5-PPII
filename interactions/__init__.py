@@ -1,4 +1,3 @@
-import redis
 from flask import Blueprint, request, render_template, abort, jsonify
 import os
 from datetime import datetime, date
@@ -11,7 +10,6 @@ from database import Interaction
 interactions_bp = Blueprint('interactions', __name__, template_folder="templates/interactions", static_folder="static", url_prefix="/interactions")
 
 DATABASE= os.getenv('DATABASE')
-
 
 # Helper validator
 def validate_interaction_form(form):
@@ -77,28 +75,11 @@ def interactions_home():
         return abort(403)
 
      # Récupération des paramètres de pagination
-    q = request.args.get("q", "")
+    page = request.args.get("p", 0, type=int)
+    limit = request.args.get("l", 10, type=int)
     db = get_db()
-
-    def filter_interactions(i: Interaction) -> bool:
-        """
-        Filter les interactions selon la query
-        """
-        if q == "":
-            return True
-        q_lower = q.lower()
-        return (q_lower in str(i.interaction_id).lower() or
-                q_lower in i.client.nom_entreprise.lower() or
-                q_lower in i.client.contact_email.lower() or
-                q_lower in i.utilisateur.nom.lower() or
-                q_lower in i.utilisateur.prenom.lower() or
-                q_lower in i.type_interaction.lower() or
-                q_lower in i.titre.lower() or
-                q_lower in i.contenu.lower())
-     # Récupération des interactions avec filtrage selon les permissions
-
-    interactions = db.get_all_interactions(key=filter_interactions)
-    return render_template("interactions/interactions.html", interactions=interactions, Interaction=Interaction)
+    interactions = db.get_all_interactions(limit=10)
+    return render_template("interactions/interactions.html", interactions=interactions, Interaction=Interaction, page=page, limit=limit)
 
 @interactions_bp.route('/<int:interaction_id>')
 @login_required
