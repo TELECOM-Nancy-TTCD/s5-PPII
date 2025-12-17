@@ -3,11 +3,13 @@ CREATE TABLE Roles (
     nom VARCHAR,
     hierarchie INT, -- pour la modification de rôles, on ne peut destituer un individu d'un role plus haut
 
+    administrateur BOOLEAN DEFAULT false,
     peut_gerer_utilisateurs BOOLEAN DEFAULT false,
     peut_gerer_roles BOOLEAN DEFAULT false,
     
     peut_lire_clients BOOLEAN DEFAULT false,
-    peut_gerer_clients BOOLEAN DEFAULT false, 
+    peut_gerer_clients BOOLEAN DEFAULT false,
+    peut_creer_interactions BOOLEA DEFAULT false,
     peut_gerer_interactions BOOLEAN DEFAULT false,
     
     peut_lire_projets BOOLEAN DEFAULT false,

@@ -1,3 +1,16 @@
+# Base de données
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+
+# Environnements virtuels
+venv/
+__pycache__
+
+# VS Code
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -152,7 +165,6 @@ activemq-data/
 .envrc
 .venv
 env/
-venv/
 ENV/
 env.bak/
 venv.bak/
@@ -307,5 +319,3 @@ __marimo__/
 
 schema.txt
 venv
-__pycache__
-schema.txt

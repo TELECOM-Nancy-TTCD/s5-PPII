@@ -38,7 +38,8 @@
 
         {% if interactions != [] %}
             {% for interaction in interactions %}
-                <div class="client-card" onclick="window.location.href='/interactions/{{ interaction.interaction_id }}'">
+                <div class="client-card"
+                     onclick="window.location.href='/interactions/{{ interaction.interaction_id }}'">
                     <div class="client-row">
                         <span class="col">{{ interaction.interaction_id }}</span>
                         <span class="col">{{ interaction.client.nom_entreprise }}</span>
@@ -46,7 +47,12 @@
                         <span class="col">{{ interaction.titre }}</span>
                         <span class="col">{{ interaction.type_interaction }}</span>
                         <span class="col">{{ interaction.date_time_interaction.strftime('%d/%m/%Y') }}</span>
-                        <span class="col">Button</span>
+                        <span class="col">
+    <a href="/interactions/{{ interaction.interaction_id }}/edit" class="primary-button icon-button"
+       aria-label="Modifier">
+      <!-- pencil / edit icon -->
+      <i class="fa-solid fa-pen"></i>
+    </a></span>
                     </div>
                 </div>
             {% endfor %}

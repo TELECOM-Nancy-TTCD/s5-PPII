@@ -1,14 +1,31 @@
 :root {
-    /* Palette de couleurs réutilisable */
+    /* Fonds et valeurs globales existantes laissées intactes (ne pas toucher au fond) */
     --bg-dark: #1b1b1b;
     --card-bg: #292929;
     --surface: #2b2b2c;
     --surface-2: #2c2c2c;
     --menu-img-bg: #2a2d39;
-    --primary: #475eab;
-    --primary-variant: #3a4e91;
-    --danger: #ff6b6b;
-    --danger-hover: #e05555;
+
+    /* Couleurs primaires/auxiliaires (charte fournie) */
+    --primary: #253da5;       /* Bleu primaire */
+    --primary-variant: #1d4c9c; /* variante */
+    --accent: #42b9bc;        /* accent / teal */
+
+    --danger: #d13651;        /* auxiliaire rouge */
+    --danger-hover: #e05555;  /* hover danger */
+
+    --success: #65b231;       /* vert succès */
+    --success-2: #4fb271;     /* second vert */
+
+    --warning: #e29320;       /* warning orange */
+    --highlight: #d3c116;     /* jaune highlight */
+    --accent-2: #af38d6;      /* violet accent */
+
+    /* Gradient exemples depuis la charte */
+    --gradient-start: #68a4d9;
+    --gradient-end: #1d4c9c;
+
+    /* Neutres / texte (laisser existants) */
     --text-main: linen; /* couleur principale du texte (héritée) */
     --text-light: #cccccc; /* rgb(204,204,204) */
     --white: #ffffff;
@@ -655,7 +672,7 @@ a:hover {
 /* From Uiverse.io by mi-series */
 .container {
     position: relative;
-    width: 100%;
+    width: 95%;
     background: var(--card-bg);
     padding: 25px;
     border-radius: 8px;
@@ -705,12 +722,12 @@ a:hover {
 
 .input-box input:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(71,94,171,0.08);
+    box-shadow: 0 0 0 4px rgba(37,61,165,0.08); /* palette primaire */
 }
 
 .input-box textarea {
     position: relative;
-    width: 100%;
+    width: 97.5%;
     outline: none;
     font-size: 1rem;
     color: var(--text-main);
@@ -725,7 +742,14 @@ a:hover {
 
 .input-box textarea:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(71,94,171,0.08);
+    box-shadow: 0 0 0 4px rgba(37,61,165,0.08); /* palette primaire */
+}
+
+.text-danger {
+    color: var(--danger);
+    font-size: 0.9rem;
+    margin-top: 4px;
+    text-align: left;
 }
 
 .form .column {
@@ -889,7 +913,7 @@ dialog .container .actions {
 
 /* success message styling */
 .success-message {
-    color: var(--primary-variant);
+    color: var(--success);
     font-weight: 600;
     margin: 8px 0 12px;
 }
@@ -919,7 +943,38 @@ dialog .container .actions {
 
 .client-suggestions .client-suggestion:hover,
 .client-suggestions .client-suggestion.highlight {
-    background: rgba(71,94,171,0.08);
+    background: rgba(37,61,165,0.08); /* palette primaire */
+}
+
+/* Styles pour indiquer un champ invalide */
+.invalid-field {
+    border: 1px solid var(--danger) !important;
+    box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.08);
+    background-clip: padding-box;
+}
+.invalid-field:focus {
+    outline: none;
+    box-shadow: 0 0 0 6px rgba(255, 107, 107, 0.16);
+}
+
+/* Shake animation for invalid fields */
+@keyframes shake {
+  0% { transform: translateX(0); }
+  10% { transform: translateX(-6px); }
+  20% { transform: translateX(6px); }
+  30% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  50% { transform: translateX(-4px); }
+  60% { transform: translateX(4px); }
+  70% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+  90% { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+
+.shake {
+    animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+    will-change: transform;
 }
 
 /* Responsive: on small screens, stack the column items vertically to avoid overlap/scroll */
@@ -978,7 +1033,7 @@ dialog .container .actions {
 
 .main-menu-items .menu-dropdown > a:hover,
 .menu-dropdown:focus-within > a {
-    background-color: rgba(71,94,171,0.12); /* léger surlignage */
+    background-color: rgba(37,61,165,0.12); /* palette primaire */
     color: var(--white);
     transition: background-color 0.12s ease, color 0.12s ease;
 }
@@ -986,9 +1041,10 @@ dialog .container .actions {
 /* Si on veut un effet plus marqué quand le dropdown est ouvert */
 .menu-dropdown:hover > a,
 .menu-dropdown:focus-within > a {
-    background-color: rgba(71,94,171,0.18);
+    background-color: rgba(37,61,165,0.18); /* palette primaire */
     color: var(--white);
 }
+
 
 .interactions-container {
     display: flex;

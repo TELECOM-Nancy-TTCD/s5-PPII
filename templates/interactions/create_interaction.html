@@ -1,8 +1,77 @@
 {% extends "menu.html" %}
 
-{% block title %}Création d'utilisateur{% endblock %}
+{% block title %}Ajouter une interaction{% endblock %}
 
 {% block content %}
 
-  {% include 'interactions/create_interaction_content.html' %}
-{%endblock%}
+  <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
+    <h1 style="flex:1">{{ 'Modifier l\'interaction' if interaction else 'Ajouter une interaction' }}</h1>
+
+    <a href="/interactions" class="primary-button icon-button" aria-label="Retour">
+      <!-- arrow-left / back icon -->
+      <i class="fa-solid fa-arrow-left"></i>
+    </a>
+  </div>
+
+  <section class="container" style="margin-top:12px;">
+    <form class="form" id="interaction-form">
+      <div class="column">
+
+        <div class="input-box">
+          <label for="interaction-type">Support</label>
+          <div class="select-box">
+            <select name="type" id="interaction-type">
+              <option hidden>Type</option>
+              {% for t in Interaction.interactions_types %}
+                {% set selected_value = (interaction.type_interaction_id if interaction is defined else (form_data.get('type_interaction') if form_data else '')) %}
+                <option value="{{ t }}" {% if selected_value == t %}selected{% endif %}>{{ Interaction.types_names.get(t, 'Inconnu') }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field-error text-danger" id="error-type"></div>
+        </div>
+
+        <div class="input-box">
+          <label for="interaction-date">Date de l'interaction</label>
+          {% set date_value = (interaction.date_time_interaction.strftime('%Y-%m-%d') if interaction is defined and interaction.date_time_interaction else (form_data.get('date_interaction', '') if form_data else '')) %}
+          <input name="interaction-date" required placeholder="Date interaction" type="date" id="interaction-date" value="{{ date_value }}">
+          <div class="field-error text-danger" id="error-interaction-date"></div>
+        </div>
+      </div>
+
+      {# Insertion du composant de recherche de client (prépare client_id et client_name si sélectionné) #}
+      {% set preselected_client_id = (interaction.client.client_id if interaction is defined and interaction.client is defined else (form_data.get('client_id', '') if form_data else '')) %}
+      {% set preselected_client_name = (interaction.client.nom_entreprise if interaction is defined and interaction.client is defined else (form_data.get('client_name', '') if form_data else '')) %}
+      {% include 'components/search_client.html' %}
+
+      <div class="input-box">
+        <label for="title">Titre</label>
+        {% set title_value = (interaction.titre if interaction is defined and interaction.titre else (form_data.get('title', '') if form_data else '')) %}
+        <input name="title" required placeholder="Objet de l'interaction" type="text" id="title" value="{{ title_value }}">
+        <div class="field-error text-danger" id="error-title"></div>
+      </div>
+
+      <div class="input-box">
+        <label for="content">Contenu</label>
+        {% set content_value = (interaction.contenu if interaction is defined and interaction.contenu else (form_data.get('contenu', '') if form_data else '')) %}
+        <textarea name="content" required placeholder="Détails de l'interaction..." id="content">{{ content_value }}</textarea>
+        <div class="field-error text-danger" id="error-content"></div>
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+        <button type="submit" class="primary-button" aria-label="Enregistrer" title="Enregistrer" id="submit-create-interaction">
+          <!-- save icon -->
+          <i class="fa-solid fa-floppy-disk"></i>
+        </button>
+
+        <a href="/interactions" class="primary-button icon-button" aria-label="Annuler">
+          <!-- close / cancel icon -->
+          <i class="fa-solid fa-xmark"></i>
+        </a>
+      </div>
+    </form>
+  </section>
+
+  <script src="/static/scripts/interactions.js"></script>
+
+{% endblock %}
