@@ -20,6 +20,8 @@ cur.execute("DELETE FROM Intervenant_competences ")
 
 cur.execute("DELETE FROM Projet_competences")
 
+cur.execute("DELETE FROM Travaille_sur")
+
 
 db.commit()
 

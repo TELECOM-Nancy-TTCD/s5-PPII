@@ -57,10 +57,11 @@ CREATE TABLE Clients (
         CHECK (type_client IN ('Prospect', 'Actif', 'Ancien')),
 
     interlocuteur_principal_id INT, --La personne de TNS en contact avec l'entreprise
-    FOREIGN KEY (interlocuteur_principal_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL,
     localisation_lat FLOAT,
     localisation_lng FLOAT,
-    address VARCHAR
+    address VARCHAR,
+
+    FOREIGN KEY (interlocuteur_principal_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL
     
 );
 
@@ -83,6 +84,7 @@ CREATE TABLE Projets (
     nom_projet VARCHAR NOT NULL,
     description TEXT,
     budget FLOAT,
+    charge_travail INT,
     date_debut DATE,
     date_fin DATE,
     statut TEXT NOT NULL
@@ -132,7 +134,7 @@ CREATE TABLE Intervenant_competences (
     competence_id INT,
     
     niveau INT NOT NULL
-        CHECK (niveau BETWEEN 0 AND 5),
+        CHECK (niveau BETWEEN 0 AND 10),
     PRIMARY KEY (intervenant_id, competence_id),
     FOREIGN KEY (intervenant_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE CASCADE, --suppression d'un intervenant implique suppression de ses compétences
     FOREIGN KEY (competence_id) REFERENCES Competences(competence_id) ON UPDATE CASCADE ON DELETE CASCADE --suppression d'une compétence implique que l'intervenant n'a plus cette compétence
@@ -143,7 +145,7 @@ CREATE TABLE Projet_competences (
     projet_id INT,
     competence_id INT,
     niveau_requis INT NOT NULL
-        CHECK (niveau_requis BETWEEN 0 AND 5),
+        CHECK (niveau_requis BETWEEN 0 AND 10),
     FOREIGN KEY (projet_id) REFERENCES Projets(projet_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (competence_id) REFERENCES Competences(competence_id) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (projet_id, competence_id)
