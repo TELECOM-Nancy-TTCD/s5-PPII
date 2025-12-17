@@ -1,7 +1,8 @@
-from flask import Flask, session, render_template, request, redirect, url_for, g, abort
+from flask import Flask, session, render_template, request, redirect, url_for, g, abort, send_from_directory
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 from hashlib import scrypt
 import os, base64, sqlite3
+import mimetypes
 from database import Database, Role, Utilisateur
 import redis
 from tools import get_db, has_permission
@@ -78,7 +79,6 @@ def login():
 
     if request.method == 'POST' :
         c = get_db().cursor()
-
         adressemail = request.form["Adresse e-mail"]
         mdp = request.form["Mot de passe"]
         c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))

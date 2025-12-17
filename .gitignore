@@ -162,6 +162,7 @@ activemq-data/
 *.sage.py
 
 # Environments
+.env
 .envrc
 .venv
 env/
@@ -317,5 +318,3 @@ __marimo__/
 
 schema.txt
 venv
-__pycache__
-schema.txt

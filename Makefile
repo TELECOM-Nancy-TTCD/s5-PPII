@@ -39,7 +39,7 @@ major:
 
 
 lance:
-	sudo systemctl start docker
+	sudo systemctl enable docker
 	sudo docker compose up -d
 	. venv/bin/activate && python3 app.py
 	@echo "Ouvrir l'url : http://127.0.0.1:5000/"

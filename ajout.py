@@ -27,13 +27,13 @@ def main():
     cur.execute("""
         INSERT INTO Roles VALUES (
             NULL, 'Admin', 0,
-            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+            1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
         );
     """)
     cur.execute("""
         INSERT INTO Roles VALUES (
             NULL, 'Admin', 5,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         );
     """)
     print("   ✔ Rôles ajoutés.\n")
@@ -112,7 +112,7 @@ def main():
         for i in range(1, 3):
             cur.execute("""
                 INSERT INTO Projets (projet_id, convention_id, nom_projet, description, budget, date_debut, date_fin, statut, doc_dossier)
-                VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, NULL)
+                VALUES (NULL, ?, ?, ?, ?, NULL, NULL, ?, NULL)
             """, (
                 convention_id,
                 f"Projet {conv['nom'].split()[1]} {i}",
@@ -138,8 +138,23 @@ def main():
     cur.execute("SELECT utilisateur_id FROM Utilisateurs")
     all_users = [row[0] for row in cur.fetchall()]
 
+    # Types et mapping demandés
+    types_names = {
+        "email": "Email",
+        "phone": "Appel téléphonique",
+        "meeting": "Réunion",
+        "textmessage": "Message texte",
+        "other": "Autre",
+        "Email": "email",
+        "Appel téléphonique": "phone",
+        "Réunion": "meeting",
+        "Message texte": "textmessage",
+        "Autre": "other"
+    }
+    interactions_types = ['email', 'phone', 'meeting', 'textmessage', 'other']
+
     interactions_examples = [
-        "Appel rapide pour valider l’avancement.nf jsdfizjbdfijzbdfijbdviohbjqdiovbjifvbbvzpiubzpiubpiuzrbgpiuzbgpijabfpijbpiuvzUDHzouhvpjbefpivuhrpuvbqifjbvpiubfvpiuzbivpbifugbzpirubgipubfvipjbfivubipufn liehshqifhbid",
+        "Appel rapide pour valider l’avancement.",
         "Envoi d’un mail contenant des documents complémentaires.",
         "Discussion sur le cahier des charges.",
         "Relance client concernant la signature.",
@@ -157,23 +172,31 @@ def main():
         for _ in range(random.randint(2, 5)):
             contenu = random.choice(interactions_examples)
             utilisateur = random.choice(all_users)
+            utilisateur = random.choice(all_users) if all_users else None
 
             # Date aléatoire dans les 60 derniers jours
             date = datetime.now() - timedelta(days=random.randint(0, 60))
             date_str = date.strftime("%Y-%m-%d %H:%M:%S")
 
+            # Type et titre conformes au schéma
+            type_interaction = random.choice(interactions_types)
+            titre = types_names.get(type_interaction, type_interaction)
+
             cur.execute("""
                 INSERT INTO Interactions (
-                    interaction_id, date_time_interaction, contenu, client_id, utilisateur_id
-                ) VALUES (NULL, ?, ?, ?, ?)
+                    interaction_id, date_time_interaction, type_interaction_id, titre, contenu, client_id, utilisateur_id
+                ) VALUES (NULL, ?, ?, ?, ?, ?, ?)
             """, (
                 date_str,
+                type_interaction,
+                titre,
                 contenu,
                 client_id,
                 utilisateur
             ))
 
     print("   ✔ Interactions ajoutées.")
+
 
 
     # ==========================
@@ -183,6 +206,7 @@ def main():
     conn.close()
 
     print("\n🎉 Import terminé !")
+
     print("Données disponibles :")
     print("  - Admin John : john@admin.tns.com / superadmin")
     print("  - Membre Bob : bob@tns.com / bob")
