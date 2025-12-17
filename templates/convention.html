@@ -34,7 +34,7 @@
               </div>
               <ul>
             {% for projet in context.projets %}
-            <li>
+            <li class="projets_associes_pageconv" onclick="window.location.href='/projet/{{ projet.id }}'">
                 <span>{{ projet.nom_projet }}</span>
                 <span>{{ projet.statut }}</span>
                 <span>{{ projet.budget }} €</span>

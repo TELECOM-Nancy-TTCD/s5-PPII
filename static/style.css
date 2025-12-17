@@ -170,6 +170,11 @@ main {
     align-items: center;
 }
 
+.projets_associes_pageconv:hover {
+    cursor: pointer;    
+    font-weight: bold;
+}
+
 .convention-row .col {
     flex: 1;
     min-width: 80px;
@@ -198,6 +203,22 @@ main {
 .convention-row {
     display: flex;
     gap: 15px;
+    align-items: center;
+}
+
+.convention-row:hover {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.en-tete-pj-associes {
+    display: flex;
+    background-color: #2b2b2b;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    z-index: 10;
+    border-radius: 10px 10px 0 0;
+    padding: 12px 15px;
     align-items: center;
 }
 
@@ -417,7 +438,7 @@ main {
     border-radius: 6px;
 }
 
-
+/* Partie du CSS générée avec aide d'une IA */
 .timeline_jalons {
   position: relative;
   max-width: 800px;
@@ -458,4 +479,5 @@ main {
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
+/* Partie du CSS générée avec aide d'une IA */
 

@@ -35,10 +35,18 @@
         </div>
 
         <div class="collapsed-row">
-            {% for p in convention.projets %}
-            <div class="convention-row" onclick="window.location.href='/projet/{{ p.projet_id }}'">
+            <div class="en-tete-pj-associes">
                 <div class="button-col"></div>
-                <div class="col">{{ p.convention_id }}</div>
+                <div class="col">ID du projet</div>
+                <div class="col">Nom du projet</div>
+                <div class="col">Budget</div>
+                <div class="col">Début du projet</div>
+                <div class="col">Fin du projet</div>
+            </div>
+            {% for p in pj_as[convention.id-1] %}
+            <div class="convention-row" onclick="event.stopPropagation(); window.location.href='/projet/{{ p.id }}'">
+                <div class="button-col"></div>
+                <div class="col">{{ p.id }}</div>
                 <div class="col">{{ p.nom_projet }}</div>
                 <div class="col">{{ p.budget }} €</div>
                 <div class="col">{{ p.date_debut }}</div>
