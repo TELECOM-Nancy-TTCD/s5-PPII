@@ -112,12 +112,14 @@ def main():
         for i in range(1, 3):
             cur.execute("""
                 INSERT INTO Projets (projet_id, convention_id, nom_projet, description, budget, date_debut, date_fin, statut, doc_dossier)
-                VALUES (NULL, ?, ?, ?, ?, NULL, NULL, ?, NULL)
+                VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, NULL)
             """, (
                 convention_id,
                 f"Projet {conv['nom'].split()[1]} {i}",
                 f"Description du projet {i} pour {conv['nom']}",
                 10000 * i,
+                f"2025-04-1{i}",
+                f"2025-05-{i}1",
                 "En cours"
             ))
 
