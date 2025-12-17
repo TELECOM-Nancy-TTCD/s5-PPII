@@ -170,6 +170,11 @@ main {
     align-items: center;
 }
 
+.projets_associes_pageconv:hover {
+    cursor: pointer;
+    font-weight: bold;
+}
+
 .convention-row .col {
     flex: 1;
     min-width: 80px;
@@ -198,6 +203,22 @@ main {
 .convention-row {
     display: flex;
     gap: 15px;
+    align-items: center;
+}
+
+.convention-row:hover {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.en-tete-pj-associes {
+    display: flex;
+    background-color: #2b2b2b;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    z-index: 10;
+    border-radius: 10px 10px 0 0;
+    padding: 12px 15px;
     align-items: center;
 }
 
@@ -352,7 +373,6 @@ main {
 }
 
 
-
 .clients-projets-entete {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
@@ -364,6 +384,62 @@ main {
     padding-bottom: 5px;
 }
 
+.interactions-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.interaction-card {
+    background: #2c2c2c;
+    border: 1px solid #444;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    max-width: 800px;
+    width: 100%;
+    word-wrap: break-word;
+}
+
+.interaction-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+
+.interaction-text {
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.interaction-text.collapsed {
+    max-height: 80px;
+    position: relative;
+}
+
+.interaction-text.collapsed::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    background: linear-gradient(to bottom, transparent, #2c2c2c);
+}
+
+.interaction-toggle {
+    margin-top: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+/* Partie du CSS générée avec aide d'une IA */
 .timeline_jalons {
   position: relative;
   max-width: 800px;
@@ -404,63 +480,5 @@ main {
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
+/* Partie du CSS générée avec aide d'une IA */
 
-
-.interactions-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.interaction-card {
-    background: #2c2c2c;
-    border: 1px solid #444;
-    padding: 12px;
-    margin-bottom: 15px;
-    border-radius: 8px;
-    max-width: 800px;
-    width: 100%;
-    word-wrap: break-word;
-}
-
-
-.interaction-header {
-    display: flex;
-    justify-content: space-between;
-    font-weight: bold;
-    margin-bottom: 8px;
-}
-
-
-.interaction-text {
-    overflow: hidden;
-    transition: max-height 0.4s ease;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    word-break: break-word;
-}
-
-
-.interaction-text.collapsed {
-    max-height: 80px;
-    position: relative;
-}
-
-
-.interaction-text.collapsed::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 30px;
-    background: linear-gradient(to bottom, transparent, #2c2c2c);
-}
-
-
-.interaction-toggle {
-    margin-top: 10px;
-    padding: 6px 12px;
-    cursor: pointer;
-    border-radius: 6px;
-}

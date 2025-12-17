@@ -119,7 +119,12 @@ def get_utilisateur(id):
 @conventions_bp.route('/')
 def index():
     l = liste_conventions()
-    return render_template('liste_conventions.html',context=l)
+
+    proj_associés = []
+    for i, u in enumerate(l):
+        proj_associés.append(get_projets_by_convention(u["id"]))
+
+    return render_template('liste_conventions.html',context=l, pj_as = proj_associés)
 
 @conventions_bp.route('/<int:id>')
 def convention(id : int) :
