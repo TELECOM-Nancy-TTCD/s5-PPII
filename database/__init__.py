@@ -465,7 +465,7 @@ class _RowInitMixin:
             for f in self.FIELD_NAMES:
                 setattr(self, f, data.get(f))
         elif isinstance(data, (list, tuple)):
-            assert len(data) == len(self.FIELD_NAMES), f"Data tuple must have exactly {len(self.FIELD_NAMES)} elements"
+            assert len(data) == len(self.FIELD_NAMES), f"Data tuple must have exactly {len(self.FIELD_NAMES)} elements ({len(data)} given)"
             for f, v in zip(self.FIELD_NAMES, data):
                 setattr(self, f, v)
         else:
