@@ -27,10 +27,14 @@
                   {% endfor %}
               </select>
             </div>
+            <!-- Conteneur d'erreur pour le type -->
+            <div class="field-error text-danger" id="error-type"></div>
             </div>
             <div class="input-box">
               <label for="interaction-date">Date de l'interaction</label>
               <input name="interaction-date" required placeholder="Date interaction" type="date" id="interaction-date">
+              <!-- Conteneur d'erreur pour la date -->
+              <div class="field-error text-danger" id="error-interaction-date"></div>
             </div>
         </div>
 
@@ -39,10 +43,14 @@
         <div class="input-box">
             <label for="title">Titre</label>
             <input name="title" required placeholder="Objet de l'interaction" type="text" id="title">
+            <!-- Conteneur d'erreur pour le titre -->
+            <div class="field-error text-danger" id="error-title"></div>
         </div>
         <div class="input-box">
             <label for="content">Contenu</label>
             <textarea name="content" required placeholder="Détails de l'interaction..." id="content"></textarea>
+            <!-- Conteneur d'erreur pour le contenu -->
+            <div class="field-error text-danger" id="error-content"></div>
         </div>
         <button type="submit" id="submit-create-interaction">Enregistrer</button>
     </form>

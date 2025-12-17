@@ -524,7 +524,7 @@ class _RowInitMixin:
             for f in self.FIELD_NAMES:
                 setattr(self, f, data.get(f))
         elif isinstance(data, (list, tuple)):
-            assert len(data) == len(self.FIELD_NAMES), f"Data tuple must have exactly {len(self.FIELD_NAMES)} elements"
+            assert len(data) == len(self.FIELD_NAMES), f"Data tuple must have exactly {len(self.FIELD_NAMES)} elements ({len(data)} given)"
             for f, v in zip(self.FIELD_NAMES, data):
                 setattr(self, f, v)
         else:
@@ -839,9 +839,9 @@ class Role(DBObject, _RowInitMixin):
     Permissions (booléens) indiquant les actions autorisées pour ce rôle.
     """
     FIELD_NAMES = [
-        'role_id', 'nom', 'hierarchie',
+        'role_id', 'nom', 'hierarchie', 'administrateur',
         'peut_gerer_utilisateurs', 'peut_gerer_roles',
-        'peut_lire_clients', 'peut_gerer_clients', 'peut_gerer_interactions',
+        'peut_lire_clients', 'peut_gerer_clients', 'peut_creer_interactions', 'peut_gerer_interactions',
         'peut_lire_projets', 'peut_gerer_projets', 'peut_gerer_jalons', 'peut_assigner_intervenants',
         'peut_lire_intervenants', 'peut_modifier_intervenants', 'peut_acceder_documents', 'peut_gerer_competences',
         'peut_lancer_matching', 'peut_exporter_csv'
@@ -852,21 +852,26 @@ class Role(DBObject, _RowInitMixin):
     role_id: int
     nom: str
     hierarchie: int
-    peut_gerer_utilisateurs: bool
-    peut_gerer_roles: bool
-    peut_lire_clients: bool
-    peut_gerer_clients: bool
-    peut_gerer_interactions: bool
-    peut_lire_projets: bool
-    peut_gerer_projets: bool
-    peut_gerer_jalons: bool
-    peut_assigner_intervenants: bool
-    peut_lire_intervenants: bool
-    peut_modifier_intervenants: bool
-    peut_acceder_documents: bool
-    peut_gerer_competences: bool
-    peut_lancer_matching: bool
-    peut_exporter_csv: bool
+
+    administrateur: bool # Possède toutes les permissions
+    peut_gerer_utilisateurs: bool # Peut créer, modifier et supprimer des utilisateurs
+    peut_gerer_roles: bool # Peut créer, modifier, supprimer et ajouter aux utilisateurs des rôles
+    peut_lire_clients: bool # Peut voir la liste des clients et leurs détails
+    peut_gerer_clients: bool # Peut créer, modifier et supprimer des clients
+
+    peut_creer_interactions: bool # Peut créer des interactions liées aux projets
+    peut_gerer_interactions: bool # Peut modifier et supprimer des interactions
+
+    peut_lire_projets: bool # Peut voir la liste des projets et leurs détails
+    peut_gerer_projets: bool # Peut créer, modifier et supprimer des projets
+    peut_gerer_jalons: bool # Peut créer, modifier et supprimer des jalons de projets
+    peut_assigner_intervenants: bool # Peut assigner des intervenants aux projets
+    peut_lire_intervenants: bool # Peut voir la liste des intervenants et leurs détails
+    peut_modifier_intervenants: bool # Peut modifier les informations des intervenants
+    peut_acceder_documents: bool # Peut accéder aux documents liés aux intervenants et projets
+    peut_gerer_competences: bool # Peut créer, modifier et supprimer des compétences des intervenants
+    peut_lancer_matching: bool # Peut lancer le processus de matching entre projets et intervenants
+    peut_exporter_csv: bool # Peut exporter des données au format CSV
 
     def __init__(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]] = None):
         super().__init__(db)
@@ -1797,7 +1802,10 @@ class Interaction(DBObject, _RowInitMixin):
         if self.type_interaction_id not in self.interactions_types:
             raise ValueError(f"Invalid interaction type: {self.type_interaction_id}. Must be one of {self.interactions_types}")
         if isinstance(self.date_time_interaction, str):
-            self.date_time_interaction = datetime.datetime.strptime(self.date_time_interaction, '%Y-%m-%d')
+            if ' ' in self.date_time_interaction:
+                self.date_time_interaction = datetime.datetime.strptime(self.date_time_interaction, '%Y-%m-%d %H:%M:%S')
+            else:
+                self.date_time_interaction = datetime.datetime.strptime(self.date_time_interaction, '%Y-%m-%d')
         if isinstance(self.date_time_interaction, datetime.date) and not isinstance(self.date_time_interaction, datetime.datetime):
             self.date_time_interaction = datetime.datetime.combine(self.date_time_interaction, datetime.time.min)
 

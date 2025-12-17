@@ -1,10 +1,15 @@
-from flask import Flask, session, render_template, request, redirect, url_for, g, abort
+from flask import Flask, session, render_template, request, redirect, url_for, g, abort, send_from_directory
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 from hashlib import scrypt
 import os, base64, sqlite3
+import mimetypes
 from database import Database, Role, Utilisateur
 import redis
 from tools import get_db, has_permission
+
+# Assurer que .woff2 et .woff sont servis avec les bons types MIME
+mimetypes.add_type('font/woff2', '.woff2')
+mimetypes.add_type('font/woff', '.woff')
 
 # Importation des blueprints
 from interactions import interactions_bp
@@ -248,6 +253,25 @@ def client_detail(client_id):
     
     return render_template("Pages_speciales/clients_template.html", client=client, projets=projets)
 
+# Route pour servir explicitement les polices FontAwesome avec le bon MIME type
+@app.route('/static/fontawesome/webfonts/<path:filename>')
+def fontawesome_webfonts(filename):
+    # Détermine le mimetype en fonction de l'extension
+    if filename.lower().endswith('.woff2'):
+        mimetype = 'font/woff2'
+    elif filename.lower().endswith('.woff'):
+        mimetype = 'font/woff'
+    else:
+        mimetype = None
+
+    # Le dossier physique où sont stockées les polices
+    webfonts_dir = os.path.join(app.root_path, 'static', 'fontawesome', 'webfonts')
+
+    resp = send_from_directory(webfonts_dir, filename, mimetype=mimetype)
+    # Ajouter header CORS pour les polices (utile en dev ou si appelé depuis un autre origin)
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
 #Ici les pages d'erreur personalisé, elles ne sont pas encore toutes la mais il faut que je réfléchisse au quelles, je mets.
 @app.errorhandler(404)
 def page_not_found(error):
@@ -267,4 +291,3 @@ def close_connection(exception):
 
 if __name__ == "__main__":
     app.run(debug=True)
-

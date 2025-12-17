@@ -7,17 +7,17 @@
   <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
     <h1 style="flex:1">Modifier l'interaction</h1>
 
-    <form data-id="{{ interaction.interaction_id }}" style="display:inline;" id="delete-interaction">
-      <button type="submit" class="primary-button icon-button" aria-label="Supprimer">
-        <!-- trash icon -->
-        <i class="fa-solid fa-trash"></i>
-      </button>
-    </form>
-
     <a href="/interactions/{{ interaction.interaction_id }}" class="primary-button icon-button" aria-label="Annuler">
       <!-- arrow-left / cancel icon -->
       <i class="fa-solid fa-arrow-left"></i>
     </a>
+
+    <form data-id="{{ interaction.interaction_id }}" style="display:inline;" id="delete-interaction">
+      <button type="submit" class="danger-button icon-button" aria-label="Supprimer" id="delete-interaction">
+        <!-- trash icon -->
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </form>
   </div>
 
   <section class="container" style="margin-top:12px;">
@@ -34,11 +34,13 @@
               {% endfor %}
             </select>
           </div>
+          <div class="field-error text-danger" id="error-type"></div>
         </div>
 
         <div class="input-box">
           <label for="interaction-date">Date de l'interaction</label>
           <input name="interaction-date" required placeholder="Date interaction" type="date" id="interaction-date" value="{{ interaction.date_time_interaction.strftime('%Y-%m-%d') }}">
+          <div class="field-error text-danger" id="error-interaction-date"></div>
         </div>
       </div>
 
@@ -49,11 +51,13 @@
       <div class="input-box">
         <label for="title">Titre</label>
         <input name="title" required placeholder="Objet de l'interaction" type="text" id="title" value="{{ interaction.titre }}">
+        <div class="field-error text-danger" id="error-title"></div>
       </div>
 
       <div class="input-box">
         <label for="content">Contenu</label>
         <textarea name="content" required placeholder="Détails de l'interaction..." id="content">{{ interaction.contenu or interaction.content or '' }}</textarea>
+        <div class="field-error text-danger" id="error-content"></div>
       </div>
 
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
