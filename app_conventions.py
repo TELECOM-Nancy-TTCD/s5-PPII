@@ -1,12 +1,14 @@
-from flask import Flask,render_template,send_file
+from flask import Flask,render_template,send_file, request
 from flask import g
 
 from flask import Blueprint
+from flask_login import login_user, login_required
 
 import redis
-from database import *
+import database
 
 import sqlite3
+import os
 
 conventions_bp = Blueprint('conventions',__name__,url_prefix='/conventions')
 
@@ -52,20 +54,29 @@ class FakeRedis:
         self.store.pop(key, None)
         self.sets.pop(key, None)
 
-
+'''
 r = FakeRedis()
 db = Database(r,'database/database.db')
-
-
-
-print()
+'''
 
 DATABASE = 'database/database.db'
-
+'''
 def get_db():
     db = getattr(g,'_database', None)
     if db is None :
         db = g._database = sqlite3.connect(DATABASE)
+    return db
+'''
+
+DATABASE= os.getenv('DATABASE')
+
+def get_db():
+    db= getattr(g, '_database', None)
+    if db is None:
+        db = g._database = database.Database(
+            redis_client=redis.Redis(host='localhost', port=6379, db=0),
+            database=DATABASE
+        )
     return db
 
 def get_projets_by_convention(id_convention):
@@ -116,17 +127,30 @@ def get_utilisateur(id):
         return {"id":utilisateur[0],"nom":utilisateur[1],"prenom":utilisateur[2]}
     return {}
 
-@conventions_bp.route('/')
+@conventions_bp.route('/', methods=['GET'])
+@login_required
 def index():
-    l = liste_conventions()
+    recherche_conventions = request.args.get("q", "").lower().strip()
 
-    proj_associés = []
-    for i, u in enumerate(l):
-        proj_associés.append(get_projets_by_convention(u["id"]))
+    conventions = liste_conventions()
 
-    return render_template('liste_conventions.html',context=l, pj_as = proj_associés)
+    if recherche_conventions:
+        conventions = [
+            c for c in conventions
+            if (recherche_conventions in (c["nom"] or "").lower()
+                or recherche_conventions in (c["date_debut"] or "").lower()
+                or recherche_conventions in (c["date_fin"] or "").lower()
+                or recherche_conventions in (c["nom_client"] or "").lower())
+        ]
+
+    # Crée un dictionnaire : clé = id de la convention, valeur = liste des projets
+    proj_associes_dict = {c["id"]: get_projets_by_convention(c["id"]) for c in conventions}
+
+    return render_template( 'liste_conventions.html',context=conventions, pj_as=proj_associes_dict, recherche_conventions=recherche_conventions)
+
 
 @conventions_bp.route('/<int:id>')
+@login_required
 def convention(id : int) :
     conv =  get_convention(id)
     client = get_client( conv["client_id"] )

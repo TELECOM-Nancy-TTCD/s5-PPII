@@ -8,6 +8,13 @@
 
 <p>Ici se trouvent toutes les conventions courantes ou passées signées par Telecom Nancy Services.</p>
 
+
+<form class="search-form-conventions" method="get" action="/conventions">
+    <input type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
+    <button type="submit">Rechercher</button>
+</form>
+
+
 <div class="clients-container">
 
     <div class="convention-row", id="en-tete-conventions">
@@ -48,7 +55,7 @@
                 <div class="col">Début du projet</div>
                 <div class="col">Fin du projet</div>
             </div>
-            {% for p in pj_as[convention.id-1] %}
+            {% for p in pj_as[convention.id] %}
             <div class="convention-row" onclick="event.stopPropagation(); window.location.href='/projet/{{ p.id }}'">
                 <div class="button-col"></div>
                 <div class="col">{{ p.id }}</div>

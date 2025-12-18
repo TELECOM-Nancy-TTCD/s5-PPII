@@ -283,14 +283,16 @@ main {
 
 
 
-.search-form-utilisateurs {
+.search-form-utilisateurs, .search-form-clients, .search-form-conventions {
     margin: 20px auto;
     display: flex;
     justify-content: center;
     align-items: center;
 
 }
-.search-form-utilisateurs input[type="text"] {
+.search-form-utilisateurs input[type="text"],
+.search-form-clients input[type="text"], 
+.search-form-conventions input[type="text"] {
     padding: 8px 12px;
     font-size: 16px;
     border: none;
@@ -301,7 +303,9 @@ main {
     color: white;
 }
 
-.search-form-utilisateurs button {
+.search-form-utilisateurs button, 
+.search-form-clients button, 
+.search-form-conventions button {
     padding: 8px 16px;
     font-size: 16px;
     border: none;
@@ -312,7 +316,9 @@ main {
     transition: background-color 0.2s;
 }
 
-.search-form-utilisateurs button:hover {
+.search-form-utilisateurs button:hover, 
+.search-form-clients button:hover, 
+.search-form-conventions button:hover {
     background-color: #e05555;
 }
 

@@ -50,9 +50,23 @@ def get_utilisateurs():
     conn.row_factory = sqlite3.Row 
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Utilisateurs")
-    clients = cursor.fetchall()
+    utilisateurs = cursor.fetchall()
     conn.close()
-    return clients
+    return utilisateurs
+
+def format_date(date_value):
+    if not date_value:
+        return "" 
+    if isinstance(date_value, str):
+        try:
+            return datetime.fromisoformat(date_value).strftime("%d/%m/%Y")
+        except ValueError:
+            return datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y")
+    if isinstance(date_value, (datetime,)):
+        return date_value.strftime("%d/%m/%Y")
+    return str(date_value)
+
+
 
 class User(UserMixin):
     def __init__(self, id, nom, prenom, role_id):
@@ -204,11 +218,22 @@ def accueil():
 def contact():
     return render_template("./Pages_speciales/contact.html")
 
-@app.route("/clients")
+@app.route("/clients", methods=['GET'])
 @login_required
 def clients():
+    recherche_clients = request.args.get("q", "").lower()
+
     clients_db = get_db().get_all_clients()
-    return render_template("clients.html", clients_db=clients_db)
+
+    if recherche_clients:
+        clients_db = [
+            u for u in clients_db
+            if recherche_clients in u.nom_entreprise.lower()
+            or recherche_clients in u.contact_email.lower()
+            or recherche_clients in u.type_client.lower()
+        ]
+
+    return render_template("clients.html", clients_db=clients_db, recherche_clients=recherche_clients)
 
 @app.route("/projets")
 @login_required
@@ -306,8 +331,8 @@ def projet_detail(projet_id):
         abort(404)
     
     # Conversion des dates vers le format usuel
-    proj.date_debut = datetime.fromisoformat(proj.date_debut).strftime("%d/%m/%Y")
-    proj.date_fin = datetime.fromisoformat(proj.date_fin).strftime("%d/%m/%Y")
+    proj.date_debut = format_date(proj.date_debut)
+    proj.date_fin = format_date(proj.date_fin)
     for j, u in enumerate(proj.jalons):
         if u.date_fin!= None :
             proj.jalons[j].date_fin = datetime.fromisoformat(u.date_fin).strftime("%d/%m/%Y")

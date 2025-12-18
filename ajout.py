@@ -90,12 +90,16 @@ def main():
     # ==========================
     print("➤ Ajout de conventions et projets...")
 
+    # Liste de conventions à créer
     conventions = [
         {"nom": "Convention Alpha", "description": "Projet Alpha pour TechCorp", "client_email": "alice@techcorp.com"},
         {"nom": "Convention Beta", "description": "Projet Beta pour GreenSolutions", "client_email": "bruno@greensol.fr"},
+        {"nom": "Convention Gamma", "description": "Projet Gamma pour Boulangerie Dupont", "client_email": "contact@dupont-boulangerie.fr"},
+        {"nom": "Convention Delta", "description": "Projet Delta pour AutoPlus Garage", "client_email": "david@autoplus.fr"},
     ]
 
     for conv in conventions:
+        # Récupération de l'ID du client
         cur.execute("SELECT client_id FROM Clients WHERE contact_email = ?", (conv["client_email"],))
         result = cur.fetchone()
         if result is None:
@@ -103,27 +107,46 @@ def main():
             continue
         client_id = result[0]
 
+        # Dates réalistes pour la convention
+        if conv["nom"] in ["Convention Alpha", "Convention Beta"]:
+            date_debut = "2025-04-01"
+            date_fin = "2025-06-30"
+        else:
+            date_debut = "2025-06-01"
+            date_fin = "2025-12-31"
+
+        # Insertion de la convention
         cur.execute("""
             INSERT INTO Conventions (convention_id, nom_convention, description, date_debut, date_fin, doc_contrat, client_id)
-            VALUES (NULL, ?, ?, NULL, NULL, NULL, ?)
-        """, (conv["nom"], conv["description"], client_id))
+            VALUES (NULL, ?, ?, ?, ?, NULL, ?)
+        """, (conv["nom"], conv["description"], date_debut, date_fin, client_id))
         convention_id = cur.lastrowid
 
+        # Création de 2 projets pour chaque convention
         for i in range(1, 3):
+            projet_nom = f"Projet {conv['nom'].split()[1]} {i}"
+            projet_desc = f"Description du projet {i} pour {conv['nom']}"
+            if conv["nom"] in ["Convention Alpha", "Convention Beta"]:
+                date_debut_proj = f"2025-04-{10+i:02d}"
+                date_fin_proj = f"2025-05-{10+i:02d}"
+            else:
+                date_debut_proj = f"2025-06-{10+i:02d}"
+                date_fin_proj = f"2025-11-{10+i:02d}"
+
             cur.execute("""
                 INSERT INTO Projets (projet_id, convention_id, nom_projet, description, budget, date_debut, date_fin, statut, doc_dossier)
                 VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, NULL)
             """, (
                 convention_id,
-                f"Projet {conv['nom'].split()[1]} {i}",
-                f"Description du projet {i} pour {conv['nom']}",
+                projet_nom,
+                projet_desc,
                 10000 * i,
-                f"2025-04-1{i}",
-                f"2025-05-{i}1",
+                date_debut_proj,
+                date_fin_proj,
                 "En cours"
             ))
 
-    print("   ✔ Conventions et projets ajoutés.")
+    print("   ✔ Conventions et projets ajoutés.\n")
 
         # ==========================
     #   AJOUT INTERACTIONS

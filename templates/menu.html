@@ -8,21 +8,18 @@
 </head>
 <body>
 
-    <!-- MENU GLOBAL -->
     <nav class="main-menu">
         <img class="main-menu-img" src="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}" alt="Logo TNS Lovers" width="60">
 
         <ul class="main-menu-items">
             <li><a href="{{ url_for('accueil') }}">Accueil</a></li>
             <li><a href="{{ url_for('clients') }}">Clients</a></li>
-            <li><a href="{{ url_for('projets') }}">Projets</a></li>
             <li><a href="{{ url_for('utilisateurs') }}">Utilisateurs</a></li>
             <li><a href="{{ url_for('conventions.index')}}">Conventions</a></li>
             <li><a href="{{ url_for('recherche_avance') }}">Recherche</a></li>
         </ul>
     </nav>
 
-    <!-- CONTENU VARIABLE DES PAGES -->
     <main>
         {% block content %}{% endblock %}
     </main>
