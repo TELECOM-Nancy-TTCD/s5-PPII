@@ -54,7 +54,6 @@ class Database:
         except sqlite3.Error as e:
             raise RuntimeError(f"Failed to connect to database: {e}") from e
 
-
     def close(self):
         """Ferme la connexion SQLite associée à cette instance Database."""
         self.db.close()

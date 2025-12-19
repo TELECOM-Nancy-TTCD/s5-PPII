@@ -6,8 +6,11 @@ from app_conventions import conventions_bp
 import sqlite3
 
 
+import csv
+import io
+from flask import request, abort
 
-from flask import Flask, session, render_template, request, redirect, url_for, g, abort
+from flask import Flask, session, render_template, request, redirect, url_for, g, abort, Response
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
 from hashlib import scrypt
 import os, base64, sqlite3
@@ -223,17 +226,23 @@ def contact():
 def clients():
     recherche_clients = request.args.get("q", "").lower()
 
-    clients_db = get_db().get_all_clients()
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM Clients")
+    clients_db = cursor.fetchall()
+    conn.close()
 
     if recherche_clients:
         clients_db = [
             u for u in clients_db
-            if recherche_clients in u.nom_entreprise.lower()
-            or recherche_clients in u.contact_email.lower()
-            or recherche_clients in u.type_client.lower()
+            if recherche_clients in u["nom_entreprise"].lower()
+            or recherche_clients in u["contact_email"].lower()
+            or recherche_clients in u["type_client"].lower()
         ]
 
     return render_template("clients.html", clients_db=clients_db, recherche_clients=recherche_clients)
+
 
 @app.route("/projets")
 @login_required
@@ -320,6 +329,156 @@ def client_detail(client_id):
     conn.close()
     
     return render_template("Pages_speciales/clients_template.html", client=client, projets=projets, interactions=interactions)
+
+
+@app.route("/import_clients", methods=["POST"])
+def import_clients():
+    fichier = request.files.get("fichier")
+    if not fichier:
+        return "Aucun fichier sélectionné", 400
+
+    try:
+        lines = fichier.stream.read().decode("utf-8").splitlines()
+        reader = csv.DictReader(lines, delimiter=";")
+
+        colonnes_attendues = [
+            "nom_entreprise",
+            "contact_nom",
+            "contact_email",
+            "contact_telephone",
+            "type_client",
+            "interlocuteur_principal_id",
+            "localisation_lat",
+            "localisation_lng",
+            "address"
+        ]
+
+        if reader.fieldnames != colonnes_attendues:
+            return "Format CSV invalide (colonnes incorrectes)", 400
+
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+
+        for row in reader:
+            def clean(val):
+                return val.strip() if val and val.strip() != "" else None
+
+            c.execute("""
+                INSERT INTO Clients (
+                    nom_entreprise,
+                    contact_nom,
+                    contact_email,
+                    contact_telephone,
+                    type_client,
+                    interlocuteur_principal_id,
+                    localisation_lat,
+                    localisation_lng,
+                    address
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                clean(row["nom_entreprise"]),
+                clean(row["contact_nom"]),
+                clean(row["contact_email"]),
+                clean(row["contact_telephone"]),
+                clean(row["type_client"]),
+                int(row["interlocuteur_principal_id"]) if clean(row["interlocuteur_principal_id"]) else None,
+                float(row["localisation_lat"]) if clean(row["localisation_lat"]) else None,
+                float(row["localisation_lng"]) if clean(row["localisation_lng"]) else None,
+                clean(row["address"]),
+            ))
+
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("clients"))
+
+    except Exception as e:
+        return f"Erreur import CSV : {e}", 500
+
+
+@app.route("/export_clients")
+@login_required
+def export_clients():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT
+            client_id,
+            nom_entreprise,
+            contact_nom,
+            contact_email,
+            contact_telephone,
+            type_client,
+            interlocuteur_principal_id,
+            localisation_lat,
+            localisation_lng,
+            address
+        FROM Clients
+        ORDER BY client_id
+    """)
+    clients = c.fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";")
+
+    writer.writerow([
+        "client_id",
+        "nom_entreprise",
+        "contact_nom",
+        "contact_email",
+        "contact_telephone",
+        "type_client",
+        "interlocuteur_principal_id",
+        "localisation_lat",
+        "localisation_lng",
+        "address"
+    ])
+
+    for cl in clients:
+        writer.writerow([
+            cl["client_id"],
+            cl["nom_entreprise"],
+            cl["contact_nom"],
+            cl["contact_email"],
+            cl["contact_telephone"],
+            cl["type_client"],
+            cl["interlocuteur_principal_id"],
+            cl["localisation_lat"],
+            cl["localisation_lng"],
+            cl["address"]
+        ])
+
+    output.seek(0)
+
+    return send_file(
+        io.BytesIO(output.getvalue().encode("utf-8")),
+        mimetype="text/csv; charset=utf-8",
+        as_attachment=True,
+        download_name="clients_export.csv"
+    )
+
+@app.post("/projet/<int:projet_id>/terminer")
+@login_required
+def terminer_projet(projet_id):
+    projet = get_db().get_project_id(projet_id)
+
+    if projet is None:
+        abort(404)
+
+    projet.statut = "Terminé"
+    projet.save()
+
+    try:
+        get_db().redis_client.delete(f"projets:{projet_id}")
+    except Exception:
+        pass
+
+    return redirect(url_for("projet_detail", projet_id=projet_id))
+
+
 
 
 @app.route("/projet/<int:projet_id>")

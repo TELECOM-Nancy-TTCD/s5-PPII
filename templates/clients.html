@@ -14,6 +14,17 @@
     <button type="submit">Rechercher</button>
 </form>
 
+<form action="{{ url_for('import_clients') }}" method="post" enctype="multipart/form-data">
+    <input type="file" name="fichier" required>
+    <button type="submit">Importer</button>
+</form>
+
+<form action="{{ url_for('export_clients') }}" >
+    <button type="submit">Exporter</button>
+</form>
+
+
+
 
 <div class="clients-container">
     <div class="client-row" id="en-tete-clients">
@@ -41,6 +52,13 @@
         </div>
     </div>
     {% endfor %}
+
+    
+    {% if request.args.get('message') %}
+        <div class="info">{{ request.args.get('message') }}</div>
+    {% endif %}
 </div>
+
+
 
 {% endblock %}

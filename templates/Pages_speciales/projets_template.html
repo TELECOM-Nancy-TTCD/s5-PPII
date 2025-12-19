@@ -3,7 +3,19 @@
 {% block title %}{{p.nom_projet}}{% endblock %}
 
 {% block content %}
+
 <h1>{{p.nom_projet}}</h1>
+
+{% if p.statut != "Terminé" %}
+<form method="post" action="{{ url_for('terminer_projet', projet_id=p.projet_id) }}">
+    <button type="submit" class="btn-terminer">
+        Marquer comme terminé
+    </button>
+</form>
+{% else %}
+<p><strong>Projet terminé ✅</strong></p>
+{% endif %}
+
 <p>Statut du projet : {{p.statut}}</p>
 {% if p.statut == 'En attente'%}
 <p> Date de début prévue : {{p.date_debut}} </p>

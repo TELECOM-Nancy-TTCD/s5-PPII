@@ -1,0 +1,7 @@
+nom_entreprise;contact_nom;contact_email;contact_telephone;type_client;interlocuteur_principal_id;localisation_lat;localisation_lng;address
+TechCorp;Alice Martin;alice@techcorp.com;0601020304;Actif;;48.6921;6.1844;12 Rue de la République, Nancy
+GreenSolutions;Bruno Petit;bruno@greensol.fr;0605060708;Prospect;;48.6738;6.1560;8 Avenue du Général Leclerc, Nancy
+Boulangerie Dupont;Claire Dupont;contact@dupont-boulangerie.fr;0677889900;Actif;;;;5 Rue des Carmes, Nancy
+AutoPlus Garage;David Leroy;david@autoplus.fr;0655443322;Actif;;48.6930;6.2000;23 Rue Stanislas, Nancy
+ImmoCity;Eva Lambert;eva@immocity.fr;0611223344;Ancien;;;;41 Boulevard d'Haussonville, Nancy
+Client Test Vide;;;;Prospect;;;; 
