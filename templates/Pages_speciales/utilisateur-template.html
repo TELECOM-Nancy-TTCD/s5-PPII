@@ -2,6 +2,15 @@
 
 {% block content %}
 
+{% if current_user.role_id == 1 %}
+<form action="{{ url_for('supprimer_utilisateur', user_id=utilisateur['utilisateur_id']) }}" method="post" 
+      onsubmit="return confirm('Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible !');", class="bouton-">
+    <button type="submit">Supprimer</button>
+</form>
+
+
+{% endif %}
+
 <h1>{{utilisateur['prenom']}} {{utilisateur['nom']}}</h1>
 
 <p>Email : {{utilisateur['email']}}</p>
@@ -11,6 +20,8 @@
 <p>Nombre d'heure disponible (par semaine) : {{utilisateur['heures_dispo_semaine']}}</p>
 <p>-----</p>
 <h2>Documents</h2>
+
+
 
 <div class="documents-users">
 

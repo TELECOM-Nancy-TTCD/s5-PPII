@@ -44,9 +44,9 @@ def main():
     print("➤ Ajout des utilisateurs...")
 
     users = [
-        ("john@admin.tns.com", "superadmin", "ADMIN", "John TNS", 0, 169, None, None, None, None),
-        ("bob@tns.com", "bob", "Bob", "Client", 0, 0, None, None, None, None),
-        ("bob2@tns.com", "bob", "BobDoc", "Client", 0, 12,
+        ("john@admin.tns.com", "superadmin", "ADMIN", "John TNS", 1, 0, 169, None, None, None, None),
+        ("bob@tns.com", "bob", "Bob", "Client", 2, 0, 0, None, None, None, None),
+        ("bob2@tns.com", "bob", "BobDoc", "Client", 2, 0, 12,
          "https://drive.google.com/file/d/1PzE1K6lxY1Yiqr1kLwApwygojMHcDOgK/view?usp=sharing",
          None, None, None)
     ]
@@ -55,11 +55,11 @@ def main():
         cur.execute("""
             INSERT INTO Utilisateurs(
                 utilisateur_id, email, mot_de_passe_hashed,
-                nom, prenom, est_intervenant, heures_dispo_semaine,
+                nom, prenom, role_id, est_intervenant, heures_dispo_semaine,
                 doc_carte_vitale, doc_cni, doc_adhesion, doc_rib
-            ) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (NULL, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?)
         """, (
-            u[0], hash_password(u[1]), u[2], u[3], u[4], u[5], u[6], u[7], u[8], u[9]
+            u[0], hash_password(u[1]), u[2], u[3], u[4], u[5], u[6], u[7], u[8], u[9], u[10]
         ))
     print("   ✔ Utilisateurs ajoutés.\n")
 

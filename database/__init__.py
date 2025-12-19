@@ -878,7 +878,7 @@ class Utilisateur(DBObject, _RowInitMixin):
     """
     FIELD_NAMES = [
         'utilisateur_id', 'email', 'mot_de_passe_hashed', 'mot_de_passe_expire',
-        'nom', 'prenom', 'role_id',
+        'nom', 'prenom', 'avatar', 'role_id',
         'est_intervenant', 'heures_dispo_semaine',
         'doc_carte_vitale', 'doc_cni', 'doc_adhesion', 'doc_rib'
     ]

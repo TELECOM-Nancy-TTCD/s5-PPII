@@ -10,7 +10,7 @@ import csv
 import io
 from flask import request, abort
 
-from flask import Flask, session, render_template, request, redirect, url_for, g, abort, Response
+from flask import Flask, session, render_template, request, redirect, url_for, g, abort, Response, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
 from hashlib import scrypt
 import os, base64, sqlite3
@@ -278,7 +278,15 @@ def cgu():
 @app.route("/rgpd")
 @login_required
 def rgpd():
-    return render_template("./Pages_speciales/rgpd.html")
+    c = get_db().cursor()
+    c.execute("SELECT peut_exporter_csv FROM Roles WHERE role_id = ?", (current_user.role_id,))
+    print(current_user.role_id)
+    droit = c.fetchone()
+    
+    if not (droit and droit[0]):
+        abort(403)
+
+    return render_template("./Pages_speciales/rgpd.html", droit=droit)
 
 @app.route("/utilisateur/<int:uid>")
 @login_required
@@ -498,6 +506,84 @@ def projet_detail(projet_id):
 
     return render_template("Pages_speciales/projets_template.html", p = proj)
 
+
+
+@app.route("/rgpd/download", methods=["POST"])
+@login_required
+def download_rgpd():
+    
+    conn = sqlite3.connect("database/database.db")
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    
+
+    cur.execute("SELECT nom_entreprise, contact_email, contact_telephone, address FROM Clients")
+    clients = cur.fetchall()
+    
+
+    cur.execute("""
+        SELECT u.nom, u.prenom, u.email, r.nom as role_nom
+        FROM Utilisateurs u
+        LEFT JOIN Roles r ON u.role_id = r.role_id
+    """)
+    utilisateurs = cur.fetchall()
+    
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+    
+    writer.writerow(["Type", "Nom", "Prénom", "Email", "Téléphone/Adresse", "Rôle"])
+    
+    for cl in clients:
+        writer.writerow([
+            "Client",
+            cl["nom_entreprise"],
+            "",
+            cl["contact_email"],
+            f"{cl['contact_telephone']} / {cl['address']}",
+            ""
+        ])
+    
+    for u in utilisateurs:
+        writer.writerow([
+            "Utilisateur",
+            u["nom"],
+            u["prenom"],
+            u["email"],
+            "",
+            u["role_nom"]
+        ])
+    
+    conn.close()
+    output.seek(0)
+
+    csv_data = '\ufeff' + output.getvalue()
+    
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-Disposition":"attachment;filename=rgpd_export.csv"}
+    )
+
+
+@app.post("/utilisateur/<int:user_id>/supprimer")
+@login_required
+def supprimer_utilisateur(user_id):
+    # Vérifier que l'utilisateur courant a le rôle 1
+    if getattr(current_user, 'role_id', None) != 1:
+        abort(403)  # Forbidden
+
+    user = get_db().get_user_by_id(user_id)
+    if not user:
+        abort(404)
+
+    try:
+        # Supprimer l'utilisateur de la base + cache
+        user.delete()  
+        flash("Utilisateur supprimé avec succès.", "success")
+    except Exception as e:
+        flash(f"Erreur lors de la suppression: {str(e)}", "danger")
+
+    return redirect(url_for("utilisateurs"))
 
 #Ici les pages d'erreur personalisées, elle ne sont pas encore toutes là mais il faut que je réfléchisse auxquelles je mets.
 @app.errorhandler(404)

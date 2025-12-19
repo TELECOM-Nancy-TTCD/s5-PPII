@@ -15,12 +15,12 @@
 </form>
 
 <form action="{{ url_for('import_clients') }}" method="post" enctype="multipart/form-data">
-    <input type="file" name="fichier" required>
-    <button type="submit">Importer</button>
+    <input class="file-input" type="file" name="fichier" required>
+    <button type="submit", class="bouton-importer">Importer</button>
 </form>
 
 <form action="{{ url_for('export_clients') }}" >
-    <button type="submit">Exporter</button>
+    <button type="submit" class="bouton-exporter">Exporter</button>
 </form>
 
 

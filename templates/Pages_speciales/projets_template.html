@@ -8,7 +8,7 @@
 
 {% if p.statut != "Terminé" %}
 <form method="post" action="{{ url_for('terminer_projet', projet_id=p.projet_id) }}">
-    <button type="submit" class="btn-terminer">
+    <button type="submit" class="bouton-terminer-projet">
         Marquer comme terminé
     </button>
 </form>
