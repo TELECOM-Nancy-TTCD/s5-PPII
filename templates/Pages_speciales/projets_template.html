@@ -35,11 +35,7 @@
             {% if j.est_complete %}
                 <p style="color: green; font-weight:bold"> Terminé le {{j.date_fin}}</p>
             {% else %}
-                {% if j.date_fin == None %}
-                <p style="color: red; font-weight:bold"> En cours</p>
-                {% else %}
-                <p style="color: red; font-weight:bold"> Abandonné le {{j.date_fin}}</p>
-                {% endif %}
+                <p style="color: red; font-weight:bold"> À faire pour le {{j.date_fin}}</p>
             {% endif %}
             
         </div>
