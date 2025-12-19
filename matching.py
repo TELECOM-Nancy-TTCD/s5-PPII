@@ -2,6 +2,8 @@
 
 import sqlite3
 
+from math import exp
+
 DATABASE = 'database/database.db'
 
 con = sqlite3.connect(DATABASE)
@@ -54,6 +56,37 @@ def get_projets_participe_utilisateur(id_utilisateur):
                      utilisateur_id="""+str(id_utilisateur))
     return [elt[0] for elt in res.fetchall()]
 
+def get_all_utilisateurs():
+    res = cur.execute("""SELECT utilisateur_id FROM Utilisateurs """)
+    return [ elt[0] for elt in res.fetchall() ]
+
+def get_all_pairs_utilisateurs():
+    res = cur.execute("""SELECT u1.utilisateur_id,u2.utilisateur_id FROM
+                        Utilisateurs AS u1 JOIN Utilisateurs AS u2 
+                        ON u1.utilisateur_id < u2.utilisateur_id  """)
+    return [(elt[0],elt[1]) for elt in res.fetchall()]
+
+def get_all_triplets_utilisateurs():
+    res = cur.execute("""SELECT u1.utilisateur_id,u2.utilisateur_id,u3.utilisateur_id FROM
+                        Utilisateurs AS u1 JOIN Utilisateurs AS u2 
+                        ON u1.utilisateur_id < u2.utilisateur_id
+                        JOIN Utilisateurs AS u3 
+                        ON u2.utilisateur_id < u3.utilisateur_id  """)
+    return [(elt[0],elt[1],elt[2]) for elt in res.fetchall()]
+
+
+def has_competence(id_utilisateur,id_competence):
+    res = cur.execute(""" SELECT * FROM Intervenant_competences
+                            WHERE intervenant_id ="""+str(id_utilisateur)+ """ 
+                            AND competence_id ="""+str(id_competence))
+    return len(res) >0
+
+def get_level_competence(id_utilisateur,id_competence):
+    res = cur.execute(""" SELECT niveau FROM Intervenant_competences
+                            WHERE intervenant_id ="""+str(id_utilisateur)+ """ 
+                            AND competence_id ="""+str(id_competence))
+    return res.fetchone()[0]
+
 def charge_par_semaine(projet_id):
     projet = get_projet(projet_id)
     nb_jour = temps_projet(projet["debut"],projet["fin"])
@@ -66,6 +99,11 @@ def charge_individuelle_par_semaine(id_projet):
 
 def charge_courante_utilisateur(id_utilisateur):
     return sum([charge_individuelle_par_semaine(id_projet) for id_projet in get_projets_participe_utilisateur(id_utilisateur)])
+
+def temps_libre(id_utilisateur):
+    utilisateur = get_utilisateur(id_utilisateur)
+    return utilisateur["heures"] -  charge_courante_utilisateur(id_utilisateur)
+
 
 def niveau_requis(competence,id_utilisateur):
     niveau_projet = competence["niveau"]
@@ -88,21 +126,35 @@ def competences_lies_projet(competences,id_utilisateur) :
     return competences_utilisateur_projet
 
 
-def filtrage_minimal(id_projet,id_utilisateurs):
-    for id in id_utilisateurs:
+def filtrage_minimal(id_projet,ids_utilisateur):
+    """ 
+    input : id du projet, ids des utilisateurs dont on veut tester le matching 
+    avec le projet 
+    output : booleen, vrai si le groupe d'utilisateurs PEUVENT participer au projet 
+    specification : le groupe peut participer au projet si :
+        - ils sont tous intervenant 
+        - leurs compétences recouvrent bien les compétences attendues sur le projet
+        - ils ont assez de temps en semaine pour se répartir la charge du projet
+        sur le temps du projet
+        - il n'y a pas d'utilisateur superflu qui n'a aucune compétence en rapport avec le projet
+    remarque : cette fonction ne donne pas de pourcentage de matching
+    """
+    for id in ids_utilisateur:
         utilisateur = get_utilisateur(id)
         if not utilisateur["est_intervenant"]:
             return False 
     charge_semaine_projet = charge_par_semaine(id_projet)
-    for id in id_utilisateurs:
-        print(charge_par_semaine(id_projet)/len(id_utilisateurs))
-        if  get_utilisateur(id)["heures"] -  charge_courante_utilisateur(id) < (charge_par_semaine(id_projet)/len(id_utilisateurs)) :
+    if  sum([ temps_libre(id) for id in ids_utilisateur ] ) < charge_par_semaine(id_projet) :
             return False 
     competences_projet = get_competences_projet(id_projet)
     for competence in competences_projet :
-        if not any( [niveau_requis(competence,id) for id in id_utilisateurs] ):
+        if not any( [niveau_requis(competence,id) for id in ids_utilisateur] ):
             return False
+    for id in ids_utilisateur:
+        if not any( [niveau_requis(competence,id) for competence in competences_projet] ):
+            return False 
     return True 
+
 
 def add_replace(liste_competences,competence):
     i = 0 
@@ -114,6 +166,39 @@ def add_replace(liste_competences,competence):
         i+=1
     if i==len(liste_competences):
         liste_competences.append(competence)
+
+def competence_max(id_competence,n):
+    if n>3:
+        return -1 
+    if n==1:
+        ensemble_utilisateurs = get_all_utilisateurs()
+        intervenants_projet = [ id for id in ensemble_utilisateurs if filtrage_minimal(id_projet,[id]) ]
+        intervenant_competence = [ id for id in intervenants_projet if has_competence(id_competence,id) ]
+        if intervenant_competence == []:
+            return 0
+        return max( [get_level_competence(id,id_competence) for id in intervenant_competence] )
+
+def disponibilite_max_projet(id_projet,n):
+    if n>3:
+        return -1 
+    if n==1 :
+        ensemble_utilisateurs = get_all_utilisateurs()
+        intervenants_projet = [ id for id in ensemble_utilisateurs if filtrage_minimal(id_projet,[id]) ]
+        if intervenants_projet == []:
+            return 0
+        return max( [ temps_libre(id) for id in intervenants_projet ] )
+    if n==2 :
+        ensemble_utilisateurs = get_all_pairs_utilisateurs()
+        intervenants_projet = [ c for c in ensemble_utilisateurs if filtrage_minimal(id_projet,list(c)) ]
+        if intervenants_projet == []:
+            return 0
+        return max( sum( [temps_libre(u) for u in ids] ) for ids in intervenants_projet )
+    if n==3:
+        ensemble_utilisateurs = get_all_triplets_utilisateurs()
+        intervenants_projet = [ c for c in ensemble_utilisateurs if filtrage_minimal(id_projet,list(c)) ]
+        if intervenants_projet == []:
+            return 0
+        return max( sum( [temps_libre(u) for u in ids] ) for ids in intervenants_projet )
 
 def recuperation_competences_utilisateurs(competences_projet,utilisateur_ids):
     liste_competences = []
@@ -129,15 +214,47 @@ def sum(L):
     else:
         return L[0] + sum(L[1:])
 
+def fonction(x):
+    return exp(x)
+
 def matching_competence(projet_id,utilisateur_ids):
     competences_projet = get_competences_projet(projet_id)
     niveau_requis = [competence["niveau"] for competence in competences_projet]
     competences_utilisateurs = recuperation_competences_utilisateurs(competences_projet,utilisateur_ids)
-    return sum( [competences_utilisateurs[i]["niveau"] - niveau_requis[i] for i in range(len(niveau_requis))  ] ) / sum( [10 - niveau for niveau in niveau_requis] )
+    print(competences_utilisateurs)
+    print(competences_projet)
+    return sum( [fonction(competences_utilisateurs[i]["niveau"]) - fonction(niveau_requis[i]) for i in range(len(niveau_requis))  ] ) / sum( [fonction(10) - fonction(niveau) for niveau in niveau_requis] )
 
 
-print(  get_utilisateur(1)["heures"] - charge_courante_utilisateur(1))
+def matching_disponibilite(projet_id,utilisateur_ids):
+    dispo_max = disponibilite_max_projet(projet_id,len(utilisateur_ids))
+    if dispo_max == 0 :
+        return -1
+    return sum( [temps_libre(id) for id in utilisateur_ids] ) / dispo_max
 
-print(filtrage_minimal( 3,[1] ))
+def matching(projet_id,utilisateur_ids):
+    score_competence = matching_competence(projet_id,utilisateur_ids)
+    score_disponibilite = matching_disponibilite(projet_id,utilisateur_ids)
+    score_nombre_intervenants = 1/len(utilisateur_ids)
+    score = score_competence*(2/5) + score_disponibilite*(2/5) + score_nombre_intervenants*(1/5)
+    return round(score*100)
+
+print(get_all_triplets_utilisateurs())
+
+
+def best_composition(projet_id):
+    selection = []
+    for id in get_all_utilisateurs():
+        if filtrage_minimal(projet_id,[id]):
+            selection.append( ([id],matching(projet_id,[id])) )
+    for pair in get_all_pairs_utilisateurs():
+        if filtrage_minimal(projet_id,list(pair)):
+            selection.append( (list(pair),matching(projet_id,list(pair))) )
+    for triplet in get_all_triplets_utilisateurs():
+        if filtrage_minimal(projet_id,list(triplet)):
+            selection.append( (list(triplet),matching(projet_id,list(triplet))) )
+    return selection
+
+print(best_composition(4))
 
 con.close()

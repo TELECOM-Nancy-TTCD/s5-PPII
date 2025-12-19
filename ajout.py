@@ -32,11 +32,26 @@ cur.execute("""INSERT INTO Projets VALUES(2,1,'A*','implementation de lalgorithm
 cur.execute("""INSERT INTO Projets VALUES(3,2,'Site Mairie','Création dun site pour la mairie de Nancy',
             250,100,'01/09/2025','01/12/2025','Annulé','https://google.com')""")
 
+cur.execute("""INSERT INTO Projets VALUES(4,2,'API REST','',
+            80,80,'01/09/2025','01/11/2025','En cours','https://google.com')""")
+
 cur.execute("""INSERT INTO Utilisateurs VALUES(1,'email@email.com','1',NULL,
-            'Dupont','Oscar','https://google.com','1',true,10,'','','','')""")
+            'Dupont','Oscar','https://google.com','1',true,50,'','','','')""")
 
 cur.execute("""INSERT INTO Utilisateurs VALUES(2,'yoyo@email.com','1',NULL,
-            'Dupont','Louis','https://google.com','1',true,10,'','','','')""")
+            'Dupont','Louis','https://google.com','1',true,20,'','','','')""")
+
+cur.execute("""INSERT INTO Utilisateurs VALUES(3,'ouais@email.com','1',NULL,
+            'Dupont','Léo','https://google.com','1',true,50,'','','','')""")
+
+cur.execute("""INSERT INTO Utilisateurs VALUES(4,'alice@email.com','1',NULL,
+            'Dupont','Alice','https://google.com','1',true,15,'','','','')""")
+
+cur.execute("""INSERT INTO Utilisateurs VALUES(5,'bob@email.com','1',NULL,
+            'Dupont','Bob','https://google.com','1',true,10,'','','','')""")
+
+cur.execute("""INSERT INTO Utilisateurs VALUES(6,'charlie@email.com','1',NULL,
+            'Dupont','Charlie','https://google.com','1',true,12,'','','','')""")
 
 cur.execute(""" INSERT INTO Competences VALUES(1,'Python',1)  """)
 
@@ -54,11 +69,35 @@ cur.execute(""" INSERT INTO Intervenant_competences VALUES(2,1,7)  """)
 
 cur.execute(""" INSERT INTO Intervenant_competences VALUES(2,3,4)  """)
 
+cur.execute(""" INSERT INTO Intervenant_competences VALUES(4,1,9)  """)
+
+cur.execute(""" INSERT INTO Intervenant_competences VALUES(4,2,8)  """)
+
+cur.execute(""" INSERT INTO Intervenant_competences VALUES(4,3,6)  """)
+
+cur.execute(""" INSERT INTO Intervenant_competences VALUES(5,1,8)  """)
+
+cur.execute(""" INSERT INTO Intervenant_competences VALUES(5,2,4)  """)
+
+cur.execute(""" INSERT INTO Intervenant_competences VALUES(6,1,6)  """)
+
+cur.execute(""" INSERT INTO Intervenant_competences VALUES(6,2,5)  """)
+
+cur.execute(""" INSERT INTO Intervenant_competences VALUES(6,3,5)  """)
+
+cur.execute(""" INSERT INTO Intervenant_competences VALUES(5,3,7)  """)
+
 cur.execute(""" INSERT INTO Projet_competences VALUES(3,1,6)  """)
 
 cur.execute(""" INSERT INTO Projet_competences VALUES(3,2,4)  """)
 
 cur.execute(""" INSERT INTO Projet_competences VALUES(3,3,4)  """)
+
+cur.execute(""" INSERT INTO Projet_competences VALUES(4,1,6)  """)
+
+cur.execute(""" INSERT INTO Projet_competences VALUES(4,2,4)  """)
+
+cur.execute(""" INSERT INTO Projet_competences VALUES(4,3,5)  """)
 
 cur.execute(""" INSERT INTO Travaille_sur VALUES(1,1,true)  """)
 
