@@ -1,13 +1,13 @@
 {% extends "menu.html" %}
 
-{% block title %}{{p.nom_projet}}{% endblock %}
+{% block title %}{{projet.nom_projet}}{% endblock %}
 
 {% block content %}
 
-<h1>{{p.nom_projet}}</h1>
+<h1>{{projet.nom_projet}}</h1>
 
-{% if p.statut != "Terminé" %}
-<form method="post" action="{{ url_for('terminer_projet', projet_id=p.projet_id) }}">
+{% if projet.statut != "Terminé" %}
+<form method="post" action="{{ url_for('terminer_projet', projet_id=projet.projet_id) }}">
     <button type="submit" class="bouton-terminer-projet">
         Marquer comme terminé
     </button>
@@ -16,31 +16,31 @@
 <p><strong>Projet terminé ✅</strong></p>
 {% endif %}
 
-<p>Statut du projet : {{p.statut}}</p>
-{% if p.statut == 'En attente'%}
-<p> Date de début prévue : {{p.date_debut}} </p>
+<p>Statut du projet : {{projet.statut}}</p>
+{% if projet.statut == 'En attente'%}
+<p> Date de début prévue : {{projet.date_debut}} </p>
 {% else %}
-<p> Date de début: {{p.date_debut}} </p>
+<p> Date de début: {{projet.date_debut}} </p>
 {% endif %}
 
-{% if p.statut == 'Terminé'%}
-<p> Date de fin : {{p.date_fin}} </p>
-{% elif p.statut == 'Annulé' and p.date_fin != None %}
-<p> Date d'abandon : {{p.date_fin}} </p>
-{% elif p.statut != 'Annulé' and p.date_fin != None %}
-<p> Date de fin prévue : {{p.date_fin}} </p>
+{% if projet.statut == 'Terminé'%}
+<p> Date de fin : {{projet.date_fin}} </p>
+{% elif projet.statut == 'Annulé' and projet.date_fin != None %}
+<p> Date d'abandon : {{projet.date_fin}} </p>
+{% elif projet.statut != 'Annulé' and projet.date_fin != None %}
+<p> Date de fin prévue : {{projet.date_fin}} </p>
 
 {% endif %}
 
-<p> Budget : {{p.budget}} € </p>
-<a href={{p.doc_dossier}}> Documents associés au projet </a>
+<p> Budget : {{projet.budget}} € </p>
+<a href={{projet.doc_dossier}}> Documents associés au projet </a>
 
 <p>-----</p>
 
 <h2>Jalons du projet</h2>
 
 <section class="timeline_jalons">
-    {% for j in p.jalons%}
+    {% for j in projet.jalons%}
     <div class="timeline-item">
         <div class="timeline-card">
             <p>{{j.description}}</p>

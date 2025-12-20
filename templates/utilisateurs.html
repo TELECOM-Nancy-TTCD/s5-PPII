@@ -17,7 +17,7 @@
 
 <div class="grid-utilisateurs">
     {% for utilisateur in utilisateurs_db %}
-    <div class="card-utilisateurs" onclick="window.location.href='/utilisateur/{{ utilisateur['utilisateur_id'] }}'">
+    <div class="card-utilisateurs" onclick="window.location.href='/utilisateurs/{{ utilisateur['utilisateur_id'] }}'">
         <h3>{{ utilisateur.prenom }} {{ utilisateur.nom }}</h3>
         <p>Rôle : {{ utilisateur['role_nom'] or 'Inconnu' }}</p>
         {% if utilisateur.est_intervenant %}
