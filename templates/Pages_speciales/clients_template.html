@@ -4,6 +4,7 @@
 
 {% block content %}
 <h1>{{ client['nom_entreprise'] }}</h1>
+
 <p><strong>Contact :</strong> {{ client['contact_nom'] }}</p>
 <p><strong>Email :</strong> {{ client['contact_email'] }}</p>
 <p><strong>Téléphone :</strong> {{ client['contact_telephone'] }}</p>
@@ -54,14 +55,13 @@
             <span>Utilisateur : {{ interaction.utilisateur_nom }}</span>
         </div>
 
-        <!-- Bloc texte -->
         <div id="interaction-{{ loop.index }}" class="interaction-text {% if is_long %}collapsed{% endif %}">
             {{ interaction.contenu }}
         </div>
 
         {% if is_long %}
         <button id="btn-{{ loop.index }}" class="interaction-toggle"
-                onclick="toggleInteraction({{ loop.index }})">
+                onclick="Interaction({{ loop.index }})">
             Voir plus
         </button>
         {% endif %}
@@ -70,12 +70,13 @@
     {% endfor %}
 
 </div>
+
 {% else %}
 <p>Aucune interaction.</p>
 {% endif %}
 
 <script>
-function toggleInteraction(id) {
+function Interaction(id) {
     const textBlock = document.getElementById("interaction-" + id);
     const btn = document.getElementById("btn-" + id);
 
