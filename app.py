@@ -408,6 +408,18 @@ def terminer_projet(projet_id):
 
     projet = get_db().get_project_id(projet_id)
 
+    if projet == None: 
+        abort(404)
+    
+    # Conversion des dates vers le format usuel
+    projet.date_debut = format_date(projet.date_debut)
+    projet.date_fin = format_date(projet.date_fin)
+
+    for j, u in enumerate(projet.jalons):
+        if u.date_fin!= None :
+            projet.jalons[j].date_fin = datetime.fromisoformat(u.date_fin).strftime("%d/%m/%Y")
+    projet = get_db().get_project_id(projet_id)
+
     if projet is None:
         abort(404)
 
@@ -421,6 +433,67 @@ def terminer_projet(projet_id):
         pass
 
     return redirect(url_for("projet_detail", projet_id=projet_id))
+
+
+@app.post("/jalon/<int:jalon_id>/modifier")
+@login_required
+def modifier_jalon(jalon_id):
+    '''Fonction pour la route /jalon/jalon_id/modifier \n
+    Sert pour la pop up de modification des jalons'''
+    db = get_db()
+
+    row = db.execute(
+        "SELECT projet_id FROM Jalons WHERE jalon_id = ?",
+        (jalon_id,)
+    ).fetchone()
+
+    if not row:
+        abort(404)
+
+    projet_id = row[0]
+
+    description = request.form.get("description")
+    date_fin = request.form.get("date_fin") or None
+    est_complete = 1 if request.form.get("est_complete") else 0
+
+    db.execute("""
+        UPDATE Jalons
+        SET description = ?, date_fin = ?, est_complete = ?
+        WHERE jalon_id = ?
+    """, (description, date_fin, est_complete, jalon_id))
+
+    db.commit()
+
+    db.invalidate_project(projet_id)
+
+    return redirect(url_for("projet_detail", projet_id=projet_id))
+
+@app.post("/jalon/creer")
+@login_required
+def creer_jalon():
+    db = get_db()
+
+    projet_id = request.form.get("projet_id")
+    if not projet_id:
+        abort(400)
+
+    description = request.form.get("description_creation")
+    date_fin = request.form.get("date_fin_creation") or None
+    est_complete = 1 if request.form.get("est_complete_creation") else 0
+
+    db.execute("""
+        INSERT INTO Jalons (description, date_fin, est_complete, projet_id)
+        VALUES (?, ?, ?, ?)
+    """, (description, date_fin, est_complete, projet_id))
+
+    db.commit()
+    db.invalidate_project(projet_id)
+    
+    return redirect(url_for("projet_detail", projet_id=projet_id))
+
+
+
+
 
 
 @app.route("/utilisateurs", methods=["GET"])

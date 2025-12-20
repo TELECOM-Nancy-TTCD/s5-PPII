@@ -148,7 +148,17 @@ def main():
 
     print("   ✔ Conventions et projets ajoutés.\n")
 
-        # ==========================
+    # ==========================
+    #   AJOUT JALONS
+    # ==========================
+
+    cur.execute(""" INSERT INTO Jalons(description, est_complete, date_fin, projet_id) VALUES ("signature de la charte de projet", 1, "2025-04-28", 1);""")
+    cur.execute(""" INSERT INTO Jalons(description, est_complete, date_fin, projet_id) VALUES ("Implémentation de la base de données", 1, "2025-04-29", 1);""")
+    cur.execute(""" INSERT INTO Jalons(description, est_complete, date_fin, projet_id) VALUES ("Implémentation du Flask", 0, "2025-04-29", 1);""")
+    cur.execute(""" INSERT INTO Jalons(description, est_complete, projet_id) VALUES ("Post-Mortem", 0, 1);""")
+
+    print("   ✔ jalons ajoutés.\n")
+    # ==========================
     #   AJOUT INTERACTIONS
     # ==========================
     print("➤ Ajout des interactions...")

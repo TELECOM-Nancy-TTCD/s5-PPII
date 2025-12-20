@@ -54,6 +54,15 @@ class Database:
         except sqlite3.Error as e:
             raise RuntimeError(f"Failed to connect to database: {e}") from e
 
+    def invalidate_project(self, projet_id: int):
+        try:
+            self.redis_client.delete(f"projets:{projet_id}")
+            self.redis_client.delete(f"projets:{projet_id}:jalons")
+            self.redis_client.delete(f"projets:{projet_id}:competences")
+            self.redis_client.delete(f"projets:{projet_id}:intervenants")
+        except Exception:
+            pass
+
     def close(self):
         """Ferme la connexion SQLite associée à cette instance Database."""
         self.db.close()

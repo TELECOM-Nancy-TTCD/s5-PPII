@@ -560,3 +560,57 @@ main {
     border-radius: 6px;
     margin-bottom: 15px;
 }
+
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+}
+
+.modal-content {
+    background: #282828;
+    margin: 10% auto;
+    padding: 20px;
+    width: 400px;
+    border-radius: 12px;
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+#form-jalon-modification,
+#form-jalon-creation {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+
+.jalon_boutton{
+    padding: 10px;
+    background-color: #475eab;
+    color:  rgb(204, 204, 204);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.lien_doc_projet{
+    display: inline-block;
+    padding: 10px 14px;
+    background-color: #9c948f;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 6px;
+    margin-top: 10px;
+}
