@@ -32,7 +32,7 @@ def main():
     """)
     cur.execute("""
         INSERT INTO Roles VALUES (
-            NULL, 'Admin', 5,
+            NULL, 'Membre', 5,
             0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         );
     """)

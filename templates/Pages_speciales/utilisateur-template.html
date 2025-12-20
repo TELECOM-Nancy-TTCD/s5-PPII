@@ -4,8 +4,8 @@
 
 {% if current_user.role_id == 1 %}
 <form action="{{ url_for('supprimer_utilisateur', user_id=utilisateur['utilisateur_id']) }}" method="post" 
-      onsubmit="return confirm('Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible !');", class="bouton-">
-    <button type="submit">Supprimer</button>
+      onsubmit="return confirm('Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible !');">
+    <button type="submit", class="bouton-supprimer-utilisateur">Supprimer</button>
 </form>
 
 

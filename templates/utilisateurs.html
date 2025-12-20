@@ -11,13 +11,15 @@
     <button type="submit">Rechercher</button>
 </form>
 
-
+<div class="actions-utilisateurs">
+    <a href="{{ url_for('create_user') }}" class="bouton-ajouter-utilisateur">Ajouter un utilisateur.</a>
+</div>
 
 <div class="grid-utilisateurs">
     {% for utilisateur in utilisateurs_db %}
     <div class="card-utilisateurs" onclick="window.location.href='/utilisateur/{{ utilisateur['utilisateur_id'] }}'">
         <h3>{{ utilisateur.prenom }} {{ utilisateur.nom }}</h3>
-        <p>Rôle : {{ utilisateur.role.nom if utilisateur.role else 'Inconnu' }}</p>
+        <p>Rôle : {{ utilisateur['role_nom'] or 'Inconnu' }}</p>
         {% if utilisateur.est_intervenant %}
         <p>Intervenant</p>
         {% endif %}

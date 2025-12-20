@@ -16,7 +16,7 @@ from hashlib import scrypt
 import os, base64, sqlite3
 import database
 import redis
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import os
 from dotenv import load_dotenv
@@ -189,19 +189,20 @@ def create_user():
     if request.method == 'POST' :
         email = request.form["e-mail"]
         hmdp = hash_password(request.form["mdp"])
+        date_expiration_mdp = (datetime.now() + timedelta(days=365)).date()
         nom = request.form["nom"]
         prenom = request.form["prenom"]
+        avatar = None
         role_name = request.form["role"]
-        print(role_name)
         est_intervenant = "est_intervenant" in request.form
-        heures_dispo = request.form["h_disp"]
+        heures_dispo_semaine = request.form["h_disp"]
         doc_carte_vitale = request.form["doc_car"]
         doc_cni = request.form["doc_cni"]
         doc_adhesion = request.form["doc_adh"]
         doc_rib = request.form["doc_rib"]
 
         role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
-        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (None, email, hmdp, nom, prenom, role_id, est_intervenant, heures_dispo, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
+        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (None, email, hmdp, date_expiration_mdp, nom, prenom, avatar, role_id, est_intervenant, heures_dispo_semaine, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
         get_db().commit()
         #Insertion de None = NULL dans la colonne primary key car elle se gère ainsi automatiquement
         user_added_successfully = True
@@ -258,7 +259,18 @@ def recherche_avance():
 @login_required
 def utilisateurs():
     recherche = request.args.get("q", "").lower()
-    utilisateurs_db = get_utilisateurs()
+
+    conn = sqlite3.connect('database/database.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT u.*, r.nom AS role_nom
+        FROM Utilisateurs u
+        LEFT JOIN Roles r ON u.role_id = r.role_id
+    """)
+    utilisateurs_db = cursor.fetchall()
+    conn.close()
 
     if recherche:
         utilisateurs_db = [
@@ -266,11 +278,13 @@ def utilisateurs():
             if recherche in u["nom"].lower()
             or recherche in u["prenom"].lower()
             or recherche in u["email"].lower()
+            or (u["role_nom"] and recherche in u["role_nom"].lower())
         ]
 
     return render_template("utilisateurs.html", utilisateurs_db=utilisateurs_db, recherche=recherche)
 
-# Ci dessous les pages du pied de page , souvent seules.
+
+# Ci dessous les pages du pied de page, souvent seules.
 @app.route("/cgu")
 def cgu():
     return render_template("./Pages_speciales/cgu.html")
@@ -568,16 +582,14 @@ def download_rgpd():
 @app.post("/utilisateur/<int:user_id>/supprimer")
 @login_required
 def supprimer_utilisateur(user_id):
-    # Vérifier que l'utilisateur courant a le rôle 1
     if getattr(current_user, 'role_id', None) != 1:
-        abort(403)  # Forbidden
+        abort(403) 
 
     user = get_db().get_user_by_id(user_id)
     if not user:
         abort(404)
 
     try:
-        # Supprimer l'utilisateur de la base + cache
         user.delete()  
         flash("Utilisateur supprimé avec succès.", "success")
     except Exception as e:
