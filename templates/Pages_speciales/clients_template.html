@@ -37,6 +37,22 @@
     <p>Aucun projet associé.</p>
 {% endif %}
 
+
+<p>-----</p>
+
+<h2>Avancement des projets du client</h2>
+{% for projet in projets %}
+<div class="projet-card">
+    <p>{{ projet.nom_projet }}</p>
+    <div class="progress-bar-container">
+        <div class="progress-bar" style="width: {{ projet.progress }}%;">
+            {{ projet.progress }}%
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+
 <p>-----</p>
 
 

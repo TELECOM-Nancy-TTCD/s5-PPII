@@ -212,7 +212,7 @@ def clients():
 @login_required
 def client_detail(client_id):
     '''Fonction pour la route /clients/id_client \n
-    Affiche la page dédié à un client'''
+    Affiche la page dédié à un client, ses projets, ses interaction et l'avancement des projets'''
 
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
@@ -224,8 +224,27 @@ def client_detail(client_id):
         abort(404)
  
     c.execute("""SELECT p.* FROM Projets p JOIN Conventions c ON p.convention_id = c.convention_id WHERE c.client_id = ?""", (client_id,))
-    projets = c.fetchall()
+
     
+    projets_raw = c.fetchall()
+
+    # Calcul du pourcentage de jalon terminés
+    projets = []
+    for p in projets_raw:
+        
+        c.execute("SELECT est_complete FROM Jalons WHERE projet_id = ?", (p["projet_id"],))
+        jalons = c.fetchall()
+        total_jalons = len(jalons)
+        jalons_termines = sum(1 for j in jalons if j["est_complete"])
+        progress = int((jalons_termines / total_jalons) * 100) if total_jalons > 0 else 0
+
+        projets.append({
+            "projet_id": p["projet_id"],
+            "nom_projet": p["nom_projet"],
+            "statut": p["statut"],
+            "progress": progress 
+        })
+
     c.execute("""
         SELECT i.*, u.nom || ' ' || u.prenom AS utilisateur_nom FROM Interactions i
         JOIN Utilisateurs u ON i.utilisateur_id = u.utilisateur_id WHERE i.client_id = ?
@@ -488,7 +507,7 @@ def creer_jalon():
 
     db.commit()
     db.invalidate_project(projet_id)
-    
+     
     return redirect(url_for("projet_detail", projet_id=projet_id))
 
 

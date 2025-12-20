@@ -132,7 +132,6 @@ main {
 }
 
 .footer-menu-items a{
-
     text-decoration: none;
     color: rgb(204, 204, 204);
     display: inline-block;
@@ -614,3 +613,24 @@ main {
     border-radius: 6px;
     margin-top: 10px;
 }
+
+.progress-bar-container {
+    width: 500px;
+    background-color: #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    height: 20px;
+    margin-bottom: 10px;
+    width: 50%; 
+    margin: 0 auto;
+}
+
+.progress-bar {
+    height: 500px;
+    background-color: #4caf50;
+    text-align: center;
+    color: black;
+    line-height: 20px;
+    font-size: 12px;
+}
+
