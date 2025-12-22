@@ -6,6 +6,12 @@ db = sqlite3.connect(DATABASE)
 
 cur = db.cursor()
 
+cur.execute("DELETE FROM Roles")
+
+cur.execute("DELETE FROM clients")
+
+cur.execute("DELETE FROM Interactions")
+
 cur.execute("DELETE FROM conventions")
 
 cur.execute("DELETE FROM clients")

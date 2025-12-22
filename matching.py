@@ -2,7 +2,7 @@
 
 import sqlite3
 
-from math import exp
+from math import exp,sqrt
 
 DATABASE = 'database/database.db'
 
@@ -11,22 +11,24 @@ con = sqlite3.connect(DATABASE)
 cur = con.cursor()
 
 def get_projet(id):
-    res = cur.execute("SELECT * FROM Projets WHERE projet_id="+str(id))
+    query = """SELECT * FROM Projets WHERE projet_id=? """
+    res = cur.execute(query,(id,))
     p = res.fetchone()
+    assert p != None
     projet = {"id" : p[0], "nom" : p[2],"charge":p[5], "debut" : p[6], "fin" : p[7]}
     return projet 
 
 def get_utilisateur(id):
-    res = cur.execute("SELECT * FROM Utilisateurs WHERE utilisateur_id="+str(id))
+    res = cur.execute("SELECT * FROM Utilisateurs WHERE utilisateur_id=?",(id,))
     u = res.fetchone()
     utilisateur = {"id":u[0],"nom":u[4],"prenom":u[5],"est_intervenant": u[8], "heures" : u[9]}
     return utilisateur
 
-def get_competences_utilisateur(id_utilisateurs):
+def get_competences_utilisateur(id_utilisateur):
     res = cur.execute("""SELECT * FROM Intervenant_competences 
                         JOIN Competences ON Intervenant_competences.competence_id =
                         Competences.competence_id 
-                        WHERE intervenant_id="""+str(id_utilisateurs))
+                        WHERE intervenant_id=?""",(id_utilisateur,))
     competences = []
     for c in res.fetchall():
         competence = { "id":c[1], "nom" : c[4], "niveau" : c[2]}
@@ -36,7 +38,7 @@ def get_competences_utilisateur(id_utilisateurs):
 def get_competences_projet(id_projet):
     res = cur.execute("""SELECT * FROM Projet_competences
                         JOIN Competences ON Projet_competences.competence_id = Competences.competence_id 
-                        WHERE projet_id="""+str(id_projet)+ """ ORDER BY projet_id """)
+                        WHERE projet_id=? ORDER BY projet_id """, (id_projet,) )
     competences = []
     for c in res.fetchall():
         competence = { "id":c[1], "nom" : c[4], "niveau" : c[2]}
@@ -45,7 +47,7 @@ def get_competences_projet(id_projet):
 
 def get_nb_intervenant(id_projet):
     res = cur.execute("""SELECT Count(Distinct(utilisateur_id)) FROM Travaille_sur
-                        WHERE projet_id="""+str(id_projet))
+                        WHERE projet_id=?""", (id_projet,) )
     return res.fetchone()[0]
 
 def get_projets_participe_utilisateur(id_utilisateur):
@@ -53,7 +55,7 @@ def get_projets_participe_utilisateur(id_utilisateur):
                     JOIN Projets ON Travaille_sur.projet_id = Projets.projet_id
                     WHERE est_intervenant_sur_projet == true AND
                     statut = 'En cours' AND
-                     utilisateur_id="""+str(id_utilisateur))
+                     utilisateur_id=?""", (id_utilisateur, ))
     return [elt[0] for elt in res.fetchall()]
 
 def get_all_utilisateurs():
@@ -77,15 +79,44 @@ def get_all_triplets_utilisateurs():
 
 def has_competence(id_utilisateur,id_competence):
     res = cur.execute(""" SELECT * FROM Intervenant_competences
-                            WHERE intervenant_id ="""+str(id_utilisateur)+ """ 
-                            AND competence_id ="""+str(id_competence))
-    return len(res) >0
+                            WHERE intervenant_id =? 
+                            AND competence_id =?""", (id_utilisateur,id_competence )  )
+    return res.fetchone() != None 
 
 def get_level_competence(id_utilisateur,id_competence):
     res = cur.execute(""" SELECT niveau FROM Intervenant_competences
-                            WHERE intervenant_id ="""+str(id_utilisateur)+ """ 
-                            AND competence_id ="""+str(id_competence))
-    return res.fetchone()[0]
+                            WHERE intervenant_id =? 
+                            AND competence_id =?""", (id_utilisateur,id_competence) )
+    resultat = res.fetchone()
+    assert (resultat!= None)
+    return resultat[0]
+
+def competence_commune(id_projet1,id_projet2):
+    query = """
+    SELECT COUNT(DISTINCT competence_id)
+    FROM (
+        SELECT competence_id FROM Projet_competences WHERE projet_id = ?
+        INTERSECT
+        SELECT competence_id FROM Projet_competences WHERE projet_id = ?
+    ) AS t;
+    """
+    cur.execute(query, (id_projet1, id_projet2))
+    return  cur.fetchone()[0]
+
+def get_projet_experience(ids_utilisateur):
+    if not ids_utilisateur:  # éviter les listes vides
+        return []
+
+    placeholders = ','.join(['?'] * len(ids_utilisateur))
+    query = f"""
+    SELECT p.projet_id
+    FROM Travaille_sur AS t
+    JOIN Projets AS p ON p.projet_id = t.projet_id
+    WHERE utilisateur_id IN ({placeholders}) AND statut = 'Terminé'
+    """
+    res = cur.execute(query, ids_utilisateur)
+    return [ elt[0] for elt in  res.fetchall()]
+
 
 def charge_par_semaine(projet_id):
     projet = get_projet(projet_id)
@@ -116,9 +147,9 @@ def niveau_requis(competence,id_utilisateur):
 
 
 def temps_projet(date_debut,date_fin) :
-    date_debut = date_debut.split("/")
-    date_fin = date_fin.split("/")
-    return int(date_fin[0])-int(date_debut[0]) + 30*( int(date_fin[1])- int(date_debut[1]) ) + 365*( int(date_fin[2])-int(date_debut[2]) )
+    date_debut = date_debut.split("-")
+    date_fin = date_fin.split("-")
+    return int(date_fin[2])-int(date_debut[2]) + 30*( int(date_fin[1])- int(date_debut[1]) ) + 365*( int(date_fin[0])-int(date_debut[0]) )
 
 def competences_lies_projet(competences,id_utilisateur) :
     ids_projet = [competence["id"] for competence in competences]
@@ -214,16 +245,17 @@ def sum(L):
     else:
         return L[0] + sum(L[1:])
 
-def fonction(x):
+def fonction1(x):
     return exp(x)
+
+def function2(x):
+    return x**2
 
 def matching_competence(projet_id,utilisateur_ids):
     competences_projet = get_competences_projet(projet_id)
     niveau_requis = [competence["niveau"] for competence in competences_projet]
     competences_utilisateurs = recuperation_competences_utilisateurs(competences_projet,utilisateur_ids)
-    print(competences_utilisateurs)
-    print(competences_projet)
-    return sum( [fonction(competences_utilisateurs[i]["niveau"]) - fonction(niveau_requis[i]) for i in range(len(niveau_requis))  ] ) / sum( [fonction(10) - fonction(niveau) for niveau in niveau_requis] )
+    return sum( [fonction1(competences_utilisateurs[i]["niveau"]) - fonction1(niveau_requis[i]) for i in range(len(niveau_requis))  ] ) / sum( [fonction1(10) - fonction1(niveau) for niveau in niveau_requis] )
 
 
 def matching_disponibilite(projet_id,utilisateur_ids):
@@ -232,14 +264,52 @@ def matching_disponibilite(projet_id,utilisateur_ids):
         return -1
     return sum( [temps_libre(id) for id in utilisateur_ids] ) / dispo_max
 
+def homogeneite_utilisateurs(projet_id,utilisateur_ids):
+    score = 1
+    competences_commune = 0
+    score_competence = []
+    competences_projet = get_competences_projet(projet_id)
+    for competence in competences_projet:
+        dist = [ abs(get_level_competence(id_1,competence["id"]) -get_level_competence(id_2,competence["id"]) ) for id_2 in utilisateur_ids  for id_1 in utilisateur_ids if id_2 > id_1 and has_competence(id_1,competence["id"]) and has_competence(id_2,competence["id"]) ]
+        if dist != []:
+            competences_commune += 1
+            score_competence.append(1- min(dist)/10 )
+        else:
+            score *= 1
+    if len(score_competence) == 0:
+        return competences_commune/len(competences_projet)
+    return competences_commune/len(competences_projet) * ( sum(score_competence)/len(score_competence) )
+
+def homogeneite_projet(projet_id,projet_ids):
+    competences_projet = get_competences_projet(projet_id)
+    res = 1
+    for id in projet_ids:
+        res *= 1-(competence_commune(projet_id,id)/len(competences_projet) )
+    return 1  - res
+
+def matching_experience(projet_id,utilisateur_ids):
+    projet_ids = get_projet_experience(utilisateur_ids)
+    return homogeneite_projet(projet_id,projet_ids)
+
+
+def matching_nombre_intervenants(projet_id,utilisateur_ids):
+    n = len(utilisateur_ids)
+    homogeneite = homogeneite_utilisateurs(projet_id,utilisateur_ids)
+    return (function2(1/n)/function2(1/1)) * (1-homogeneite)
+
+
+
 def matching(projet_id,utilisateur_ids):
     score_competence = matching_competence(projet_id,utilisateur_ids)
     score_disponibilite = matching_disponibilite(projet_id,utilisateur_ids)
-    score_nombre_intervenants = 1/len(utilisateur_ids)
-    score = score_competence*(2/5) + score_disponibilite*(2/5) + score_nombre_intervenants*(1/5)
+    score_nombre_intervenants = matching_nombre_intervenants(projet_id,utilisateur_ids)
+    score_experience = matching_experience(projet_id,utilisateur_ids)
+    print(utilisateur_ids)
+    print(score_competence,score_disponibilite,score_nombre_intervenants,score_experience)
+    print()
+    score = score_competence*(1/4) + score_disponibilite*(1/4) + score_nombre_intervenants*(1/4)+score_experience*(1/4)
     return round(score*100)
 
-print(get_all_triplets_utilisateurs())
 
 
 def best_composition(projet_id):
@@ -255,6 +325,9 @@ def best_composition(projet_id):
             selection.append( (list(triplet),matching(projet_id,list(triplet))) )
     return selection
 
-print(best_composition(4))
+
+for id in range(1,10):
+    print(id,best_composition(id))
+
 
 con.close()
