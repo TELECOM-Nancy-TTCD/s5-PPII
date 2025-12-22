@@ -17,7 +17,7 @@ def normalize_text(s: Optional[str]) -> str:
 
 
 # Builder de clés Redis exporté
-def redis_key(resource: str, id: Optional[Any] = None, suffix: Optional[str] = None) -> str:
+def redis_key(resource: str, id_: Optional[Any] = None, suffix: Optional[str] = None) -> str:
     """
     Construit une clé Redis simple et consistante.
     Exemples:
@@ -26,8 +26,8 @@ def redis_key(resource: str, id: Optional[Any] = None, suffix: Optional[str] = N
     Note: le resource peut être le DATABASE_NAME (avec majuscule initiale) ou un préfixe plus court ('user').
     """
     parts: List[str] = [str(resource)]
-    if id is not None:
-        parts.append(str(id))
+    if id_ is not None:
+        parts.append(str(id_))
     if suffix is not None:
         parts.append(str(suffix))
     return ":".join(parts).lower()
@@ -112,7 +112,8 @@ class Database:
             return None
 
     def get_user_by_id(self, user_id: int) -> Optional['Utilisateur']:
-        cached_user = self.redis_client.get(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), user_id))
+        cached_user = self.redis_client.get(
+            redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), user_id))
         if cached_user:
             return Utilisateur.from_db_row(self, json.loads(cached_user))
         cursor = self.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE utilisateur_id = ?", (user_id,))
@@ -224,7 +225,8 @@ class Database:
         return users
 
     def get_client_by_id(self, client_id: int) -> Optional['Client']:
-        cached_client = self.redis_client.get(redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), client_id))
+        cached_client = self.redis_client.get(
+            redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), client_id))
         if cached_client:
             return Client.from_db_row(self, json.loads(cached_client))
         cursor = self.execute(f"SELECT * FROM {Client.DATABASE_NAME} WHERE client_id = ?", (client_id,))
@@ -264,7 +266,8 @@ class Database:
         return clients
 
     def get_role_by_id(self, role_id: int) -> Optional['Role']:
-        cached_role = self.redis_client.get(redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), role_id))
+        cached_role = self.redis_client.get(
+            redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), role_id))
         if cached_role:
             return Role.from_db_row(self, json.loads(cached_role))
         cursor = self.execute(f"SELECT * FROM {Role.DATABASE_NAME} WHERE role_id = ?", (role_id,))
@@ -312,7 +315,8 @@ class Database:
         :param project_id: identifiant du projet
         :return: instance Projet ou None si non trouvée
         """
-        cached_project = self.redis_client.get(redis_key(getattr(Projet, 'CACHE_PREFIX', None) or Projet.__name__.lower(), project_id))
+        cached_project = self.redis_client.get(
+            redis_key(getattr(Projet, 'CACHE_PREFIX', None) or Projet.__name__.lower(), project_id))
         if cached_project:
             return Projet.from_db_row(self, json.loads(cached_project))
         cursor = self.execute(f"SELECT * FROM {Projet.DATABASE_NAME} WHERE projet_id = ?", (project_id,))
@@ -355,7 +359,8 @@ class Database:
         :param interaction_id: identifiant de l'interaction
         :return: instance Interaction ou None si non trouvée
         """
-        cached_interaction = self.redis_client.get(redis_key(getattr(Interaction, 'CACHE_PREFIX', None) or Interaction.__name__.lower(), interaction_id))
+        cached_interaction = self.redis_client.get(
+            redis_key(getattr(Interaction, 'CACHE_PREFIX', None) or Interaction.__name__.lower(), interaction_id))
         if cached_interaction:
             return Interaction.from_db_row(self, json.loads(cached_interaction))
         cursor = self.execute(f"SELECT * FROM {Interaction.DATABASE_NAME} WHERE interaction_id = ?", (interaction_id,))
@@ -845,7 +850,8 @@ class Role(DBObject, _RowInitMixin):
         Utilise le cache Redis si disponible, sinon interroge la table Utilisateurs.
         :return: liste d'instances Utilisateur
         """
-        cached_users = self.db.redis_client.get(redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"))
+        cached_users = self.db.redis_client.get(
+            redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"))
         if cached_users:
             users_ids = json.loads(cached_users)
             users = [self.db.get_user_by_id(uid) for uid in users_ids]
@@ -856,7 +862,8 @@ class Role(DBObject, _RowInitMixin):
         users = [Utilisateur.from_db_row(self.db, row) for row in rows]
         # Mettre en cache les IDs des utilisateurs
         users_ids = [user.utilisateur_id for user in users]
-        self.db.redis_client.setex(redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"), 1_800, json.dumps(users_ids))
+        self.db.redis_client.setex(
+            redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"), 1_800, json.dumps(users_ids))
         return users
 
 
@@ -1005,7 +1012,9 @@ class Utilisateur(UserMixin, DBObject, _RowInitMixin):
         Récupère les compétences associées à l'utilisateur.
         :return: Liste des objets Compétence ou None si aucune compétence
         """
-        cached_competences_ids = self.db.redis_client.get(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.utilisateur_id, "competences"))
+        cached_competences_ids = self.db.redis_client.get(
+            redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.utilisateur_id,
+                      "competences"))
         not_cached_competences = False
         if cached_competences_ids:
             competences_ids = json.loads(cached_competences_ids)
@@ -1029,7 +1038,9 @@ class Utilisateur(UserMixin, DBObject, _RowInitMixin):
             cursor.close()
             # Mettre en cache les IDs des compétences
             competences_ids = [competence.competence_id for competence in competences]
-            self.db.redis_client.setex(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.utilisateur_id, "competences"), 1_800, json.dumps(competences_ids))
+            self.db.redis_client.setex(
+                redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(),
+                          self.utilisateur_id, "competences"), 1_800, json.dumps(competences_ids))
             return competences
         return None
 
@@ -1116,7 +1127,9 @@ class Client(DBObject, _RowInitMixin):
         :return: instance Utilisateur
         :raises ValueError: si l'utilisateur associé n'existe pas
         """
-        cached_user = self.db.redis_client.get(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.interlocuteur_principal_id))
+        cached_user = self.db.redis_client.get(
+            redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(),
+                      self.interlocuteur_principal_id))
         if cached_user:
             return Utilisateur.from_db_row(self.db, json.loads(cached_user))
         cursor = self.db.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE utilisateur_id = ?", (self.interlocuteur_principal_id,))
@@ -1129,7 +1142,8 @@ class Client(DBObject, _RowInitMixin):
 
     @property
     def conventions(self) -> list[Any] | None:
-        cached_conventions_ids = self.db.redis_client.get(redis_key(Client.DATABASE_NAME.lower(), self.client_id, "conventions"))
+        cached_conventions_ids = self.db.redis_client.get(
+            redis_key(Client.DATABASE_NAME.lower(), self.client_id, "conventions"))
         not_cached_conventions = False
         if cached_conventions_ids:
             conventions_ids = json.loads(cached_conventions_ids)
@@ -1156,7 +1170,8 @@ class Client(DBObject, _RowInitMixin):
 
     @property
     def interactions(self) -> list[Any] | None:
-        cached_interactions_ids = self.db.redis_client.get(redis_key(Client.DATABASE_NAME.lower(), self.client_id, "interactions"))
+        cached_interactions_ids = self.db.redis_client.get(
+            redis_key(Client.DATABASE_NAME.lower(), self.client_id, "interactions"))
         not_cached_interactions = False
         if cached_interactions_ids:
             interactions_ids = json.loads(cached_interactions_ids)
@@ -1227,7 +1242,8 @@ class Convention(DBObject, _RowInitMixin):
         :return: instance Client
         :raises ValueError: si le client n'existe pas
         """
-        cached_client = self.db.redis_client.get(redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), self.client_id))
+        cached_client = self.db.redis_client.get(
+            redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), self.client_id))
         if cached_client:
             return Client.from_db_row(self.db, json.loads(cached_client))
         cursor = self.db.execute(f"SELECT * FROM {Client.DATABASE_NAME} WHERE client_id = ?", (self.client_id,))
@@ -1241,7 +1257,8 @@ class Convention(DBObject, _RowInitMixin):
     @property
     def projets(self) -> list[Any] | None:
         """Liste des projets associés à cette convention (utilise cache si possible)."""
-        cached_projets_ids = self.db.redis_client.get(redis_key(Convention.DATABASE_NAME.lower(), self.convention_id, "projets"))
+        cached_projets_ids = self.db.redis_client.get(
+            redis_key(Convention.DATABASE_NAME.lower(), self.convention_id, "projets"))
         not_cached_projets = False
         if cached_projets_ids:
             projets_ids = json.loads(cached_projets_ids)
@@ -1316,7 +1333,8 @@ class Projet(DBObject, _RowInitMixin):
         :return: instance Convention
         :raises ValueError: si la convention n'existe pas
         """
-        cached_convention = self.db.redis_client.get(redis_key(getattr(Convention, 'CACHE_PREFIX', None) or Convention.__name__.lower(), self.convention_id))
+        cached_convention = self.db.redis_client.get(
+            redis_key(getattr(Convention, 'CACHE_PREFIX', None) or Convention.__name__.lower(), self.convention_id))
         if cached_convention:
             return Convention.from_db_row(self.db, json.loads(cached_convention))
         cursor = self.db.execute(f"SELECT * FROM {Convention.DATABASE_NAME} WHERE convention_id = ?", (self.convention_id,))
@@ -1361,7 +1379,8 @@ class Projet(DBObject, _RowInitMixin):
         Récupère les compétences associées au projet.
         :return: Liste des objets Compétence ou None si aucune compétence
         """
-        cached_competences_ids = self.db.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "competences"))
+        cached_competences_ids = self.db.redis_client.get(
+            redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "competences"))
         not_cached_competences = False
         if cached_competences_ids:
             competences_ids = json.loads(cached_competences_ids)
@@ -1514,7 +1533,8 @@ class Competence(DBObject, _RowInitMixin):
         """
         if self.competence_parent is None:
             return None
-        cached_competence = self.db.redis_client.get(redis_key(getattr(Competence, 'CACHE_PREFIX', None) or Competence.__name__.lower(), self.competence_parent))
+        cached_competence = self.db.redis_client.get(
+            redis_key(getattr(Competence, 'CACHE_PREFIX', None) or Competence.__name__.lower(), self.competence_parent))
         if cached_competence:
             return Competence.from_db_row(self.db, json.loads(cached_competence))
         cursor = self.db.execute(f"SELECT * FROM {Competence.DATABASE_NAME} WHERE competence_id = ?", (self.competence_parent,))

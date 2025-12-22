@@ -1,27 +1,15 @@
-from flask import Flask, Response, Blueprint, render_template, send_file, abort, redirect, url_for, flash, g, request, session
-from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
+from flask import Blueprint, render_template, request, abort
+from flask_login import login_required
 
-from hashlib import scrypt
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-import sqlite3, csv, io, redis, os, base64, database
+from tools import get_db
 
 
 conventions_bp = Blueprint('conventions',__name__,url_prefix='/conventions')
 
 
 load_dotenv()
-DATABASE= os.getenv('DATABASE')
-
-def get_db():
-    db= getattr(g, '_database', None)
-    if db is None:
-        db = g._database = database.Database(
-            redis_client=redis.Redis(host='localhost', port=6379, db=0),
-            database=DATABASE
-        )
-    return db
 
 def get_projets_by_convention(id_convention):
     c = get_db().cursor()
@@ -101,4 +89,3 @@ def convention(id : int) :
     return render_template('convention.html',context={"convention":conv, 
     "client":get_client( conv["client_id"] ) , "projets": get_projets_by_convention(id), "utilisateur" : get_utilisateur(client["interlocuteur_principal"]) } 
     )
-
