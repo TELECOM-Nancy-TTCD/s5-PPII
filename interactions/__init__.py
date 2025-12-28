@@ -1,15 +1,31 @@
 from flask import Blueprint, request, render_template, abort, jsonify
 import os
-from datetime import datetime, date
+from datetime import datetime
 
 from flask_login import login_required, current_user
 
 from tools import get_db, has_permission
 from database import Interaction
 
-interactions_bp = Blueprint('interactions', __name__, template_folder="templates/interactions", static_folder="static", url_prefix="/interactions")
+interactions_bp = Blueprint('interactions', __name__, template_folder="templates/interactions", static_folder="static",
+                            url_prefix="/interactions")
 
-DATABASE= os.getenv('DATABASE')
+def interaction_filter(q: str, i: Interaction):
+    """
+    Filter function for interactions.
+    """
+    if q == "":
+        return True
+    q_lower = q.lower()
+    return (q_lower in str(i.interaction_id).lower() or
+            q_lower in i.client.nom_entreprise.lower() or
+            q_lower in i.client.contact_email.lower() or
+            q_lower in i.utilisateur.nom.lower() or
+            q_lower in i.utilisateur.prenom.lower() or
+            q_lower in i.type_interaction.lower() or
+            q_lower in i.titre.lower() or
+            q_lower in i.contenu.lower())
+
 
 # Helper validator
 def validate_interaction_form(form):
@@ -68,23 +84,32 @@ def validate_interaction_form(form):
 
     return errors
 
+
 @interactions_bp.route('/')
 @login_required
 def interactions_home():
-    if not has_permission(current_user, 'peut_gerer_interactions') and not has_permission(current_user, 'peut_creer_interactions'):
+    if not has_permission(current_user, 'peut_gerer_interactions') and not has_permission(current_user,
+                                                                                          'peut_creer_interactions'):
         return abort(403)
 
-     # Récupération des paramètres de pagination
+    # Récupération des paramètres de pagination
     page = request.args.get("p", 0, type=int)
     limit = request.args.get("l", 10, type=int)
+    query = request.args.get("q", "", type=str)
+
     db = get_db()
-    interactions = db.get_all_interactions(limit=10)
-    return render_template("interactions/interactions.html", interactions=interactions, Interaction=Interaction, page=page, limit=limit)
+    # Calculer offset pour la pagination (fenêtre). offset est appliqué seulement si limit>0.
+    offset = max(page, 0) * max(limit, 0)
+    interactions = db.get_all_interactions(limit=limit, offset=offset, key=lambda i: interaction_filter(query, i))
+    return render_template("interactions/interactions.html", interactions=interactions, Interaction=Interaction,
+                           page=page, limit=limit)
+
 
 @interactions_bp.route('/<int:interaction_id>')
 @login_required
 def interaction_detail(interaction_id):
-    if not has_permission(current_user, 'peut_gerer_interactions') and not has_permission(current_user, 'peut_creer_interactions'):
+    if not has_permission(current_user, 'peut_gerer_interactions') and not has_permission(current_user,
+                                                                                          'peut_creer_interactions'):
         return abort(403)
 
     db = get_db()
@@ -94,6 +119,7 @@ def interaction_detail(interaction_id):
 
     return render_template("interactions/view_interaction.html", interaction=interaction)
 
+
 @interactions_bp.route('/<int:interaction_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_interaction(interaction_id):
@@ -102,11 +128,11 @@ def edit_interaction(interaction_id):
     if interaction is None:
         return abort(404)
 
-    if not has_permission(current_user, 'peut_gerer_interactions') and interaction.utilisateur_id != current_user.utilisateur_id:
+    if not has_permission(current_user,
+                          'peut_gerer_interactions') and interaction.utilisateur_id != current_user.utilisateur_id:
         return abort(403)
 
-
-     # Gestion du formulaire soumis
+    # Gestion du formulaire soumis
     if request.method == 'POST':
         errors = validate_interaction_form(request.form)
         if errors:
@@ -124,6 +150,7 @@ def edit_interaction(interaction_id):
 
     return render_template("interactions/edit_interaction.html", interaction=interaction, Interaction=Interaction)
 
+
 @interactions_bp.route('/<int:interaction_id>/delete', methods=['DELETE'])
 @login_required
 def delete_interaction(interaction_id):
@@ -132,19 +159,22 @@ def delete_interaction(interaction_id):
     if interaction is None:
         return abort(404)
 
-    if not has_permission(current_user, 'peut_gerer_interactions') and interaction.utilisateur_id != current_user.utilisateur_id:
+    if not has_permission(current_user,
+                          'peut_gerer_interactions') and interaction.utilisateur_id != current_user.utilisateur_id:
         return abort(403)
 
     interaction.delete()
     return jsonify({'message': 'Interaction deleted successfully'}), 200
 
+
 @interactions_bp.route('/create', methods=['GET', 'PUT'])
 @login_required
 def create_interaction():
-    if not has_permission(current_user, 'peut_gerer_interactions') and not has_permission(current_user, 'peut_creer_interactions'):
+    if not has_permission(current_user, 'peut_gerer_interactions') and not has_permission(current_user,
+                                                                                          'peut_creer_interactions'):
         return abort(403)
 
-     # Gestion du formulaire soumis
+    # Gestion du formulaire soumis
     db = get_db()
     if request.method == 'PUT':
         errors = validate_interaction_form(request.form)
@@ -163,7 +193,7 @@ def create_interaction():
 
         return jsonify({'message': 'Interaction created successfully'}), 201
 
-     # Récupération des informations déjà présentes dans l'URL pour le formulaire
+    # Récupération des informations déjà présentes dans l'URL pour le formulaire
     # Supporter plusieurs variantes de noms (provenant du modal, du form inline ou d'un lien externe)
     def pick(*names, default=''):
         for n in names:
@@ -190,4 +220,5 @@ def create_interaction():
         'utilisateur_name': pick('utilisateur_name', 'user_name', 'username'),
     }
 
-    return render_template("interactions/create_interaction.html", Interaction=Interaction, form_data=interaction_form_data)
+    return render_template("interactions/create_interaction.html", Interaction=Interaction,
+                           form_data=interaction_form_data)
