@@ -27,13 +27,11 @@ def main():
 
     cur.execute("""
                 INSERT INTO Roles
-                VALUES (NULL, 'Admin', 0,
-                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+                VALUES (NULL, 'Admin', 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
                 """)
     cur.execute("""
                 INSERT INTO Roles
-                VALUES (NULL, 'Membre', 5,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                VALUES (NULL, 'Membre', 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                 """)
     print("   ✔ Rôles ajoutés.\n")
 
@@ -43,9 +41,9 @@ def main():
     print("➤ Ajout des utilisateurs...")
 
     users = [
-        ("john@admin.tns.com", "superadmin", "ADMIN", "John TNS", 0, 169, None, None, None, None),
-        ("bob@tns.com", "bob", "Bob", "Client", 0, 0, None, None, None, None),
-        ("bob2@tns.com", "bob", "BobDoc", "Client", 0, 12,
+        ("john@admin.tns.com", "superadmin", "ADMIN", "John TNS", 1, 0, 169, None, None, None, None),
+        ("bob@tns.com", "bob", "Bob", "Client", 2, 0, 0, None, None, None, None),
+        ("bob2@tns.com", "bob", "BobDoc", "Client", 2, 0, 12,
          "https://drive.google.com/file/d/1PzE1K6lxY1Yiqr1kLwApwygojMHcDOgK/view?usp=sharing",
          None, None, None)
     ]

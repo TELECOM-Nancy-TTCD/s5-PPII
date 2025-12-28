@@ -40,6 +40,25 @@
 
     </nav>
 
+    <!-- From Uiverse.io by xerith_8140 -->
+<ul class="notification-container">
+  <!-- Template item (hidden). JS va cloner ce code pour créer la notification de manière dynamique -->
+  <li class="notification-item template" style="display:none;" aria-hidden="true">
+    <div class="notification-content">
+      <div class="notification-icon">
+        <!-- placeholder icon -->
+        <i class="fa-solid fa-bell"></i>
+      </div>
+      <div class="notification-text">Notification</div>
+    </div>
+    <div class="notification-icon notification-close" role="button" aria-label="Fermer">
+      <i class="fa-solid fa-xmark"></i>
+    </div>
+    <div class="notification-progress-bar"></div>
+  </li>
+</ul>
+
+
     <main>
         {% block content %}{% endblock %}
     </main>
@@ -55,6 +74,48 @@
             </ul>
         </nav>
     </footer>
+
+
+    <dialog id="confirm" class="dialog">
+      <form method="dialog" class="dialog-form">
+        <h3 id="confirm-title">Confirmer</h3>
+        <p id="confirm-description">Êtes-vous sûr de vouloir supprimer cette interaction ? Cette action est irréversible.</p>
+        <div class="dialog-actions">
+          <button value="cancel" class="secondary-button" id="confirm-cancel">Annuler</button>
+          <button id="confirm-delete-button" value="confirm" class="danger-button">Supprimer</button>
+        </div>
+      </form>
+    </dialog>
+
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='scripts/showNotif.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/confirmDialog.js') }}"></script>
+
+
+{#
+Pour afficher une notification flash depuis une route Flask, utilisez le code suivant 
+from flask import flash, redirect, url_for
+flash('Utilisateur créé avec succès', 'success')
+return redirect(url_for('utilisateurs'))
+#}
+
+{% if get_flashed_messages() %}
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const msgs = {{ get_flashed_messages(with_categories=true) | tojson | safe }};
+    msgs.forEach(function(m){
+      // m is [category, message] when with_categories=True
+      const category = (m[0] || 'info');
+      const message = m[1] || m[0] || '';
+      // map flask categories to our css types
+      const map = { 'error':'error', 'danger':'error', 'warning':'warning', 'info':'info', 'success':'success' };
+      const type = map[category] || 'info';
+      // duration 5000ms
+      if(window.notify) window.notify(type, message, 5000);
+    });
+  });
+</script>
+{% endif %}
 
 </body>
 </html>

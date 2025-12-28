@@ -70,8 +70,8 @@ if (submitModalButton) {
         }
 
         const formData = new FormData(form);
-        const action = form.action || '/interactions/create';
-        const method = form.method || 'PUT';
+        const action = '/interactions/create';
+        const method = 'PUT';
 
         try {
             const response = await fetch(action, {
@@ -85,27 +85,35 @@ if (submitModalButton) {
                 if (successMessage) {
                     successMessage.classList.remove("hidden");
                 }
-                // If it's a modal, close it after 5s and refresh the page
-                setTimeout(() => {
-                    if (modal) try { modal.close(); } catch (e) {}
-                    window.location.reload(); // or update the UI as needed
-                }, 5000);
+                // Persist the notification and then reload so the message survives the reload
+                if (window.persistNotification) {
+                    window.persistNotification('success', 'Interaction créée avec succès !', 5000);
+                }
+                try { if (modal) modal.close(); } catch (e) {}
+                window.location.reload(); // reload page; persisted notif will be shown on load
             } else {
-                const errorText = await response.text();
-                alert('Error submitting form: ' + errorText);
+                const errorCode = response.status;
+                window.notify('error', `Erreur lors de la création de l'interaction (code ${errorCode})`, 10000);
             }
         } catch (error) {
-            alert('Network error: ' + error.message);
+            window.notify('error', "Erreur réseau lors de la création de l'interaction", 10000);
+            console.error(error);
         }
     });
 }
 
 // Delete interaction button
-const deleteButtons = document.getElementById("delete-interaction");
+const deleteButtons = document.getElementById("delete-interaction-button");
 if (deleteButtons) {
     deleteButtons.addEventListener('click', async (evt) => {
         evt.preventDefault();
-        if (!confirm('Êtes-vous sûr de vouloir supprimer cette interaction ?')) {
+        if (!await window.confirmDialog({
+            title: 'Confirmer la suppression',
+            description: 'Êtes-vous sûr de vouloir supprimer cette interaction ? Cette action est irréversible.',
+            confirmText: 'Supprimer',
+            cancelText: 'Annuler',
+            danger: true
+        })) {
             return;
         }
 
@@ -115,8 +123,14 @@ if (deleteButtons) {
                 method: 'DELETE',
             });
             if (response.ok) {
-                alert('Interaction supprimée avec succès !.');
-                window.location.href = '/interactions';
+                // Persist a success notification and redirect to the interactions list
+                if (window.notifyAndRedirect) {
+                    window.notifyAndRedirect('success', 'Interaction supprimée avec succès !', 5000, '/interactions');
+                } else {
+                    // fallback
+                    alert('Interaction supprimée avec succès !.');
+                    window.location.href = '/interactions';
+                }
             } else {
                 const errorText = await response.text();
                 alert('Une erreur est apparue pendant la suppression: ' + errorText);
@@ -144,14 +158,21 @@ if (saveEditButton) {
             });
 
             if (response.ok) {
-                alert('Interaction modifiée avec succès.');
-                window.location.href = window.location.href.replace('/edit', '');
+                // Persist the notification and redirect to the view page so the message survives
+                const redirectUrl = window.location.href.replace('/edit', '');
+                if (window.notifyAndRedirect) {
+                    window.notifyAndRedirect('success', 'Interaction enregistrée avec succès !', 5000, redirectUrl);
+                } else {
+                    window.persistNotification && window.persistNotification('success', 'Interaction enregistrée avec succès !', 5000);
+                    window.location.href = redirectUrl;
+                }
             } else {
-                const errorText = await response.text();
-                alert("Une erreur est apparue durant l'enregistrement: " + errorText);
+                const errorCode = response.status;
+                window.notify('error', `Erreur lors de l'enregistrement de l'interaction (code ${errorCode})`, 10000);
             }
         } catch (error) {
-            alert('Network error: ' + error.message);
+            window.notify('error', "Erreur réseau lors de l'enregistrement de l'interaction", 10000);
+            console.error(error);
         }
     });
 }

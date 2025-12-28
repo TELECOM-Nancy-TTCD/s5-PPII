@@ -37,6 +37,14 @@
     --shadow-1: rgba(0, 0, 0, 0.2);
     --shadow-2: rgba(0, 0, 0, 0.3);
     --shadow-3: rgba(0, 0, 0, 0.4);
+
+    /* RGB helpers for notification translucent backgrounds and gradients */
+    --primary-rgb: 37,61,165;   /* #253da5 */
+    --accent-rgb: 66,185,188;   /* #42b9bc */
+    --success-rgb: 101,178,49;  /* #65b231 */
+    --warning-rgb: 226,147,32;  /* #e29320 */
+    --danger-rgb: 209,54,81;    /* #d13651 */
+    --accent2-rgb: 175,56,214;  /* #af38d6 */
 }
 
 html, body {
@@ -484,7 +492,7 @@ a:hover {
 
 
 
-.search-form-utilisateurs, .search-form-clients, .search-form-conventions {
+.search-form-utilisateurs, .search-form-clients, .search-form-conventions, .search-form {
     margin: 20px auto;
     display: flex;
     justify-content: center;
@@ -493,7 +501,8 @@ a:hover {
 }
 .search-form-utilisateurs input[type="text"],
 .search-form-clients input[type="text"],
-.search-form-conventions input[type="text"] {
+.search-form-conventions input[type="text"],
+.search-form input[type="text"] {
     padding: 8px 12px;
     font-size: 16px;
     border: none;
@@ -506,7 +515,8 @@ a:hover {
 
 .search-form-utilisateurs button,
 .search-form-clients button,
-.search-form-conventions button {
+.search-form-conventions button,
+.search-form button {
     padding: 8px 16px;
     font-size: 16px;
     border: none;
@@ -519,7 +529,8 @@ a:hover {
 
 .search-form-utilisateurs button:hover,
 .search-form-clients button:hover,
-.search-form-conventions button:hover {
+.search-form-conventions button:hover,
+.search-form button:hover {
     background-color: var(--danger-hover);
 }
 
@@ -1018,6 +1029,7 @@ dialog .container .actions {
     padding: 10px;
     border: 1px solid var(--border);
     white-space: pre-wrap; /* conserver les sauts de ligne */
+    word-wrap: break-word;
 }
 
 /* Rendre le lien parent du dropdown (ex: Interactions) réactif au hover/focus */
@@ -1100,7 +1112,7 @@ dialog .container .actions {
     border-radius: 6px;
 }
 
-/* Partie du CSS générée avec aide d'une IA */
+/* Partie du CSS générée avec aide d'une AI */
 .timeline_jalons {
   position: relative;
   max-width: 800px;
@@ -1141,7 +1153,7 @@ dialog .container .actions {
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
-/* Partie du CSS générée avec aide d'une IA */
+/* Partie du CSS générée avec aide d'une AI */
 
 .bouton-terminer-projet {
     display: inline-block;
@@ -1289,5 +1301,130 @@ dialog .container .actions {
     color: black;
     line-height: 20px;
     font-size: 12px;
+}
+
+/* From Uiverse.io by xerith_8140 */
+/* Notification container */
+
+.notification-container {
+  position: fixed;
+  top: 2%;
+  right: 2%;
+  z-index: 10000;
+  max-width: 80%;
+
+  --content-color: var(--text-main);
+  --background-color: rgba(255,255,255,0.02);
+  --font-size-content: 0.9em;
+  --icon-size: 1em;
+  /* durée de la notif (ms) — définie par JS via style.setProperty('--notif-duration', '5000ms') */
+  --notif-duration: 5000ms;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  list-style-type: none;
+  font-family: sans-serif;
+  color: var(--content-color);
+}
+
+/* Notification Item */
+
+.notification-item {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: row;
+  gap: 1em;
+  overflow: hidden;
+  padding: 10px 15px;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 6px 18px;
+  background-color: var(--surface); /* fallback */
+  transition: transform 300ms ease, opacity 300ms ease;
+  opacity: 1;
+}
+
+/* hiding state used when JS déclenche la suppression : fondu court avant suppression du DOM */
+.notification-item.hiding {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.995);
+}
+
+.notification-item svg {
+  transition: 250ms ease;
+}
+
+.notification-item:hover { transform: translateY(-2px); }
+.notification-item:active { transform: translateY(0); }
+
+.notification-item .notification-close:hover { background-color: rgba(255,255,255,0.08); }
+.notification-item .notification-close:hover svg { color: inherit; }
+
+.notification-item .notification-close:active svg { transform: scale(1.1); }
+
+/* Notification Icons */
+.notification-item .notification-close { padding: 2px; border-radius: 5px; transition: all 250ms; }
+.notification-container svg { width: var(--icon-size); height: var(--icon-size); color: var(--content-color); }
+.notification-icon { display: flex; align-items: center; }
+
+/* Filled backgrounds (plein, sans transparence) - utilise les couleurs du thème */
+.notification-item.success {
+  background-color: var(--success);
+  color: var(--white);
+}
+.notification-item.success .notification-icon i,
+.notification-item.success svg { color: var(--white); }
+
+.notification-item.info {
+  background-color: var(--accent);
+  color: var(--white);
+}
+.notification-item.info .notification-icon i,
+.notification-item.info svg { color: var(--white); }
+
+.notification-item.warning {
+  background-color: var(--warning);
+  color: var(--white);
+}
+.notification-item.warning .notification-icon i,
+.notification-item.warning svg { color: var(--white); }
+
+.notification-item.error {
+  background-color: var(--danger);
+  color: var(--white);
+}
+.notification-item.error .notification-icon i,
+.notification-item.error svg { color: var(--white); }
+
+/* Notification content */
+.notification-content { display: flex; justify-content: flex-start; align-items: center; gap: 0.5em; }
+.notification-text { font-size: var(--font-size-content); user-select: none; }
+.notification-close { cursor: pointer; color: inherit; }
+
+/* Notification progress bar - utilise la variable --notif-duration définie par JS */
+.notification-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: rgba(255,255,255,0.12);
+  transform: translateX(0);
+  /* animation controlled by --notif-duration; JS doit définir cette variable sur l'élément .notification-item */
+  animation: progressBar var(--notif-duration, 5000ms) linear forwards;
+}
+
+/* Bar color per type (contraste sur fond plein) */
+.notification-item.success .notification-progress-bar { background: rgba(255,255,255,0.18); }
+.notification-item.info .notification-progress-bar { background: rgba(255,255,255,0.18); }
+.notification-item.warning .notification-progress-bar { background: rgba(255,255,255,0.18); }
+.notification-item.error .notification-progress-bar { background: rgba(255,255,255,0.18); }
+
+/* progressBar Animation — fait partir la barre vers la gauche sur la durée fournie */
+@keyframes progressBar {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
 }
 
