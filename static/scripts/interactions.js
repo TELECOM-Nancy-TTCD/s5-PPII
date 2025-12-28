@@ -103,9 +103,9 @@ if (submitModalButton) {
 }
 
 // Delete interaction button
-const deleteButtons = document.getElementById("delete-interaction-button");
+const deleteButtons = document.getElementById("delete-interaction");
 if (deleteButtons) {
-    deleteButtons.addEventListener('click', async (evt) => {
+    deleteButtons.addEventListener('submit', async (evt) => {
         evt.preventDefault();
         if (!await window.confirmDialog({
             title: 'Confirmer la suppression',

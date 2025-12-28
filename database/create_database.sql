@@ -158,6 +158,7 @@ CREATE TABLE Travaille_sur (
     utilisateur_id INT,
     projet_id INT,
     est_intervenant_sur_projet BOOLEAN,
+    poste VARCHAR,
     PRIMARY KEY (utilisateur_id, projet_id),
     FOREIGN KEY (utilisateur_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL, -- Si un utilisateur est supprimé tandis qu'il travaille sur un projet, NULL travaille sur le projet
     FOREIGN KEY (projet_id) REFERENCES Projets(projet_id) ON UPDATE CASCADE ON DELETE CASCADE -- Suppression d'un projet implique suppression de la notion de qui travaille dessus
