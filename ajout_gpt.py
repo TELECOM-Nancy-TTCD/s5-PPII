@@ -45,6 +45,10 @@ utilisateurs = [
     (13, "interv5@tns.fr", "pwd", "Andre", "Leo", 4, 1, 35),
     (14, "junior4@tns.fr", "pwd", "Mercier", "Mila", 5, 1, 25),
     (15, "junior5@tns.fr", "pwd", "Blanc", "Adam", 5, 1, 20),
+
+    (16, "junior6@tns.fr", "pwd", "", "Sophie", 5, 1, 15),
+    (17, "junior7@tns.fr", "pwd", "", "Bob", 5, 1, 10),
+    (18, "junior8@tns.fr", "pwd", "", "Charlie", 5, 1, 12),
 ]
 
 for u in utilisateurs:
@@ -116,6 +120,8 @@ projets = [
      date(2025, 4, 1), date(2025, 10, 31),
      "Terminé"),
 
+    (11,1,"WEB","Site WEB 2.0",8000,100,date(2025,4,1),date(2025,10,31),"Terminé" ),
+
     # convention 2 – DataPlus
     (3, 2, "BI", "Dashboard BI",
      12000, 180,
@@ -148,6 +154,8 @@ projets = [
      4000, 120,
      date(2024, 1, 1), date(2024, 12, 31),
      "Terminé"),
+
+     (12,4,"API","",4000,80,date(2024,1,1),date(2024,3,1),"En cours")
 ]
 
 for p in projets:
@@ -168,14 +176,17 @@ competences = [
     (2, "SQL", None),
     (3, "Java", None),
     (4, "Gestion de projet", None),
-    (5, "Data Analysis", 1),
-    (6, "Machine Learning", 1),
+    (5, "Data Analysis", None),
+    (6, "Machine Learning", None),
     (7, "Dev Backend", 3),
     (8, "Dev Frontend", None),
     (9, "Cloud", None),
     (10, "Docker", 9),
     (11, "Communication", None),
-    (12, "Cybersécurité", None)
+    (12, "Cybersécurité", None),
+    (13,"Flask",1),
+    (14,"HTML",8),
+    (15,"PostgreSQL",2)
 ]
 
 for comp in competences:
@@ -198,7 +209,10 @@ intervenant_competences = [
     (12, 6, 8), (12, 10, 7),
     (13, 4, 7),
     (14, 2, 5),
-    (15, 12, 4),(15,3,6),(15,7,7)
+    (15, 12, 4),(15,3,6),(15,7,7),
+    (16,1,9),(16,13,8),(16,15,6),
+    (17,1,8),(17,13,4),(17,15,7),
+    (18,1,6),(18,13,5),(18,15,5),
 ]
 
 for ic in intervenant_competences:
@@ -212,16 +226,18 @@ for ic in intervenant_competences:
 # 8. PROJET ↔ COMPÉTENCES
 # =====================
 projet_competences = [
-    (1, 1, 7), (1, 2, 6), (1, 4, 6),(1,5,5),
+    (1, 1, 7), (1, 13, 6), (1, 4, 6),(1,5,5),
     (2, 3, 6), (2, 7, 7),
     (3, 5, 6),
     (4, 6, 7),
     (5, 11, 5),
     (6, 6, 6),
     (7, 12, 4),
-    (8, 8, 6),
+    (8, 8, 8),
     (9, 9, 7), (9, 10, 6),
-    (10, 1, 6),(10,3,5)
+    (10, 1, 6),(10,3,5),
+    (11,13,5),
+    (12,1,7),(12,13,6),(12,15,5)
 ]
 
 for pc in projet_competences:
