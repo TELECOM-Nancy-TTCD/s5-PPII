@@ -136,7 +136,7 @@ CREATE TABLE Intervenant_competences (
     competence_id INT,
     
     niveau INT NOT NULL
-        CHECK (niveau BETWEEN 0 AND 5),
+        CHECK (niveau BETWEEN 0 AND 10),
     PRIMARY KEY (intervenant_id, competence_id),
     FOREIGN KEY (intervenant_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE CASCADE, --suppression d'un intervenant implique suppression de ses compétences
     FOREIGN KEY (competence_id) REFERENCES Competences(competence_id) ON UPDATE CASCADE ON DELETE CASCADE --suppression d'une compétence implique que l'intervenant n'a plus cette compétence
@@ -161,6 +161,6 @@ CREATE TABLE Travaille_sur (
     poste VARCHAR,
     PRIMARY KEY (utilisateur_id, projet_id),
     FOREIGN KEY (utilisateur_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL, -- Si un utilisateur est supprimé tandis qu'il travaille sur un projet, NULL travaille sur le projet
-    FOREIGN KEY (projet_id) REFERENCES Projets(projet_id) ON UPDATE CASCADE ON DELETE CASCADE -- Suppression d'un projet implique suppression de la notion de qui travaille dessus
-
+    FOREIGN KEY (projet_id) REFERENCES Projets(projet_id) ON UPDATE CASCADE ON DELETE CASCADE, -- Suppression d'un projet implique suppression de la notion de qui travaille dessus
+    poste VARCHAR -- Nom du poste occupé sur le projet
 )
