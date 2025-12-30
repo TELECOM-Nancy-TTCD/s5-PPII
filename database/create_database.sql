@@ -3,11 +3,13 @@ CREATE TABLE Roles (
     nom VARCHAR,
     hierarchie INT, -- pour la modification de rôles, on ne peut destituer un individu d'un role plus haut
 
+    administrateur BOOLEAN DEFAULT false,
     peut_gerer_utilisateurs BOOLEAN DEFAULT false,
     peut_gerer_roles BOOLEAN DEFAULT false,
     
     peut_lire_clients BOOLEAN DEFAULT false,
-    peut_gerer_clients BOOLEAN DEFAULT false, 
+    peut_gerer_clients BOOLEAN DEFAULT false,
+    peut_creer_interactions BOOLEAN DEFAULT false,
     peut_gerer_interactions BOOLEAN DEFAULT false,
     
     peut_lire_projets BOOLEAN DEFAULT false,
@@ -30,7 +32,6 @@ CREATE TABLE Utilisateurs (
     email VARCHAR UNIQUE NOT NULL,
     mot_de_passe_hashed VARCHAR NOT NULL,
     mot_de_passe_expire TEXT NULL, -- Date d'expiration du mot de passe, NULL si jamais expiré
-    
     nom VARCHAR,
     prenom VARCHAR,
     avatar VARCHAR, -- Lien vers l'avatar de l'utilisateur
@@ -116,8 +117,11 @@ CREATE TABLE Jalons (
 CREATE TABLE Interactions ( -- correspond au 'communique avec' du schéma mais avec le logging
     interaction_id INTEGER PRIMARY KEY,
     date_time_interaction TEXT NOT NULL,
+    titre VARCHAR NOT NULL,
     contenu TEXT NOT NULL,
-    
+    type_interaction_id TEXT NOT NULL
+        CHECK( type_interaction_id IN ('email', 'phone', 'meeting', 'textmessage', 'other')),
+
     -- relations aux autres tables
 
     client_id INT,
@@ -154,6 +158,7 @@ CREATE TABLE Travaille_sur (
     utilisateur_id INT,
     projet_id INT,
     est_intervenant_sur_projet BOOLEAN,
+    poste VARCHAR,
     PRIMARY KEY (utilisateur_id, projet_id),
     FOREIGN KEY (utilisateur_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL, -- Si un utilisateur est supprimé tandis qu'il travaille sur un projet, NULL travaille sur le projet
     FOREIGN KEY (projet_id) REFERENCES Projets(projet_id) ON UPDATE CASCADE ON DELETE CASCADE -- Suppression d'un projet implique suppression de la notion de qui travaille dessus

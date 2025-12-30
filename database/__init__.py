@@ -4,6 +4,7 @@ import logging
 import sqlite3
 import unicodedata
 from typing import Any, List, Optional, cast, Sequence, Mapping, Dict, Tuple
+from flask_login import UserMixin
 
 
 def normalize_text(s: Optional[str]) -> str:
@@ -16,7 +17,7 @@ def normalize_text(s: Optional[str]) -> str:
 
 
 # Builder de clés Redis exporté
-def redis_key(resource: str, id: Optional[Any] = None, suffix: Optional[str] = None) -> str:
+def redis_key(resource: str, id_: Optional[Any] = None, suffix: Optional[str] = None) -> str:
     """
     Construit une clé Redis simple et consistante.
     Exemples:
@@ -25,8 +26,8 @@ def redis_key(resource: str, id: Optional[Any] = None, suffix: Optional[str] = N
     Note: le resource peut être le DATABASE_NAME (avec majuscule initiale) ou un préfixe plus court ('user').
     """
     parts: List[str] = [str(resource)]
-    if id is not None:
-        parts.append(str(id))
+    if id_ is not None:
+        parts.append(str(id_))
     if suffix is not None:
         parts.append(str(suffix))
     return ":".join(parts).lower()
@@ -47,7 +48,6 @@ class Database:
             raise ValueError("A valid redis_client must be provided")
         if not database:
             raise ValueError("A valid database path must be provided")
-
         self.redis_client = redis_client
         try:
             self.db = sqlite3.connect(database, **kwargs)
@@ -64,26 +64,17 @@ class Database:
             pass
 
     def close(self):
-        """Ferme la connexion SQLite associée à cette instance Database."""
         self.db.close()
 
     def commit(self):
-        """Valide la transaction courante sur la base SQLite.
-
-        Lève RuntimeError en cas d'erreur SQLite.
-        """
         try:
             self.db.commit()
         except sqlite3.Error as e:
             raise RuntimeError(f"Failed to commit transaction: {e}") from e
 
     def execute(self, query: str, params: Sequence[Any] | Mapping[str, Any] | Any = ()) -> sqlite3.Cursor:
-        """Execute une requête SQL et retourne le curseur résultant.
-
-        :param query: requête SQL (optionnellement paramétrée)
-        :param params: paramètres pour la requête (tuple/list ou dict)
-        :return: sqlite3.Cursor pointant sur les résultats
-        :raises RuntimeError: si sqlite renvoie une erreur
+        """Execute a SQL query with optional parameters.
+        `params` is usually a sequence (tuple/list) or a mapping (dict) accepted by sqlite3.
         """
         try:
             return self.db.execute(query, params)
@@ -91,7 +82,6 @@ class Database:
             raise RuntimeError(f"Failed to execute query: {e}") from e
 
     def cursor(self):
-        """Retourne un nouveau curseur SQLite (équivalent de connection.cursor())."""
         return self.db.cursor()
 
     # Méthode utilitaire pour interroger un index Redis secondaire (exact match)
@@ -122,13 +112,8 @@ class Database:
             return None
 
     def get_user_by_id(self, user_id: int) -> Optional['Utilisateur']:
-        """Récupère un utilisateur par son identifiant.
-
-        Cherche d'abord dans le cache Redis, puis interroge la table SQLite si nécessaire.
-        :param user_id: identifiant de l'utilisateur
-        :return: instance Utilisateur ou None si non trouvée
-        """
-        cached_user = self.redis_client.get(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), user_id))
+        cached_user = self.redis_client.get(
+            redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), user_id))
         if cached_user:
             return Utilisateur.from_db_row(self, json.loads(cached_user))
         cursor = self.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE utilisateur_id = ?", (user_id,))
@@ -140,12 +125,6 @@ class Database:
         return None
 
     def get_users_by_ids(self, user_ids: List[int]) -> List['Utilisateur']:
-        """Récupère une liste d'utilisateurs à partir d'une liste d'identifiants.
-
-        Les utilisateurs absents sont ignorés.
-        :param user_ids: liste d'identifiants
-        :return: liste d'objets Utilisateur existants
-        """
         users = []
         for uid in user_ids:
             user = self.get_user_by_id(uid)
@@ -154,13 +133,6 @@ class Database:
         return users
 
     def get_user_by_email(self, email: str) -> 'Utilisateur':
-        """Récupère un utilisateur par email.
-
-        Tente d'abord d'utiliser un index secondaire Redis pour une recherche exacte, sinon interroge la BDD.
-        Lève ValueError si aucun utilisateur trouvé.
-        :param email: adresse email recherchée
-        :return: instance Utilisateur
-        """
         # Tenter d'utiliser l'index Redis secondaire pour recherche exacte
         ids = self._get_index_ids(Utilisateur.DATABASE_NAME, 'email', email)
         if ids:
@@ -178,13 +150,6 @@ class Database:
         raise ValueError(f"User with email {email} not found")
 
     def get_users_by_name(self, nom: str = None, prenom: str = None) -> List['Utilisateur']:
-        """Récupère les utilisateurs correspondant au nom et/ou prénom donnés.
-
-        Au moins l'un des paramètres doit être fourni. Utilise les index Redis secondaires si possible.
-        :param nom: nom de famille (optionnel)
-        :param prenom: prénom (optionnel)
-        :return: liste d'objets Utilisateur correspondant
-        """
         if nom is None and prenom is None:
             raise ValueError("At least one of 'nom' or 'prenom' must be provided")
 
@@ -221,11 +186,6 @@ class Database:
         return users
 
     def get_users_by_text_search(self, text: str) -> List['Utilisateur']:
-        """Recherche floue (LIKE) sur nom, prénom et email et retourne les utilisateurs correspondants.
-
-        :param text: texte de recherche (substring)
-        :return: liste d'objets Utilisateur
-        """
         like_pattern = f"%{text}%"
         cursor = self.execute(
             f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE nom LIKE ? OR prenom LIKE ? OR email LIKE ?",
@@ -236,22 +196,63 @@ class Database:
         users = [Utilisateur.from_db_row(self, row) for row in rows]
         return users
 
-    def get_all_users(self, limit: int = 0, *, key=lambda x: True) -> List['Utilisateur']:
+    def get_all_users(self, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, key=lambda x: True) -> List['Utilisateur']:
         """
         Récupère tous les utilisateurs de la base de données.
         :param limit: Nombre maximum d'utilisateurs à récupérer (0 pour aucune limite)
+        :param sort_by: nom de champ pour trier (doit être dans Utilisateur.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
         :param key: Fonction de filtrage optionnelle
         :return: Liste des objets Utilisateur
         """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                # Normaliser pour la comparaison: None -> (1, None) pour les pousser en fin
+                if v is None:
+                    return (1, None)
+                # Les chaînes en minuscules pour tri insensible à la casse
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
         cached_users = self.redis_client.get(redis_key(Utilisateur.DATABASE_NAME.lower(), None, "all"))
         if cached_users:
             all_users_id = json.loads(cached_users)
             users = [self.get_user_by_id(uid) for uid in all_users_id]
             users = [user for user in users if user is not None and key(user)]
+            if sort_by:
+                if sort_by not in getattr(Utilisateur, 'FIELD_NAMES', []):
+                    raise ValueError(f"Invalid sort_by field for users: {sort_by}")
+                users = _apply_python_sort(users, sort_by, sort_dir)
+            # Appliquer offset+limit côté cache si demandés (offset pris en compte seulement si limit>0)
             if limit > 0:
+                if offset and offset > 0:
+                    users = users[offset:]
                 return users[:limit]
             return users
-        cursor = self.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        # Construire la clause ORDER BY si nécessaire (sécurisée en vérifiant les champs autorisés)
+        order_clause = ""
+        if sort_by:
+            if sort_by not in getattr(Utilisateur, 'FIELD_NAMES', []):
+                raise ValueError(f"Invalid sort_by field for users: {sort_by}")
+            if sort_dir.lower() not in ('asc', 'desc'):
+                raise ValueError('sort_dir must be "asc" or "desc"')
+            order_clause = f" ORDER BY {sort_by} {sort_dir.upper()}"
+        # Si limit>0, appliquer LIMIT et OFFSET en SQL (OFFSET utile pour pagination fenêtre).
+        if limit > 0:
+            query_tail = f" LIMIT ? OFFSET ?"
+            sql_params = (limit, offset)
+        else:
+            query_tail = ""
+            sql_params = ()
+        cursor = self.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME}" + order_clause + query_tail, sql_params)
         rows = cursor.fetchall()
         cursor.close()
 
@@ -262,16 +263,13 @@ class Database:
 
         users = [Utilisateur.from_db_row(self, row) for row in rows]
         users = [user for user in users if key(user)]
+        if sort_by:
+            users = _apply_python_sort(users, sort_by, sort_dir)
         return users
 
     def get_client_by_id(self, client_id: int) -> Optional['Client']:
-        """Récupère un client par son identifiant.
-
-        Cherche d'abord dans le cache Redis, puis en base de données.
-        :param client_id: identifiant du client
-        :return: instance Client ou None si non trouvée
-        """
-        cached_client = self.redis_client.get(redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), client_id))
+        cached_client = self.redis_client.get(
+            redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), client_id))
         if cached_client:
             return Client.from_db_row(self, json.loads(cached_client))
         cursor = self.execute(f"SELECT * FROM {Client.DATABASE_NAME} WHERE client_id = ?", (client_id,))
@@ -282,22 +280,58 @@ class Database:
             return client
         return None
 
-    def get_all_clients(self, limit: int = 0, *, key=lambda x: True) -> List['Client']:
+    def get_all_clients(self, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, key=lambda x: True) -> List['Client']:
         """
         Récupère tous les clients de la base de données.
         :param limit: Nombre maximum de clients à récupérer (0 pour aucune limite)
+        :param sort_by: nom de champ pour trier (doit être dans Client.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
         :param key: Fonction de filtrage optionnelle
         :return: Liste des objets Client
         """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                if v is None:
+                    return (1, None)
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
         cached_clients = self.redis_client.get(redis_key(Client.DATABASE_NAME.lower(), None, "all"))
         if cached_clients:
             all_clients_id = json.loads(cached_clients)
             clients = [self.get_client_by_id(cid) for cid in all_clients_id]
             clients = [client for client in clients if client is not None and key(client)]
+            if sort_by:
+                if sort_by not in getattr(Client, 'FIELD_NAMES', []):
+                    raise ValueError(f"Invalid sort_by field for clients: {sort_by}")
+                clients = _apply_python_sort(clients, sort_by, sort_dir)
             if limit > 0:
+                if offset and offset > 0:
+                    clients = clients[offset:]
                 return clients[:limit]
             return clients
-        cursor = self.execute(f"SELECT * FROM {Client.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        order_clause = ""
+        if sort_by:
+            if sort_by not in getattr(Client, 'FIELD_NAMES', []):
+                raise ValueError(f"Invalid sort_by field for clients: {sort_by}")
+            if sort_dir.lower() not in ('asc', 'desc'):
+                raise ValueError('sort_dir must be "asc" or "desc"')
+            order_clause = f" ORDER BY {sort_by} {sort_dir.upper()}"
+        if limit > 0:
+            query_tail = " LIMIT ? OFFSET ?"
+            sql_params = (limit, offset)
+        else:
+            query_tail = ""
+            sql_params = ()
+        cursor = self.execute(f"SELECT * FROM {Client.DATABASE_NAME}" + order_clause + query_tail, sql_params)  # TODO: Décider si la coupe doit être faite en SQL ou en Python
         rows = cursor.fetchall()
         cursor.close()
 
@@ -308,63 +342,13 @@ class Database:
 
         clients = [Client.from_db_row(self, row) for row in rows]
         clients = [client for client in clients if key(client)]
+        if sort_by:
+            clients = _apply_python_sort(clients, sort_by, sort_dir)
         return clients
 
-    def get_convention_by_id(self, convention_id: int) -> Optional['Convention']:
-        """Récupère une convention par son identifiant.
-
-        Cherche d'abord dans le cache Redis, puis en base de données.
-        :param convention_id: identifiant de la convention
-        :return: instance Convention ou None si non trouvée
-        """
-        cached_convention = self.redis_client.get(redis_key(getattr(Convention, 'CACHE_PREFIX', None) or Convention.__name__.lower(), convention_id))
-        if cached_convention:
-            return Convention.from_db_row(self, json.loads(cached_convention))
-        cursor = self.execute(f"SELECT * FROM {Convention.DATABASE_NAME} WHERE convention_id = ?", (convention_id,))
-        row = cursor.fetchone()
-        cursor.close()
-        if row:
-            convention = Convention.from_db_row(self, row)
-            return convention
-        return None
-
-    def get_all_conventions(self, limit: int = 0, *, key=lambda x: True) -> List['Convention']:
-        """Récupère toutes les conventions (optionnellement limitées).
-
-        :param limit: nombre maximum de conventions à récupérer (0 = aucun)
-        :param key: fonction de filtrage optionnelle
-        :return: liste d'objets Convention
-        """
-        cached_conventions = self.redis_client.get(redis_key(Convention.DATABASE_NAME.lower(), None, "all"))
-        if cached_conventions:
-            all_conventions_id = json.loads(cached_conventions)
-            conventions = [self.get_convention_by_id(cid) for cid in all_conventions_id]
-            conventions = [convention for convention in conventions if convention is not None and key(convention)]
-            if limit > 0:
-                return conventions[:limit]
-            return conventions
-        cursor = self.execute(f"SELECT * FROM {Convention.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
-        rows = cursor.fetchall()
-        cursor.close()
-
-        if limit == 0:
-            # Mettre en cache les IDs des conventions
-            all_conventions_id = [row[0] for row in rows]  # Supposant que l'ID est dans la première colonne
-            self.redis_client.setex(redis_key(Convention.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_conventions_id))
-
-        conventions = [Convention.from_db_row(self, row) for row in rows]
-        conventions = [convention for convention in conventions if key(convention)]
-        return conventions
-
-
     def get_role_by_id(self, role_id: int) -> Optional['Role']:
-        """Récupère un rôle par son identifiant.
-
-        Cherche d'abord dans le cache Redis, puis en base de données.
-        :param role_id: identifiant du rôle
-        :return: instance Role ou None si non trouvée
-        """
-        cached_role = self.redis_client.get(redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), role_id))
+        cached_role = self.redis_client.get(
+            redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), role_id))
         if cached_role:
             return Role.from_db_row(self, json.loads(cached_role))
         cursor = self.execute(f"SELECT * FROM {Role.DATABASE_NAME} WHERE role_id = ?", (role_id,))
@@ -375,6 +359,76 @@ class Database:
             return role
         return None
 
+    def get_all_roles(self, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, key=lambda x: True) -> List['Role']:
+        """Récupère tous les rôles
+
+        :param limit: nombre maximum de rôles à récupérer (0 = aucun)
+        :param sort_by: nom de champ pour trier (doit être dans Role.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
+        :param key: fonction de filtrage optionnelle
+        :return: liste d'objets Role
+        """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                if v is None:
+                    return (1, None)
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
+        cached_roles = self.redis_client.get(redis_key(Role.DATABASE_NAME.lower(), None, "all"))
+        if cached_roles:
+            all_roles_id = json.loads(cached_roles)
+            roles = [self.get_role_by_id(cid) for cid in all_roles_id]
+            roles = [role for role in roles if role is not None and key(role)]
+            if sort_by:
+                if sort_by not in getattr(Role, 'FIELD_NAMES', []):
+                    raise ValueError(f"Invalid sort_by field for roles: {sort_by}")
+                roles = _apply_python_sort(roles, sort_by, sort_dir)
+            if limit > 0:
+                if offset and offset > 0:
+                    roles = roles[offset:]
+                return roles[:limit]
+            return roles
+        order_clause = ""
+        if sort_by:
+            if sort_by not in getattr(Role, 'FIELD_NAMES', []):
+                raise ValueError(f"Invalid sort_by field for roles: {sort_by}")
+            if sort_dir.lower() not in ('asc', 'desc'):
+                raise ValueError('sort_dir must be "asc" or "desc"')
+            order_clause = f" ORDER BY {sort_by} {sort_dir.upper()}"
+        if limit > 0:
+            query_tail = " LIMIT ? OFFSET ?"
+            sql_params = (limit, offset)
+        else:
+            query_tail = ""
+            sql_params = ()
+        cursor = self.execute(f"SELECT * FROM {Role.DATABASE_NAME}" + order_clause + query_tail, sql_params)  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        rows = cursor.fetchall()
+        cursor.close()
+
+        if limit == 0:
+            # Mettre en cache les IDs des roles
+            all_roles_id = [row[0] for row in rows]  # Supposant que l'ID est dans la première colonne
+            # Note: utiliser Role.DATABASE_NAME ici (correction d'une clef erronée précédemment)
+            try:
+                self.redis_client.setex(redis_key(Role.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_roles_id))
+            except Exception:
+                pass
+
+        roles = [Role.from_db_row(self, row) for row in rows]
+        roles = [role for role in roles if key(role)]
+        if sort_by:
+            roles = _apply_python_sort(roles, sort_by, sort_dir)
+        return roles
+
 
     def get_project_id(self, project_id: int) -> Optional['Projet']:
         """Récupère un projet par son identifiant.
@@ -382,7 +436,8 @@ class Database:
         :param project_id: identifiant du projet
         :return: instance Projet ou None si non trouvée
         """
-        cached_project = self.redis_client.get(redis_key(getattr(Projet, 'CACHE_PREFIX', None) or Projet.__name__.lower(), project_id))
+        cached_project = self.redis_client.get(
+            redis_key(getattr(Projet, 'CACHE_PREFIX', None) or Projet.__name__.lower(), project_id))
         if cached_project:
             return Projet.from_db_row(self, json.loads(cached_project))
         cursor = self.execute(f"SELECT * FROM {Projet.DATABASE_NAME} WHERE projet_id = ?", (project_id,))
@@ -393,22 +448,58 @@ class Database:
             return project
         return None
 
-    def get_all_projects(self, limit: int = 0, *, key=lambda x: True) -> List['Projet']:
+    def get_all_projects(self, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, key=lambda x: True) -> List['Projet']:
         """Récupère tous les projets (optionnellement limités et filtrés).
 
         :param limit: limite sur le nombre de projets (0 = aucun)
+        :param sort_by: nom de champ pour trier (doit être dans Projet.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
         :param key: fonction de filtrage optionnelle
         :return: liste d'objets Projet
         """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                if v is None:
+                    return (1, None)
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
         cached_projects = self.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), None, "all"))
         if cached_projects:
             all_projects_id = json.loads(cached_projects)
             projects = [self.get_project_id(pid) for pid in all_projects_id]
             projects = [project for project in projects if project is not None and key(project)]
+            if sort_by:
+                if sort_by not in getattr(Projet, 'FIELD_NAMES', []):
+                    raise ValueError(f"Invalid sort_by field for projects: {sort_by}")
+                projects = _apply_python_sort(projects, sort_by, sort_dir)
             if limit > 0:
+                if offset and offset > 0:
+                    projects = projects[offset:]
                 return projects[:limit]
             return projects
-        cursor = self.execute(f"SELECT * FROM {Projet.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        order_clause = ""
+        if sort_by:
+            if sort_by not in getattr(Projet, 'FIELD_NAMES', []):
+                raise ValueError(f"Invalid sort_by field for projects: {sort_by}")
+            if sort_dir.lower() not in ('asc', 'desc'):
+                raise ValueError('sort_dir must be "asc" or "desc"')
+            order_clause = f" ORDER BY {sort_by} {sort_dir.upper()}"
+        if limit > 0:
+            query_tail = " LIMIT ? OFFSET ?"
+            sql_params = (limit, offset)
+        else:
+            query_tail = ""
+            sql_params = ()
+        cursor = self.execute(f"SELECT * FROM {Projet.DATABASE_NAME}" + order_clause + query_tail, sql_params)  # TODO: Décider si la coupe doit être faite en SQL ou en Python
         rows = cursor.fetchall()
         cursor.close()
         if limit == 0:
@@ -417,6 +508,8 @@ class Database:
             self.redis_client.setex(redis_key(Projet.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_projects_id))
         projects = [Projet.from_db_row(self, row) for row in rows]
         projects = [project for project in projects if key(project)]
+        if sort_by:
+            projects = _apply_python_sort(projects, sort_by, sort_dir)
         return projects
 
     def get_interaction_by_id(self, interaction_id: int) -> Optional['Interaction']:
@@ -425,7 +518,8 @@ class Database:
         :param interaction_id: identifiant de l'interaction
         :return: instance Interaction ou None si non trouvée
         """
-        cached_interaction = self.redis_client.get(redis_key(getattr(Interaction, 'CACHE_PREFIX', None) or Interaction.__name__.lower(), interaction_id))
+        cached_interaction = self.redis_client.get(
+            redis_key(getattr(Interaction, 'CACHE_PREFIX', None) or Interaction.__name__.lower(), interaction_id))
         if cached_interaction:
             return Interaction.from_db_row(self, json.loads(cached_interaction))
         cursor = self.execute(f"SELECT * FROM {Interaction.DATABASE_NAME} WHERE interaction_id = ?", (interaction_id,))
@@ -436,16 +530,54 @@ class Database:
             return interaction
         return None
 
-    def get_all_interactions(self, project_id : int | None = None, user_id: int | None = None, limit: int = 0, *, key=lambda x: True) -> List['Interaction']:
+    def get_all_interactions(self, project_id : int | None = None, user_id: int | None = None, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, text: Optional[str] = None, key=lambda x: True) -> List['Interaction']:
         """Récupère les interactions, optionnellement filtrées par projet ou utilisateur.
 
         Utilise le cache Redis si disponible. Retourne une liste d'objets Interaction.
         :param project_id: filtrer par projet_id (optionnel)
         :param user_id: filtrer par utilisateur_id (optionnel)
         :param limit: nombre maximal d'interactions (0 = aucun)
+        :param sort_by: nom de champ pour trier (doit être dans Interaction.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
         :param key: fonction de filtrage optionnelle
         :return: liste d'objets Interaction
         """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                if v is None:
+                    return (1, None)
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
+        # Mappage d'alias pour faciliter l'utilisation de paramètres courts
+        INTERACTION_FIELD_ALIASES = {
+            'date': 'date_time_interaction',
+            'date_time': 'date_time_interaction',
+            'datetime': 'date_time_interaction',
+            'titre': 'titre',
+            'title': 'titre'
+        }
+
+        def _map_interaction_field(name: Optional[str]) -> Optional[str]:
+            """Mappe un alias de champ vers le nom réel attendu dans Interaction.FIELD_NAMES.
+            Conserve les formes pointées (relation.colonne) telles quelles.
+            """
+            if not name:
+                return None
+            s = str(name)
+            # Si la valeur contient un point, c'est une relation (ex: client.nom_entreprise) -> laisser telle quelle
+            if '.' in s:
+                return s
+            return INTERACTION_FIELD_ALIASES.get(s, s)
+
         cached_interactions = self.redis_client.get(redis_key(Interaction.DATABASE_NAME.lower(), None, "all"))
         if cached_interactions:
             all_interactions_id = json.loads(cached_interactions)
@@ -455,23 +587,142 @@ class Database:
                 interactions = [interaction for interaction in interactions if getattr(interaction, 'projet_id', None) == project_id]
             if user_id is not None:
                 interactions = [interaction for interaction in interactions if getattr(interaction, 'utilisateur_id', None) == user_id]
+            if sort_by:
+                # Normaliser quelques alias de relation utilisés dans les templates
+                REL_ALIAS = {
+                    'interlocuteur': 'utilisateur',
+                    'interlocuteurs': 'utilisateur',
+                    'user': 'utilisateur',
+                    'entreprise': 'client',
+                    'client': 'client',
+                    'utilisateur': 'utilisateur'
+                }
+                sb = str(sort_by)
+                # mapper les alias (ex: 'date' -> 'date_time_interaction', 'title' -> 'titre')
+                sb = _map_interaction_field(sort_by)
+                # Supporter uniquement la forme pointée: 'client.nom_entreprise' ou 'utilisateur.nom_prenom'
+                if '.' in sb:
+                    rel, col = sb.split('.', 1)
+                    rel = rel.lower().strip()
+                    col = col.strip()
+                    rel_norm = REL_ALIAS.get(rel, rel)
+                    if rel_norm == 'client':
+                        # N'accepter que la forme avec underscore pour la colonne (ex: 'nom_entreprise')
+                        col_norm = col
+                        if '.' in col_norm:
+                            raise ValueError(f"Invalid client sort field format: {col} (use underscore, e.g. 'nom_entreprise')")
+                        if col_norm not in getattr(Client, 'FIELD_NAMES', []):
+                            raise ValueError(f"Invalid client sort field: {col}")
+                        interactions = sorted(interactions, key=lambda i: ((getattr(i.client, col_norm) or '').lower()), reverse=(sort_dir.lower() == 'desc'))
+                    elif rel_norm == 'utilisateur':
+                        # Support tri composite nom + prenom
+                        if col == 'nom_prenom':
+                            interactions = sorted(interactions, key=lambda i: (((getattr(i.utilisateur, 'nom') or '').lower(), (getattr(i.utilisateur, 'prenom') or '').lower())), reverse=(sort_dir.lower() == 'desc'))
+                        else:
+                            if col not in getattr(Utilisateur, 'FIELD_NAMES', []):
+                                raise ValueError(f"Invalid utilisateur sort field: {col}")
+                            interactions = sorted(interactions, key=lambda i: ((getattr(i.utilisateur, col) or '').lower()), reverse=(sort_dir.lower() == 'desc'))
+                    else:
+                        raise ValueError(f"Unsupported relation for sort_by in cache: {rel}")
+                else:
+                    # Tri sur un champ de la table Interaction (tri Python) — n'accepte pas les variantes avec '_'
+                    # Appliquer le mapping d'alias (ex: 'date' -> 'date_time_interaction')
+                    sb_mapped = _map_interaction_field(sb)
+                    if sb_mapped not in getattr(Interaction, 'FIELD_NAMES', []):
+                        raise ValueError(f"Invalid sort_by field for interactions: {sb}")
+                    interactions = _apply_python_sort(interactions, sb_mapped, sort_dir)
+            # Appliquer offset+limit côté cache si demandés (offset pris en compte seulement si limit>0)
             if limit > 0:
+                if offset and offset > 0:
+                    interactions = interactions[offset:]
                 return interactions[:limit]
             return interactions
-        query = f"SELECT * FROM {Interaction.DATABASE_NAME}"
+        # Construire la requête en supportant d'éventuels JOINs si on trie sur des champs liés
+        # Par défaut on interroge la table d'interactions aliasée en 'i'
+        base_table = Interaction.DATABASE_NAME
+        query = f"SELECT i.* FROM {base_table} i"
         params: List[Any] = []
+        joins: List[str] = []
         conditions: List[str] = []
         if project_id is not None:
-            conditions.append("projet_id = ?")
+            conditions.append("i.projet_id = ?")
             params.append(project_id)
         if user_id is not None:
-            conditions.append("utilisateur_id = ?")
+            conditions.append("i.utilisateur_id = ?")
             params.append(user_id)
+
+        # Détecter si le tri porte sur une colonne liée (client.xxx ou utilisateur.xxx)
+        order_clause = ""
+        if sort_by:
+            # Support explicite du tri composite pour l'utilisateur (nom + prenom)
+            # mapper les alias si besoin (ex: 'date' -> 'date_time_interaction') mais garder la forme pointée
+            s_raw = str(sort_by)
+            s_mapped = _map_interaction_field(s_raw)
+            if s_mapped == 'utilisateur.nom_prenom' or s_raw == 'utilisateur.nom_prenom':
+                joins.append(f"JOIN {Utilisateur.DATABASE_NAME} u ON i.utilisateur_id = u.utilisateur_id")
+                if sort_dir.lower() not in ('asc', 'desc'):
+                    raise ValueError('sort_dir must be "asc" or "desc"')
+                order_clause = f" ORDER BY u.nom {sort_dir.upper()}, u.prenom {sort_dir.upper()}"
+            else:
+                # On n'accepte que la syntaxe avec '.' pour relation.colonne (ex: client.nom_entreprise)
+                s = s_mapped if s_mapped is not None else str(sort_by)
+                if '.' in s:
+                    rel, col = s.split('.', 1)
+                    rel = rel.lower()
+                    col = col.strip()
+                    # Normaliser quelques alias de relation utilisés dans les templates
+                    REL_ALIAS = {
+                        'interlocuteur': 'utilisateur',
+                        'interlocuteurs': 'utilisateur',
+                        'user': 'utilisateur',
+                        'entreprise': 'client',
+                        'client': 'client',
+                        'utilisateur': 'utilisateur'
+                    }
+                    rel_norm = REL_ALIAS.get(rel, rel)
+                    if rel_norm == 'client':
+                        # N'accepter que la forme avec underscore pour la colonne (ex: 'nom_entreprise')
+                        col_norm = col
+                        if '.' in col_norm:
+                            raise ValueError(f"Invalid client sort field format: {col} (use underscore, e.g. 'nom_entreprise')")
+                        if col_norm not in getattr(Client, 'FIELD_NAMES', []):
+                            raise ValueError(f"Invalid client sort field: {col}")
+                        # Ajouter JOIN vers la table Clients
+                        joins.append(f"JOIN {Client.DATABASE_NAME} c ON i.client_id = c.client_id")
+                        if sort_dir.lower() not in ('asc', 'desc'):
+                            raise ValueError('sort_dir must be "asc" or "desc"')
+                        order_clause = f" ORDER BY c.{col_norm} {sort_dir.upper()}"
+                    elif rel_norm in ('utilisateur', 'user', 'utilisateur_id', 'utilisateur'):
+                        # Valider le champ côté Utilisateur
+                        if col not in getattr(Utilisateur, 'FIELD_NAMES', []):
+                            raise ValueError(f"Invalid utilisateur sort field: {col}")
+                        joins.append(f"JOIN {Utilisateur.DATABASE_NAME} u ON i.utilisateur_id = u.utilisateur_id")
+                        if sort_dir.lower() not in ('asc', 'desc'):
+                            raise ValueError('sort_dir must be "asc" or "desc"')
+                        order_clause = f" ORDER BY u.{col} {sort_dir.upper()}"
+                    else:
+                        raise ValueError(f"Unsupported relation for sort_by: {rel}")
+                else:
+                    # Tri sur un champ de la table Interaction (après mapping d'alias)
+                    sort_field = _map_interaction_field(str(sort_by))
+                    if sort_field not in getattr(Interaction, 'FIELD_NAMES', []):
+                        raise ValueError(f"Invalid sort_by field for interactions: {sort_by}")
+                    if sort_dir.lower() not in ('asc', 'desc'):
+                        raise ValueError('sort_dir must be "asc" or "desc"')
+                    order_clause = f" ORDER BY i.{sort_field} {sort_dir.upper()}"
+
+        # Assembler JOINs et conditions
+        if joins:
+            query += ' ' + ' '.join(joins)
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
+        # Ajouter clause ORDER BY si nécessaire
+        query += order_clause
+        # Appliquer LIMIT/OFFSET si demandé
         if limit > 0:
-            query += " LIMIT ?"
+            query += " LIMIT ? OFFSET ?"
             params.append(limit)
+            params.append(offset)
         cursor = self.execute(query, tuple(params))
         rows = cursor.fetchall()
         cursor.close()
@@ -481,7 +732,58 @@ class Database:
             self.redis_client.setex(redis_key(Interaction.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_interactions_id))
         interactions = [Interaction.from_db_row(self, row) for row in rows]
         interactions = [interaction for interaction in interactions if key(interaction)]
+        # Si un sort_by est demandé, appliquer le tri Python final uniquement si c'est un champ d'Interaction
+        if sort_by:
+            mapped_final = _map_interaction_field(sort_by)
+            # Si mapped_final contient un point c'est un tri lié (déjà appliqué par SQL/join) -> ne rien faire
+            if mapped_final and '.' not in mapped_final and mapped_final in getattr(Interaction, 'FIELD_NAMES', []):
+                interactions = _apply_python_sort(interactions, mapped_final, sort_dir)
         return interactions
+
+    def count_interactions(self, project_id: int | None = None, user_id: int | None = None, text: Optional[str] = None) -> int:
+        """
+        Compte le nombre d'interactions correspondant aux filtres fournis en SQL.
+
+        :param project_id: filtrer par projet_id (optionnel)
+        :param user_id: filtrer par utilisateur_id (optionnel)
+        :param text: recherche texte libre (appliquée sur plusieurs colonnes via LIKE)
+        :return: nombre d'interactions correspondantes
+        """
+        base_table = Interaction.DATABASE_NAME
+        query = f"SELECT COUNT(*) FROM {base_table} i"
+        params: List[Any] = []
+        joins: List[str] = []
+        conditions: List[str] = []
+
+        # join clients/utilisateurs only if needed for text search
+        if text:
+            # We'll need client and utilisateur columns in the WHERE (nom_entreprise, contact_email, nom, prenom)
+            joins.append(f"JOIN {Client.DATABASE_NAME} c ON i.client_id = c.client_id")
+            joins.append(f"JOIN {Utilisateur.DATABASE_NAME} u ON i.utilisateur_id = u.utilisateur_id")
+            like = f"%{text.lower()}%"
+            # search across several columns similar to interaction_filter, use LOWER(...) to be case-insensitive
+            conditions.append("(CAST(i.interaction_id AS TEXT) LIKE ? OR LOWER(c.nom_entreprise) LIKE ? OR LOWER(c.contact_email) LIKE ? OR LOWER(u.nom) LIKE ? OR LOWER(u.prenom) LIKE ? OR LOWER(i.type_interaction_id) LIKE ? OR LOWER(i.titre) LIKE ? OR LOWER(i.contenu) LIKE ?)")
+            params.extend([like] * 8)
+
+        if project_id is not None:
+            conditions.append("i.projet_id = ?")
+            params.append(project_id)
+        if user_id is not None:
+            conditions.append("i.utilisateur_id = ?")
+            params.append(user_id)
+
+        if joins:
+            query += ' ' + ' '.join(joins)
+        if conditions:
+            query += ' WHERE ' + ' AND '.join(conditions)
+
+        cursor = self.execute(query, tuple(params))
+        row = cursor.fetchone()
+        cursor.close()
+        try:
+            return int(row[0]) if row and row[0] is not None else 0
+        except Exception:
+            return 0
 
 
 class DBObject:
@@ -514,6 +816,8 @@ class _RowInitMixin:
     # Champs à indexer dans Redis pour recherche exacte (secondary indexes)
     SECONDARY_INDEX_FIELDS: List[str] = []
 
+    db: Optional[Database]
+
     def _init_from(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]]):
         """Initialise les attributs d'une instance à partir d'une ligne (tuple/list) ou d'un dict.
 
@@ -533,7 +837,7 @@ class _RowInitMixin:
             for f in self.FIELD_NAMES:
                 setattr(self, f, data.get(f))
         elif isinstance(data, (list, tuple)):
-            assert len(data) == len(self.FIELD_NAMES), f"Data tuple must have exactly {len(self.FIELD_NAMES)} elements"
+            assert len(data) == len(self.FIELD_NAMES), f"Data tuple must have exactly {len(self.FIELD_NAMES)} elements ({len(data)} given)"
             for f, v in zip(self.FIELD_NAMES, data):
                 setattr(self, f, v)
         else:
@@ -549,8 +853,8 @@ class _RowInitMixin:
                 pass
 
     @classmethod
-    def from_db_row(cls, db: Database, row: Tuple[Any, ...]):
-        """Constructeur de classe alternatif à partir d'une ligne de résultat SQL.
+    def from_db_row(cls, db: Database, row: Tuple[Any, ...] | Dict[str, Any]):
+        """Constructeur de classe alternatif à partir d'une ligne de résultat SQL ou d'un dict.
 
         :param db: instance de Database
         :param row: tuple contenant les valeurs des champs dans l'ordre FIELD_NAMES
@@ -558,6 +862,57 @@ class _RowInitMixin:
         """
         # Cast cls to Any so static analyzers won't complain about varying __init__ signatures
         return cast(Any, cls)(db, row)
+
+    @classmethod
+    def from_dict(cls, db: Database, data: Dict[str, Any]):
+        """Constructeur de classe alternatif à partir d'un dictionnaire.
+
+        :param db: instance de Database
+        :param data: dictionnaire contenant les valeurs des champs
+        :return: instance de la classe
+        """
+        # Cast cls to Any so static analyzers won't complain about varying __init__ signatures
+        return cast(Any, cls)(db, data)
+
+    @classmethod
+    def get_by_id(cls, db: 'Database', id: int) -> Optional[Any]:
+        """Récupère une instance de la classe par son identifiant.
+
+        Essaie d'abord d'utiliser le cache Redis (si présent), sinon effectue une requête SQL
+        sur la table déterminée par `DATABASE_NAME` et le champ d'identifiant trouvé dans `FIELD_NAMES`.
+        :param db: instance de Database
+        :param id: identifiant à rechercher
+        :return: instance de la classe ou None si non trouvé
+        :raises ValueError: si aucun champ d'identifiant n'est défini pour la classe
+        """
+        # Tenter le cache Redis si disponible
+        cache_prefix = getattr(cls, 'CACHE_PREFIX', None) or cls.__name__.lower()
+        try:
+            cached = getattr(db, 'redis_client', None)
+            if cached is not None:
+                payload = db.redis_client.get(redis_key(cache_prefix, id))
+                if payload:
+                    return cls.from_db_row(db, json.loads(payload))
+        except Exception:
+            # Ne pas bloquer en cas d'erreur cache
+            pass
+
+        # Déterminer le champ d'identifiant (ex: 'user_id', 'client_id', ...)
+        id_field = next((f for f in getattr(cls, 'FIELD_NAMES', []) if isinstance(f, str) and f.endswith('_id')), None)
+        if id_field is None:
+            raise ValueError(f"No ID field defined for class {cls.__name__}")
+
+        # Déterminer le nom de la table
+        database_name = getattr(cls, 'DATABASE_NAME', None)
+        if database_name is None:
+            database_name = cls.__name__ + 's'
+
+        cursor = db.execute(f"SELECT * FROM {database_name} WHERE {id_field} = ?", (id,))
+        row = cursor.fetchone()
+        cursor.close()
+        if row:
+            return cls.from_db_row(db, row)
+        return None
 
     def to_dict(self) -> Dict[str, Any]:
         """Sérialise l'objet en dictionnaire en ne conservant que les champs listés dans FIELD_NAMES."""
@@ -684,8 +1039,7 @@ class _RowInitMixin:
         database_name = getattr(self, 'DATABASE_NAME', None)
         if database_name is None:
             database_name = self.__class__.__name__ + "s"  # Pluriel simple par défaut
-            logging.warn("Using default DATABASE_NAME '%s' for class %s. It's recommended to explicitly set DATABASE_NAME.", database_name, self.__class__.__name__)
-
+            logging.warning("Using default DATABASE_NAME '%s' for class %s. It's recommended to explicitly set DATABASE_NAME.", database_name, self.__class__.__name__)
         # Sauvegarde l'objet dans la base de données
         fields = ', '.join(self.FIELD_NAMES)
         placeholders = ', '.join(['?'] * len(self.FIELD_NAMES))
@@ -798,9 +1152,9 @@ class Role(DBObject, _RowInitMixin):
     Permissions (booléens) indiquant les actions autorisées pour ce rôle.
     """
     FIELD_NAMES = [
-        'role_id', 'nom', 'hierarchie',
+        'role_id', 'nom', 'hierarchie', 'administrateur',
         'peut_gerer_utilisateurs', 'peut_gerer_roles',
-        'peut_lire_clients', 'peut_gerer_clients', 'peut_gerer_interactions',
+        'peut_lire_clients', 'peut_gerer_clients', 'peut_creer_interactions', 'peut_gerer_interactions',
         'peut_lire_projets', 'peut_gerer_projets', 'peut_gerer_jalons', 'peut_assigner_intervenants',
         'peut_lire_intervenants', 'peut_modifier_intervenants', 'peut_acceder_documents', 'peut_gerer_competences',
         'peut_lancer_matching', 'peut_exporter_csv'
@@ -811,25 +1165,50 @@ class Role(DBObject, _RowInitMixin):
     role_id: int
     nom: str
     hierarchie: int
-    peut_gerer_utilisateurs: bool
-    peut_gerer_roles: bool
-    peut_lire_clients: bool
-    peut_gerer_clients: bool
-    peut_gerer_interactions: bool
-    peut_lire_projets: bool
-    peut_gerer_projets: bool
-    peut_gerer_jalons: bool
-    peut_assigner_intervenants: bool
-    peut_lire_intervenants: bool
-    peut_modifier_intervenants: bool
-    peut_acceder_documents: bool
-    peut_gerer_competences: bool
-    peut_lancer_matching: bool
-    peut_exporter_csv: bool
+
+    administrateur: bool # Possède toutes les permissions
+    peut_gerer_utilisateurs: bool # Peut créer, modifier et supprimer des utilisateurs
+    peut_gerer_roles: bool # Peut créer, modifier, supprimer et ajouter aux utilisateurs des rôles
+    peut_lire_clients: bool # Peut voir la liste des clients et leurs détails
+    peut_gerer_clients: bool # Peut créer, modifier et supprimer des clients
+
+    peut_creer_interactions: bool # Peut créer des interactions liées aux projets
+    peut_gerer_interactions: bool # Peut modifier et supprimer des interactions
+
+    peut_lire_projets: bool # Peut voir la liste des projets et leurs détails
+    peut_gerer_projets: bool # Peut créer, modifier et supprimer des projets
+    peut_gerer_jalons: bool # Peut créer, modifier et supprimer des jalons de projets
+    peut_assigner_intervenants: bool # Peut assigner des intervenants aux projets
+    peut_lire_intervenants: bool # Peut voir la liste des intervenants et leurs détails
+    peut_modifier_intervenants: bool # Peut modifier les informations des intervenants
+    peut_acceder_documents: bool # Peut accéder aux documents liés aux intervenants et projets
+    peut_gerer_competences: bool # Peut créer, modifier et supprimer des compétences des intervenants
+    peut_lancer_matching: bool # Peut lancer le processus de matching entre projets et intervenants
+    peut_exporter_csv: bool # Peut exporter des données au format CSV
 
     def __init__(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]] = None):
         super().__init__(db)
         self._init_from(db, data)
+
+    @classmethod
+    def get_by_id(cls, db: Database, id: int) -> Optional['Role']:
+        """Récupère un rôle par son identifiant (cache Redis puis SQL)."""
+        try:
+            cached = db.redis_client.get(redis_key(getattr(cls, 'CACHE_PREFIX', None) or cls.__name__.lower(), id))
+            if cached:
+                return cls.from_db_row(db, json.loads(cached))
+        except Exception:
+            pass
+        id_field = next((f for f in getattr(cls, 'FIELD_NAMES', []) if isinstance(f, str) and f.endswith('_id')), None)
+        if id_field is None:
+            raise ValueError(f"No ID field defined for class {cls.__name__}")
+        database_name = getattr(cls, 'DATABASE_NAME', None) or cls.__name__ + 's'
+        cursor = db.execute(f"SELECT * FROM {database_name} WHERE {id_field} = ?", (id,))
+        row = cursor.fetchone()
+        cursor.close()
+        if row:
+            return cls.from_db_row(db, row)
+        return None
 
     @property
     def users(self):
@@ -838,7 +1217,8 @@ class Role(DBObject, _RowInitMixin):
         Utilise le cache Redis si disponible, sinon interroge la table Utilisateurs.
         :return: liste d'instances Utilisateur
         """
-        cached_users = self.db.redis_client.get(redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"))
+        cached_users = self.db.redis_client.get(
+            redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"))
         if cached_users:
             users_ids = json.loads(cached_users)
             users = [self.db.get_user_by_id(uid) for uid in users_ids]
@@ -849,11 +1229,12 @@ class Role(DBObject, _RowInitMixin):
         users = [Utilisateur.from_db_row(self.db, row) for row in rows]
         # Mettre en cache les IDs des utilisateurs
         users_ids = [user.utilisateur_id for user in users]
-        self.db.redis_client.setex(redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"), 1_800, json.dumps(users_ids))
+        self.db.redis_client.setex(
+            redis_key(getattr(Role, 'CACHE_PREFIX', None) or Role.__name__.lower(), self.role_id, "users"), 1_800, json.dumps(users_ids))
         return users
 
 
-class Utilisateur(DBObject, _RowInitMixin):
+class Utilisateur(UserMixin, DBObject, _RowInitMixin):
     """
     Représente un utilisateur du site. Il peut être intervenant ou membre de TNS.
 
@@ -900,6 +1281,7 @@ class Utilisateur(DBObject, _RowInitMixin):
     mot_de_passe_expire: Optional[datetime.date]
     nom: str
     prenom: str
+    avatar: Optional[str]
     role_id: int
     est_intervenant: bool
     heures_dispo_semaine: Optional[int]
@@ -925,6 +1307,31 @@ class Utilisateur(DBObject, _RowInitMixin):
         except Exception:
             pass
 
+    # Méthodes attendues par Flask-Login
+    def get_id(self) -> str:
+        """Retourne l'identifiant utilisateur sous forme de chaîne pour Flask-Login."""
+        return str(getattr(self, 'utilisateur_id', ''))
+
+    @property
+    def is_active(self) -> bool:
+        """Compte actif (toujours True ici, ajuster si vous avez un champ de désactivation)."""
+        return True
+
+    @property
+    def is_authenticated(self) -> bool:
+        """Indique si l'utilisateur est authentifié (True pour instances chargées)."""
+        return True
+
+    @property
+    def is_anonymous(self) -> bool:
+        """Indique si c'est un utilisateur anonyme (toujours False pour nos objets)."""
+        return False
+
+    @classmethod
+    def get_by_id(cls, db: Database, id: int) -> Optional['Utilisateur']:
+        """Récupère un utilisateur par id (cache Redis puis SQL)."""
+        return db.get_user_by_id(id)
+
     def _patch(self):
         """Normalise et convertit certains champs (dates, entiers, booléens, chemins) après lecture de la BDD.
 
@@ -937,9 +1344,7 @@ class Utilisateur(DBObject, _RowInitMixin):
             if isinstance(self.mot_de_passe_expire, str):
                 self.mot_de_passe_expire = datetime.datetime.strptime(self.mot_de_passe_expire, '%Y-%m-%d').date()
             else:
-
-                logging.warn(f"Invalid mot_de_passe_expire for user {self.utilisateur_id} (v={self.mot_de_passe_expire}), setting to None")
-
+                logging.warning(f"Invalid mot_de_passe_expire for user {self.utilisateur_id} (v={self.mot_de_passe_expire}), setting to None")
                 self.mot_de_passe_expire = None
         if not isinstance(self.role_id, int):
             self.role_id = int(self.role_id)
@@ -974,7 +1379,9 @@ class Utilisateur(DBObject, _RowInitMixin):
         Récupère les compétences associées à l'utilisateur.
         :return: Liste des objets Compétence ou None si aucune compétence
         """
-        cached_competences_ids = self.db.redis_client.get(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.utilisateur_id, "competences"))
+        cached_competences_ids = self.db.redis_client.get(
+            redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.utilisateur_id,
+                      "competences"))
         not_cached_competences = False
         if cached_competences_ids:
             competences_ids = json.loads(cached_competences_ids)
@@ -991,16 +1398,16 @@ class Utilisateur(DBObject, _RowInitMixin):
         if not_cached_competences or not cached_competences_ids:
             cursor = self.db.execute(
                 "SELECT c.* FROM competences c "
-
                 "JOIN Intervenant_competences uc ON c.competence_id = uc.competence_id "
                 "WHERE uc.intervenant_id = ?", (self.utilisateur_id,))
-
             rows = cursor.fetchall()
             competences = [Competence.from_db_row(self.db, row) for row in rows]
             cursor.close()
             # Mettre en cache les IDs des compétences
             competences_ids = [competence.competence_id for competence in competences]
-            self.db.redis_client.setex(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.utilisateur_id, "competences"), 1_800, json.dumps(competences_ids))
+            self.db.redis_client.setex(
+                redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(),
+                          self.utilisateur_id, "competences"), 1_800, json.dumps(competences_ids))
             return competences
         return None
 
@@ -1087,7 +1494,9 @@ class Client(DBObject, _RowInitMixin):
         :return: instance Utilisateur
         :raises ValueError: si l'utilisateur associé n'existe pas
         """
-        cached_user = self.db.redis_client.get(redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(), self.interlocuteur_principal_id))
+        cached_user = self.db.redis_client.get(
+            redis_key(getattr(Utilisateur, 'CACHE_PREFIX', None) or Utilisateur.__name__.lower(),
+                      self.interlocuteur_principal_id))
         if cached_user:
             return Utilisateur.from_db_row(self.db, json.loads(cached_user))
         cursor = self.db.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} WHERE utilisateur_id = ?", (self.interlocuteur_principal_id,))
@@ -1100,8 +1509,8 @@ class Client(DBObject, _RowInitMixin):
 
     @property
     def conventions(self) -> list[Any] | None:
-        """Liste des conventions liées à ce client (utilise cache si possible)."""
-        cached_conventions_ids = self.db.redis_client.get(redis_key(Client.DATABASE_NAME.lower(), self.client_id, "conventions"))
+        cached_conventions_ids = self.db.redis_client.get(
+            redis_key(Client.DATABASE_NAME.lower(), self.client_id, "conventions"))
         not_cached_conventions = False
         if cached_conventions_ids:
             conventions_ids = json.loads(cached_conventions_ids)
@@ -1128,8 +1537,8 @@ class Client(DBObject, _RowInitMixin):
 
     @property
     def interactions(self) -> list[Any] | None:
-        """Liste des interactions liées à ce client (utilise cache si possible)."""
-        cached_interactions_ids = self.db.redis_client.get(redis_key(Client.DATABASE_NAME.lower(), self.client_id, "interactions"))
+        cached_interactions_ids = self.db.redis_client.get(
+            redis_key(Client.DATABASE_NAME.lower(), self.client_id, "interactions"))
         not_cached_interactions = False
         if cached_interactions_ids:
             interactions_ids = json.loads(cached_interactions_ids)
@@ -1200,7 +1609,8 @@ class Convention(DBObject, _RowInitMixin):
         :return: instance Client
         :raises ValueError: si le client n'existe pas
         """
-        cached_client = self.db.redis_client.get(redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), self.client_id))
+        cached_client = self.db.redis_client.get(
+            redis_key(getattr(Client, 'CACHE_PREFIX', None) or Client.__name__.lower(), self.client_id))
         if cached_client:
             return Client.from_db_row(self.db, json.loads(cached_client))
         cursor = self.db.execute(f"SELECT * FROM {Client.DATABASE_NAME} WHERE client_id = ?", (self.client_id,))
@@ -1214,7 +1624,8 @@ class Convention(DBObject, _RowInitMixin):
     @property
     def projets(self) -> list[Any] | None:
         """Liste des projets associés à cette convention (utilise cache si possible)."""
-        cached_projets_ids = self.db.redis_client.get(redis_key(Convention.DATABASE_NAME.lower(), self.convention_id, "projets"))
+        cached_projets_ids = self.db.redis_client.get(
+            redis_key(Convention.DATABASE_NAME.lower(), self.convention_id, "projets"))
         not_cached_projets = False
         if cached_projets_ids:
             projets_ids = json.loads(cached_projets_ids)
@@ -1289,7 +1700,8 @@ class Projet(DBObject, _RowInitMixin):
         :return: instance Convention
         :raises ValueError: si la convention n'existe pas
         """
-        cached_convention = self.db.redis_client.get(redis_key(getattr(Convention, 'CACHE_PREFIX', None) or Convention.__name__.lower(), self.convention_id))
+        cached_convention = self.db.redis_client.get(
+            redis_key(getattr(Convention, 'CACHE_PREFIX', None) or Convention.__name__.lower(), self.convention_id))
         if cached_convention:
             return Convention.from_db_row(self.db, json.loads(cached_convention))
         cursor = self.db.execute(f"SELECT * FROM {Convention.DATABASE_NAME} WHERE convention_id = ?", (self.convention_id,))
@@ -1334,7 +1746,8 @@ class Projet(DBObject, _RowInitMixin):
         Récupère les compétences associées au projet.
         :return: Liste des objets Compétence ou None si aucune compétence
         """
-        cached_competences_ids = self.db.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "competences"))
+        cached_competences_ids = self.db.redis_client.get(
+            redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "competences"))
         not_cached_competences = False
         if cached_competences_ids:
             competences_ids = json.loads(cached_competences_ids)
@@ -1370,7 +1783,7 @@ class Projet(DBObject, _RowInitMixin):
         """
         # Tentative d'utilisation du cache Redis. Le cache stocke une liste d'objets simples
         # contenant {"utilisateur_id": ..., "poste": ...} afin de pouvoir reconstituer
-        # des objets Intervenant avec leur poste sans dupliquer la totalité des données utilisateur.
+        # des objets Intervenant avec leur poste/projet sans dupliquer la totalité des données utilisateur.
         cached = None
         try:
             cached = self.db.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "intervenants"))
@@ -1487,7 +1900,8 @@ class Competence(DBObject, _RowInitMixin):
         """
         if self.competence_parent is None:
             return None
-        cached_competence = self.db.redis_client.get(redis_key(getattr(Competence, 'CACHE_PREFIX', None) or Competence.__name__.lower(), self.competence_parent))
+        cached_competence = self.db.redis_client.get(
+            redis_key(getattr(Competence, 'CACHE_PREFIX', None) or Competence.__name__.lower(), self.competence_parent))
         if cached_competence:
             return Competence.from_db_row(self.db, json.loads(cached_competence))
         cursor = self.db.execute(f"SELECT * FROM {Competence.DATABASE_NAME} WHERE competence_id = ?", (self.competence_parent,))
@@ -1553,11 +1967,28 @@ class Interaction(DBObject, _RowInitMixin):
     utilisateur_id: identifiant de l'utilisateur ayant effectué l'interaction (clé étrangère vers Utilisateur)
     """
 
-    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'contenu', 'client_id', 'utilisateur_id']
+    FIELD_NAMES = ['interaction_id', 'date_time_interaction', 'titre', 'contenu', 'type_interaction_id', 'client_id', 'utilisateur_id']
     DATABASE_NAME = "Interactions"
 
+    types_names = {
+        "email": "Email",
+        "phone": "Appel téléphonique",
+        "meeting": "Réunion",
+        "textmessage": "Message texte",
+        "other": "Autre",
+        "Email": "email",
+        "Appel téléphonique": "phone",
+        "Réunion": "meeting",
+        "Message texte": "textmessage",
+        "Autre": "other"
+    }
+
+    interactions_types = ['email', 'phone', 'meeting', 'textmessage', 'other']
+
     interaction_id: int
-    date_time_interaction: str
+    date_time_interaction: datetime.datetime
+    type_interaction_id: str # ('email', 'phone', 'meeting', 'textmessage', 'other')
+    titre: str
     contenu: str
     client_id: int
     utilisateur_id: int
@@ -1565,6 +1996,29 @@ class Interaction(DBObject, _RowInitMixin):
     def __init__(self, db: Database, data: Optional[Tuple[Any, ...]] | Optional[Dict[str, Any]] = None):
         super().__init__(db)
         self._init_from(db, data)
+        self._patch()
+        # Après patch, mettre en cache l'objet si possible
+        try:
+            self._try_cache()
+        except Exception:
+            pass
+
+    def _patch(self):
+        """Valide le type d'interaction avant de sauvegarder."""
+        if self.type_interaction_id not in self.interactions_types:
+            raise ValueError(f"Invalid interaction type: {self.type_interaction_id}. Must be one of {self.interactions_types}")
+        if isinstance(self.date_time_interaction, str):
+            if ' ' in self.date_time_interaction:
+                self.date_time_interaction = datetime.datetime.strptime(self.date_time_interaction, '%Y-%m-%d %H:%M:%S')
+            else:
+                self.date_time_interaction = datetime.datetime.strptime(self.date_time_interaction, '%Y-%m-%d')
+        if isinstance(self.date_time_interaction, datetime.date) and not isinstance(self.date_time_interaction, datetime.datetime):
+            self.date_time_interaction = datetime.datetime.combine(self.date_time_interaction, datetime.time.min)
+
+    @classmethod
+    def get_by_id(cls, db: Database, id: int) -> Optional['Interaction']:
+        """Récupère une interaction par id (cache Redis puis SQL)."""
+        return db.get_interaction_by_id(id)
 
     @property
     def client(self) -> Client:
@@ -1589,3 +2043,13 @@ class Interaction(DBObject, _RowInitMixin):
         if user:
             return user
         raise ValueError(f"User with id {self.utilisateur_id} not found")
+
+    @property
+    def type_interaction(self) -> str:
+        """Retourne le type d'interaction associé à cette interaction.
+
+        :raises ValueError: si le type d'interaction n'existe pas
+        :return: instance InteractionType
+        """
+        return self.types_names.get(self.type_interaction_id, "Inconnu")
+

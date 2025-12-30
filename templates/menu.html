@@ -3,38 +3,132 @@
 <head>
     <meta charset="utf-8">
     <title>{% block title %}TNS'app{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/svg" href="static/tns_logo_icon_couleur.svg"/>
+    <link rel="icon" type="image/svg" href="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}"/>
 </head>
 <body>
 
-    <nav class="main-menu">
-        <img class="main-menu-img" src="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}" alt="Logo TNS" width="60">
+<nav class="main-menu">
+    <img class="main-menu-img" src="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}" alt="Logo TNS"
+         width="60">
 
-        <ul class="main-menu-items">
-            <li><a href="{{ url_for('accueil') }}">Accueil</a></li>
-            <li><a href="{{ url_for('clients') }}">Clients</a></li>
-            <li><a href="{{ url_for('utilisateurs') }}">Utilisateurs</a></li>
-            <li><a href="{{ url_for('conventions.index')}}">Conventions</a></li>
-            <li><a href="{{ url_for('recherche_avance') }}">Recherche</a></li>
+    <ul class="main-menu-items">
+        <li><a href="{{ url_for('accueil') }}">Accueil</a></li>
+        <li><a href="{{ url_for('clients') }}">Clients</a></li>
+        <li class="menu-dropdown">
+            <a href="{{ url_for('interactions.interactions_home') }}" class="dropbtn">Interactions</a>
+            <ul class="dropdown-content">
+                <li><a href="{{ url_for('interactions.interactions_home') }}"><i class="fa-solid fa-list"></i> Liste
+                    interactions</a></li>
+                <li><a href="{{ url_for('interactions.create_interaction') }}"><i class="fa-solid fa-plus"></i> Créer
+                    interaction</a></li>
+            </ul>
+        </li>
+        <li><a href="{{ url_for('utilisateurs') }}">Utilisateurs</a></li>
+        <li><a href="{{ url_for('conventions.index') }}">Conventions</a></li>
+        <li><a href="{{ url_for('recherche_avance') }}">Recherche</a></li>
+    </ul>
+
+    {% if current_user.is_authenticated %}
+        <div class="user-menu">
+            <span class="user-name">{{ current_user.prenom }} {{ current_user.nom }}</span>
+            <div class="user-menu-items">
+                <a href="#">Profil</a>
+                <a href="#">Paramètres</a>
+                <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-right-from-bracket"></i>
+                    Déconnexion</a>
+            </div>
+        </div>
+    {% endif %}
+
+</nav>
+
+<!-- From Uiverse.io by xerith_8140 -->
+<ul class="notification-container">
+    <!-- Template item (hidden). JS va cloner ce code pour créer la notification de manière dynamique -->
+    <li class="notification-item template" style="display:none;" aria-hidden="true">
+        <div class="notification-content">
+            <div class="notification-icon">
+                <!-- placeholder icon -->
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <div class="notification-text">Notification</div>
+        </div>
+        <div class="notification-icon notification-close" role="button" aria-label="Fermer">
+            <i class="fa-solid fa-xmark"></i>
+        </div>
+        <div class="notification-progress-bar"></div>
+    </li>
+</ul>
+
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer>
+    <nav class="footer-menu">
+
+        <ul class="footer-menu-items">
+            <li><a href="{{ url_for('cgu') }}">CGU</a></li>
+            <li><a href="{{ url_for('contact') }}">Contact</a></li>
+            <li><a href="{{ url_for('rgpd') }}">RGPD</a></li>
+
         </ul>
     </nav>
+</footer>
 
-    <main>
-        {% block content %}{% endblock %}
-    </main>
 
-    <footer>
-        <nav class="footer-menu">
-        
-            <ul class="footer-menu-items">
-                <li><a href="{{ url_for('cgu') }}">CGU</a></li>
-                <li><a href="{{ url_for('contact') }}">Contact</a></li>
-                <li><a href="{{ url_for('rgpd') }}">RGPD</a></li>
-                
-            </ul>
-        </nav>
-    </footer>
+<dialog id="confirm" class="dialog">
+    <section class="container">
+        <form method="dialog" class="dialog-form">
+            <h3 id="confirm-title">Confirmer</h3>
+            <p id="confirm-description">Êtes-vous sûr de vouloir supprimer cette interaction ? Cette action est
+                irréversible.</p>
+            <div class="dialog-actions">
+                <button value="cancel" class="secondary-button" id="confirm-cancel">Annuler</button>
+                <button id="confirm-delete-button" value="confirm" class="danger-button">Supprimer</button>
+            </div>
+        </form>
+    </section>
+</dialog>
+
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='scripts/showNotif.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/confirmDialog.js') }}"></script>
+
+
+{#
+Pour afficher une notification flash depuis une route Flask, utilisez le code suivant 
+from flask import flash, redirect, url_for
+flash('Utilisateur créé avec succès', 'success')
+return redirect(url_for('utilisateurs'))
+#}
+
+{% if get_flashed_messages() %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const msgs = {{ get_flashed_messages(with_categories=true) | tojson | safe }};
+            msgs.forEach(function (m) {
+                // m is [category, message] when with_categories=True
+                const category = (m[0] || 'info');
+                const message = m[1] || m[0] || '';
+                // map flask categories to our css types
+                const map = {
+                    'error': 'error',
+                    'danger': 'error',
+                    'warning': 'warning',
+                    'info': 'info',
+                    'success': 'success'
+                };
+                const type = map[category] || 'info';
+                // duration 5000ms
+                if (window.notify) window.notify(type, message, 5000);
+            });
+        });
+    </script>
+{% endif %}
 
 </body>
 </html>

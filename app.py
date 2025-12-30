@@ -1,51 +1,29 @@
-from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, session
-from flask_login import LoginManager, UserMixin, login_user, login_required, current_user
+from typing import cast, Literal
+
+from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request
+from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 
 from app_conventions import conventions_bp
 from hashlib import scrypt
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-import sqlite3, csv, io, redis, os, base64, database
-
+import os, csv, io
 
 load_dotenv()
 DATABASE= os.getenv('DATABASE')
 
+import os, base64, sqlite3
+from tools import get_db, has_permission
 
-class User(UserMixin):
-    '''Définit la classe de l'utilisateur'''
-    def __init__(self, id, nom, prenom, role_id):
-        self.id=id
-        self.nom = nom
-        self.prenom = prenom
-        self.role_id = role_id
-    
-    @classmethod
-    def get(cls, user_id : str):
-        try:
-            c = get_db().cursor()
-            
-            c.execute("SELECT utilisateur_id, nom, prenom, role_id FROM Utilisateurs WHERE utilisateur_id = ?",(int(user_id), ))
-            row = c.fetchone()
-            
-            return cls(*row)
-        except:
-            return None
+# Importation des blueprints
+from interactions import interactions_bp
+from clients import clients_bp
 
 
-def get_db():
-    '''Permet de récuperer la DB'''
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = database.Database(
-            redis_client=redis.Redis(host='localhost', port=6379, db=0),
-            database=DATABASE
-        )
-    return db
 
 def get_clients():
-    '''Fonction qui renvoie tout les clients de la DB'''
+    """Fonction qui renvoie tout les clients de la DB"""
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row 
     cursor = conn.cursor()
@@ -56,7 +34,7 @@ def get_clients():
     return clients
 
 def get_utilisateurs():
-    '''Fonction qui renvoie tout les utilisateurs de la DB'''
+    """Fonction qui renvoie tout les utilisateurs de la DB"""
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row 
     cursor = conn.cursor()
@@ -66,23 +44,11 @@ def get_utilisateurs():
 
     return utilisateurs
 
-def can_manage_users(us : User):
-    '''Fonction qui va vérifie si une personne à le droit de modifier les utilisateurs \n
-    Renvoie un booléen'''
-
-    c = get_db().cursor()
-    c.execute('SELECT peut_gerer_utilisateurs FROM Roles WHERE role_id = ?', (us.role_id,))
-
-    donnee_users = c.fetchone()
-    if donnee_users == None or donnee_users[0] == False:
-        return False
-
-    return True
 
 def format_date(date_value):
-    '''Fonction qui change le format de la date en un format date classique sous forme de str'''
+    """Fonction qui change le format de la date en un format date classique sous forme de str"""
     if not date_value:
-        return "" 
+        return ""
     if isinstance(date_value, str):
         try:
             return datetime.fromisoformat(date_value).strftime("%d/%m/%Y")
@@ -90,37 +56,40 @@ def format_date(date_value):
             return datetime.strptime(date_value, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y")
     if isinstance(date_value, (datetime,)):
         return date_value.strftime("%d/%m/%Y")
-    
+
     return str(date_value)
 
 
 app = Flask(__name__)
-# Enregistrer le blueprint des conventions sur l'instance unique 'app'
-app.register_blueprint(conventions_bp)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
 # Clé pour l'encodage des cookies de session
-app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867' 
+app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867'
 
+
+# Blueprints are registered here
+app.register_blueprint(conventions_bp)
+app.register_blueprint(interactions_bp)
+app.register_blueprint(clients_bp)
 
 def hash_password(mdp : str):
-    '''Fonction qui hash et sale le mot de passe,
-    Les 16 premiers octets sont le salt, le reste le mdp.'''
+    """Fonction qui hash et sale le mot de passe,
+    Les 16 premiers octets sont le salt, le reste le mdp."""
     salt = os.urandom(16) # Génération d'un salt
 
     mdp_hache = scrypt(mdp.encode(), salt=salt, n=2**14, r=8, p=1) # Hachage du mdp avec le salt
 
     # Encodage en B64, et remise en forme texte pour stockage.
-    return base64.b64encode(salt+mdp_hache).decode() 
-    
+    return base64.b64encode(salt+mdp_hache).decode()
+
 def verify_password(mdp_entre : str, stored_hash):
-    '''Fonction qui vérifie le mot de passe avec le hashé. \n
+    """Fonction qui vérifie le mot de passe avec le hashé. \n
     Il est impossible de revenir au mdp depuis le hash,donc on hache l'entrée avec le même salt et on vérifie l'égalité \n
-    Le résultat est un booléen'''
-    
+    Le résultat est un booléen"""
+
     octets_decodes = base64.b64decode(stored_hash) # Bytes obtenus par décodage en B64
     salt = octets_decodes[:16]
 
@@ -133,39 +102,44 @@ def verify_password(mdp_entre : str, stored_hash):
 
 @login_manager.user_loader
 def load_user(uid : str):
-    '''Fonction qui charge l'utilisateur'''
-    return User.get(uid)
-
-
+    """Fonction qui charge l'utilisateur"""
+    return get_db().get_user_by_id(int(uid))
 
 @app.route("/login", methods = ["GET", "POST"])
 def login():
-    '''Fonction pour la route /login \n
-    Renvoie les page pour le login et vérifie le mdp'''
+    """Fonction pour la route /login \n
+    Renvoie les page pour le login et vérifie le mdp"""
     has_failed_login = False
 
-    if request.method == 'POST' : 
-        
+    if request.method == 'POST' :
         c = get_db().cursor()
-
         adressemail = request.form["Adresse e-mail"]
         mdp = request.form["Mot de passe"]
         c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
-        
+
         corresp = c.fetchone()
+        print(corresp)
+        has_failed_login = False
         if corresp != None: # Si on trouve un utilisateur avec cet email
+            print("Utilisateur trouvé")
             if verify_password(mdp, corresp[1]):
+
                 to_login = corresp[0]
-                login_user(load_user(to_login)) # On login l'utilisateur correspondant, identifié par son user id
+                # Récupérer explicitement l'instance Utilisateur via le wrapper Database
+                user = get_db().get_user_by_id(to_login)
+                if user is None:
+                    has_failed_login = True
+                else:
+                    login_user(user)  # On login l'utilisateur (instance compatible Flask-Login)
 
-                next_page = request.args.get("next")
+                    # Redirection sûre : si `next` absent, aller à l'accueil
+                    next_page = request.args.get("next")
+                    if not next_page:
+                        return redirect(url_for("accueil"))
+                    # TODO: Rendre sage la redirection "next" pour éviter les attaques open redirect
+                    return redirect(next_page)
 
-                if next_page == None:
-                    redirect(url_for("accueil"))
 
-                # TODO : Vérifier que l'URL next est safe
-                return redirect(next_page)
-        
         has_failed_login = True # Si pas d'utilisateur avec ce mail ou que le mdp est faux, on a raté le login
 
     # Pour un login échouant, on ré-affiche la page avec un message supplémentaire
@@ -173,10 +147,10 @@ def login():
     return render_template('Pages_speciales/login_page.html', has_failed_login=has_failed_login)
 
 
-@app.route("/")          
+@app.route("/")
 def accueil():
-    '''Fonction pour la route / \n
-    C'est la fonction de la page d'accueil'''
+    """Fonction pour la route / \n
+    C'est la fonction de la page d'accueil"""
 
     return render_template("accueil.html")
 
@@ -184,8 +158,8 @@ def accueil():
 @app.route("/clients", methods=['GET'])
 @login_required
 def clients():
-    '''Fonction pour la route /clients \n
-    Permet d'afficher la page avec la liste des clients'''
+    """Fonction pour la route /clients \n
+    Permet d'afficher la page avec la liste des clients"""
     # Permet de récuperer le champs de recherche de la page
     recherche_clients = request.args.get("q", "").lower()
 
@@ -195,7 +169,7 @@ def clients():
     cursor.execute("SELECT * FROM Clients")
     clients_db = cursor.fetchall()
     conn.close()
-    
+
     # Pour match tout les attribut qui pourraient coller dans la barre de recherche
     if recherche_clients:
         clients_db = [
@@ -211,27 +185,27 @@ def clients():
 @app.route("/clients/<int:client_id>")
 @login_required
 def client_detail(client_id):
-    '''Fonction pour la route /clients/id_client \n
-    Affiche la page dédié à un client, ses projets, ses interaction et l'avancement des projets'''
+    """Fonction pour la route /clients/id_client \n
+    Affiche la page dédié à un client, ses projets, ses interaction et l'avancement des projets"""
 
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    
+
     c.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
     client = c.fetchone()
     if client is None:
         abort(404)
- 
+
     c.execute("""SELECT p.* FROM Projets p JOIN Conventions c ON p.convention_id = c.convention_id WHERE c.client_id = ?""", (client_id,))
 
-    
+
     projets_raw = c.fetchall()
 
     # Calcul du pourcentage de jalon terminés
     projets = []
     for p in projets_raw:
-        
+
         c.execute("SELECT est_complete FROM Jalons WHERE projet_id = ?", (p["projet_id"],))
         jalons = c.fetchall()
         total_jalons = len(jalons)
@@ -242,7 +216,7 @@ def client_detail(client_id):
             "projet_id": p["projet_id"],
             "nom_projet": p["nom_projet"],
             "statut": p["statut"],
-            "progress": progress 
+            "progress": progress
         })
 
     c.execute("""
@@ -250,21 +224,21 @@ def client_detail(client_id):
         JOIN Utilisateurs u ON i.utilisateur_id = u.utilisateur_id WHERE i.client_id = ?
         ORDER BY i.date_time_interaction DESC
     """, (client_id,))
-    
+
     interactions = c.fetchall()
     conn.close()
-    
+
     return render_template("Pages_speciales/clients_template.html", client=client, projets=projets, interactions=interactions)
 
 
 @app.route("/import_clients", methods=["POST"])
 def import_clients():
-    '''Fonction pour la route /import_clients \n
+    """Fonction pour la route /import_clients \n
     Permet la gestion du bouton d'import de client sur la page des clients \n
-    Cette focntion gère les erreur de csv, et import dans la db les données du csv si elle sont correctes'''
+    Cette focntion gère les erreur de csv, et import dans la db les données du csv si elle sont correctes"""
 
     fichier = request.files.get("fichier")
-    
+
     if not fichier:
         return "Aucun fichier sélectionné", 400
 
@@ -330,9 +304,9 @@ def import_clients():
 @app.route("/export_clients")
 @login_required
 def export_clients():
-    '''Fonction pour la route /export_clients \n
+    """Fonction pour la route /export_clients \n
     Permet d'utiliser le bouton d'export de la page des clients \n
-    La fonction crée un csv, va récuperer les données de la DB et télécharge le fichier'''
+    La fonction crée un csv, va récuperer les données de la DB et télécharge le fichier"""
 
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
@@ -388,7 +362,7 @@ def export_clients():
 
     output.seek(0)
 
-    # Télécharge le fichier 
+    # Télécharge le fichier
     return send_file(
         io.BytesIO(output.getvalue().encode("utf-8")),
         mimetype="text/csv; charset=utf-8",
@@ -400,14 +374,14 @@ def export_clients():
 @app.route("/projet/<int:projet_id>")
 @login_required
 def projet_detail(projet_id):
-    '''Fonction pour la route /projet/id_projet \n
-    Affiche la page dédié à un projet'''
+    """Fonction pour la route /projet/id_projet \n
+    Affiche la page dédié à un projet"""
 
     projet = get_db().get_project_id(projet_id)
 
-    if projet == None: 
+    if projet == None:
         abort(404)
-    
+
     # Conversion des dates vers le format usuel
     projet.date_debut = format_date(projet.date_debut)
     projet.date_fin = format_date(projet.date_fin)
@@ -422,14 +396,14 @@ def projet_detail(projet_id):
 @app.post("/projet/<int:projet_id>/terminer")
 @login_required
 def terminer_projet(projet_id):
-    '''Fonction pour la route projet/id_projet/terminer \n
-    Permet de gerer le bouton de fin de projet et de modifier la DB en conséquence'''
+    """Fonction pour la route projet/id_projet/terminer \n
+    Permet de gerer le bouton de fin de projet et de modifier la DB en conséquence"""
 
     projet = get_db().get_project_id(projet_id)
 
-    if projet == None: 
+    if projet == None:
         abort(404)
-    
+
     # Conversion des dates vers le format usuel
     projet.date_debut = format_date(projet.date_debut)
     projet.date_fin = format_date(projet.date_fin)
@@ -453,12 +427,17 @@ def terminer_projet(projet_id):
 
     return redirect(url_for("projet_detail", projet_id=projet_id))
 
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("accueil"))
 
 @app.post("/jalon/<int:jalon_id>/modifier")
 @login_required
 def modifier_jalon(jalon_id):
-    '''Fonction pour la route /jalon/jalon_id/modifier \n
-    Sert pour la pop up de modification des jalons'''
+    """Fonction pour la route /jalon/jalon_id/modifier \n
+    Sert pour la pop up de modification des jalons"""
     db = get_db()
 
     row = db.execute(
@@ -507,7 +486,7 @@ def creer_jalon():
 
     db.commit()
     db.invalidate_project(projet_id)
-     
+
     return redirect(url_for("projet_detail", projet_id=projet_id))
 
 
@@ -518,8 +497,8 @@ def creer_jalon():
 @app.route("/utilisateurs", methods=["GET"])
 @login_required
 def utilisateurs():
-    '''Fonction pour la route /utilisateurs \n
-    Affiche la page qui lsite tout les utilisateurs'''
+    """Fonction pour la route /utilisateurs \n
+    Affiche la page qui lsite tout les utilisateurs"""
 
     recherche_utilisateurs = request.args.get("q", "").lower()
 
@@ -546,8 +525,8 @@ def utilisateurs():
 @app.route("/utilisateurs/<int:uid>")
 @login_required
 def utilisateurs_detail(uid):
-    '''Fonction pour la route /utilisateurs/id_utilisateur \n
-    Affiche la page dédié à un utilisateur'''
+    """Fonction pour la route /utilisateurs/id_utilisateur \n
+    Affiche la page dédié à un utilisateur"""
 
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
@@ -566,15 +545,15 @@ def utilisateurs_detail(uid):
 @app.route("/utilisateurs/create", methods=["GET", "POST"])
 @login_required
 def create_user():
-    '''Fonction pour la route /utilisateurs/create \n
-    C'est la page pour creer un nouvel utilisateur'''
-    if not can_manage_users(current_user):
+    """Fonction pour la route /utilisateurs/create \n
+    C'est la page pour creer un nouvel utilisateur"""
+    if not has_permission(current_user, 'peut_gerer_utilisateurs'):
         abort(403)
 
     user_added_successfully= False
     c = get_db().cursor()
 
-    
+
     if request.method == 'POST' :
         email = request.form["e-mail"]
         hmdp = hash_password(request.form["mdp"])
@@ -591,12 +570,12 @@ def create_user():
         doc_rib = request.form["doc_rib"]
 
         role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
-        
+
         #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                  (None, email, hmdp, date_expiration_mdp, nom, prenom, avatar, role_id, est_intervenant, heures_dispo_semaine, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
         get_db().commit()
-        
+
         user_added_successfully = True
 
     #Obtention des noms de rôles possibles
@@ -608,19 +587,19 @@ def create_user():
 @app.post("/utilisateurs/<int:user_id>/supprimer")
 @login_required
 def supprimer_utilisateur(user_id):
-    '''Fonction pour la route /utilisateurs/id_utilisateur/supprimer \n
-    Permet de faire fonctionner le bouton de suppression de l'utilisateur'''
+    """Fonction pour la route /utilisateurs/id_utilisateur/supprimer \n
+    Permet de faire fonctionner le bouton de suppression de l'utilisateur"""
 
     # On vérifier que la personne est bien un ADMIN
     if getattr(current_user, 'role_id', None) != 1:
-        abort(403) 
+        abort(403)
 
     user = get_db().get_user_by_id(user_id)
     if not user:
         abort(404)
 
     try:
-        user.delete()  
+        user.delete()
         flash("Utilisateur supprimé avec succès.", "success")
     except Exception as e:
         flash(f"Erreur lors de la suppression: {str(e)}", "danger")
@@ -632,8 +611,8 @@ def supprimer_utilisateur(user_id):
 @app.route("/recherche_avance")
 @login_required
 def recherche_avance():
-    '''Fonction pour la route /recherche_avance \n
-    Affiche la page de recherche avancé'''
+    """Fonction pour la route /recherche_avance \n
+    Affiche la page de recherche avancé"""
 
     return render_template("Page_recherche_avance.html")
 
@@ -641,8 +620,8 @@ def recherche_avance():
 # Ci dessous les pages du pied de page
 @app.route("/cgu")
 def cgu():
-    '''Fonction pour la route /cgu \n
-    Affiche la page des CGU'''
+    """Fonction pour la route /cgu \n
+    Affiche la page des CGU"""
 
     return render_template("./Pages_speciales/cgu.html")
 
@@ -650,8 +629,8 @@ def cgu():
 @app.route("/contact")
 @login_required
 def contact():
-    '''Fonction pour la route /contact \n
-    C'est la fonction de la page de contact'''
+    """Fonction pour la route /contact \n
+    C'est la fonction de la page de contact"""
 
     return render_template("./Pages_speciales/contact.html")
 
@@ -659,13 +638,13 @@ def contact():
 @app.route("/rgpd")
 @login_required
 def rgpd():
-    '''Fonction pour la route /rgpd \n
-    Affiche la page de rgpd et vérifie les rôle pour l'accès'''
+    """Fonction pour la route /rgpd \n
+    Affiche la page de rgpd et vérifie les rôle pour l'accès"""
 
     c = get_db().cursor()
     c.execute("SELECT peut_exporter_csv FROM Roles WHERE role_id = ?", (current_user.role_id,))
     droit = c.fetchone()
-    
+
     if not (droit and droit[0]):
         abort(403)
 
@@ -675,27 +654,26 @@ def rgpd():
 @app.route("/rgpd/download", methods=["POST"])
 @login_required
 def download_rgpd():
-    '''Fonction pour la route /rgpd/download \n
+    """Fonction pour la route /rgpd/download \n
     Permet d'utiliser le bouton de téléchargement du csv pour le rgpd \n
-    Renvoie un fichier csv avec tout les clients et tout les utilisateurs'''
+    Renvoie un fichier csv avec tout les clients et tout les utilisateurs"""
 
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    
+
     cur.execute("SELECT nom_entreprise, contact_email, contact_telephone, address FROM Clients")
     clients = cur.fetchall()
-    
+
 
     cur.execute("""SELECT u.nom, u.prenom, u.email, r.nom as role_nom FROM Utilisateurs u LEFT JOIN Roles r ON u.role_id = r.role_id""")
     utilisateurs = cur.fetchall()
-    
+
     # Permt de mettre le délimiteur ";"
     output = io.StringIO()
-    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
-    
+    writer = csv.writer(output, delimiter=';', quoting=cast(Literal[0, 1, 2, 3, 4, 5], csv.QUOTE_MINIMAL))
     writer.writerow(["Type", "Nom", "Prénom", "Email", "Téléphone/Adresse", "Rôle"])
-    
+
     for cl in clients:
         writer.writerow([
             "Client",
@@ -705,7 +683,7 @@ def download_rgpd():
             f"{cl['contact_telephone']} / {cl['address']}",
             ""
         ])
-    
+
     for u in utilisateurs:
         writer.writerow([
             "Utilisateur",
@@ -715,12 +693,12 @@ def download_rgpd():
             "",
             u["role_nom"]
         ])
-    
+
     conn.close()
     output.seek(0)
 
     csv_data = '\ufeff' + output.getvalue()
-    
+
     # Télécharge le fichier csv
     return Response(
         csv_data,
@@ -732,12 +710,12 @@ def download_rgpd():
 #Ici les pages d'erreur.
 @app.errorhandler(404)
 def page_not_found(error):
-    '''Fonction pour l'erreur 404'''
+    """Fonction pour l'erreur 404"""
     return render_template("errors/404.html"), 404
 
 @app.errorhandler(500)
 def serveur_error(error):
-    '''Fonction pour l'erreur 500'''
+    """Fonction pour l'erreur 500"""
     return render_template("errors/500.html"), 500
 
 
