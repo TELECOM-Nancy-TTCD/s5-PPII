@@ -426,3 +426,246 @@ if (saveEditButton) {
         }
     });
 }
+
+/* Pagination interactive: transforme le centre en champ texte pour sélectionner une page */
+(function () {
+    try {
+        const pag = document.getElementById('pagination');
+        if (!pag) return;
+        const current = parseInt(pag.getAttribute('data-current') || '0', 10);
+        const lastAttr = pag.getAttribute('data-last');
+        const last = lastAttr === '' ? null : parseInt(lastAttr, 10);
+        const q = encodeURIComponent(pag.getAttribute('data-q') || '');
+        const ordt = encodeURIComponent(pag.getAttribute('data-ord-t') || '');
+        const ord = encodeURIComponent(pag.getAttribute('data-ord') || 'asc');
+        const l = encodeURIComponent(pag.getAttribute('data-l') || '10');
+
+        const center = document.getElementById('page-center');
+        const prev = document.getElementById('pag-prev');
+        const next = document.getElementById('pag-next');
+        const lastBtn = pag.querySelector('.last-page');
+
+        function buildHref(p) {
+            return `?q=${q}&l=${l}&ord-t=${ordt}&ord=${ord}&p=${p}`;
+        }
+
+        // Compute final disabled states first
+        const firstBtn = pag.querySelector('.first-page');
+        const shouldDisablePrev = current <= 0;
+        const shouldDisableNext = (last !== null) ? (current >= last) : false;
+        const shouldDisableFirst = current === 0;
+        const shouldDisableLast = (last === null) || (current === last);
+
+        // Apply classes/aria/tabindex according to final states
+        if (firstBtn) {
+            const isAnchor = firstBtn.tagName === 'A';
+            if (shouldDisableFirst) {
+                firstBtn.classList.add('disabled');
+                firstBtn.setAttribute('aria-disabled', 'true');
+                if (isAnchor) {
+                    firstBtn.removeAttribute('href');
+                    firstBtn.setAttribute('tabindex', '-1');
+                } else {
+                    firstBtn.disabled = true;
+                    firstBtn.setAttribute('tabindex', '-1');
+                }
+            } else {
+                firstBtn.classList.remove('disabled');
+                firstBtn.removeAttribute('aria-disabled');
+                firstBtn.removeAttribute('tabindex');
+                if (isAnchor) {
+                    firstBtn.href = buildHref(0);
+                } else {
+                    firstBtn.disabled = false;
+                }
+            }
+        }
+
+        if (prev) {
+            const isAnchor = prev.tagName === 'A';
+            if (shouldDisablePrev) {
+                prev.classList.add('disabled');
+                prev.setAttribute('aria-disabled', 'true');
+                if (isAnchor) {
+                    prev.removeAttribute('href');
+                    prev.setAttribute('tabindex', '-1');
+                } else {
+                    prev.disabled = true;
+                    prev.setAttribute('tabindex', '-1');
+                }
+            } else {
+                prev.classList.remove('disabled');
+                prev.removeAttribute('aria-disabled');
+                prev.removeAttribute('tabindex');
+                if (isAnchor) {
+                    prev.href = buildHref(Math.max(0, current - 1));
+                } else {
+                    prev.disabled = false;
+                }
+            }
+        }
+
+        if (next) {
+            const isAnchor = next.tagName === 'A';
+            if (shouldDisableNext) {
+                next.classList.add('disabled');
+                next.setAttribute('aria-disabled', 'true');
+                if (isAnchor) {
+                    next.removeAttribute('href');
+                    next.setAttribute('tabindex', '-1');
+                } else {
+                    next.disabled = true;
+                    next.setAttribute('tabindex', '-1');
+                }
+            } else {
+                next.classList.remove('disabled');
+                next.removeAttribute('aria-disabled');
+                next.removeAttribute('tabindex');
+                if (isAnchor) {
+                    next.href = buildHref((last !== null) ? Math.min(last, current + 1) : (current + 1));
+                } else {
+                    next.disabled = false;
+                }
+            }
+        }
+
+        if (lastBtn) {
+            const isAnchor = lastBtn.tagName === 'A';
+            if (last === null) {
+                lastBtn.classList.add('disabled');
+                lastBtn.setAttribute('aria-disabled', 'true');
+                if (isAnchor) {
+                    lastBtn.removeAttribute('href');
+                    lastBtn.setAttribute('tabindex', '-1');
+                } else {
+                    lastBtn.disabled = true;
+                    lastBtn.setAttribute('tabindex', '-1');
+                }
+                // add title for screen readers
+                lastBtn.setAttribute('title', `Dernière`);
+                lastBtn.setAttribute('aria-label', `Dernière`);
+            } else {
+                // set title/aria-label with page number; do not replace inner icon
+                lastBtn.setAttribute('title', `Dernière (${last + 1})`);
+                lastBtn.setAttribute('aria-label', `Dernière (${last + 1})`);
+                if (shouldDisableLast) {
+                    lastBtn.classList.add('disabled');
+                    lastBtn.setAttribute('aria-disabled', 'true');
+                    if (isAnchor) {
+                        lastBtn.removeAttribute('href');
+                        lastBtn.setAttribute('tabindex', '-1');
+                    } else {
+                        lastBtn.disabled = true;
+                        lastBtn.setAttribute('tabindex', '-1');
+                    }
+                } else {
+                    lastBtn.classList.remove('disabled');
+                    lastBtn.removeAttribute('aria-disabled');
+                    lastBtn.removeAttribute('tabindex');
+                    if (isAnchor) {
+                        lastBtn.href = buildHref(last);
+                    } else {
+                        lastBtn.disabled = false;
+                    }
+                }
+            }
+        }
+
+        // Also ensure any anchor elements that still have the 'disabled' class cannot be activated
+        const disabledAnchors = pag.querySelectorAll('a.disabled');
+        disabledAnchors.forEach(a => {
+            // remove href if present
+            if (a.hasAttribute('href')) a.removeAttribute('href');
+            // ensure not focusable
+            a.setAttribute('tabindex', '-1');
+            // avoid adding multiple listeners
+            if (!a.dataset.disabledListener) {
+                a.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); }, { capture: true });
+                a.dataset.disabledListener = '1';
+            }
+        });
+
+        // Block clicks on any anchor with class 'disabled' as a final safeguard
+        pag.addEventListener('click', function (e) {
+            const a = e.target.closest('a');
+            if (!a) return;
+            if (a.classList.contains('disabled') || a.getAttribute('aria-disabled') === 'true') {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+        }, { capture: true });
+
+        if (!center) return;
+        // When clicking the center element, replace it by a small form with an input
+        center.addEventListener('click', function (evt) {
+            evt.preventDefault();
+            const parentLi = center.parentElement;
+            if (!parentLi) return;
+            // create form
+            const form = document.createElement('form');
+            form.style.display = 'inline';
+            form.style.margin = '0';
+            form.className = 'inline-page-form';
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '1';
+            if (last !== null) input.max = String(last + 1);
+            input.value = String(current + 1);
+            input.style.width = '70px';
+            input.style.padding = '6px';
+            input.style.borderRadius = '6px';
+            input.style.border = '1px solid rgba(255,255,255,0.08)';
+            input.autofocus = true;
+            input.className = 'page-input';
+
+            // append only the input (no Go button)
+            form.appendChild(input);
+
+            // Replace center link with form
+            parentLi.replaceChild(form, center);
+
+            // handle cancel and submit logic
+            let submitted = false;
+            const cancel = () => {
+                // restore original center link
+                if (parentLi.contains(form)) {
+                    parentLi.replaceChild(center, form);
+                }
+            };
+
+            const submitAction = () => {
+                if (submitted) return;
+                const v = parseInt(input.value, 10);
+                if (isNaN(v) || v < 1) {
+                    input.classList.add('invalid-field');
+                    try { input.focus(); } catch (e) {}
+                    return;
+                }
+                let targetPage = v - 1; // convert to 0-based
+                if (last !== null && targetPage > last) targetPage = last;
+                submitted = true;
+                // navigate
+                window.location.href = buildHref(targetPage);
+            };
+
+            // Escape to cancel
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancel();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitAction();
+                }
+            });
+
+            // On blur, submit (after short timeout to allow potential focus changes)
+            input.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== input) submitAction(); }, 150));
+
+            // remove any lingering listeners for a submit button (none created now)
+        });
+    } catch (e) {
+        console.error('Pagination script error', e);
+    }
+})();

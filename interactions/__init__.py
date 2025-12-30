@@ -1,5 +1,4 @@
 from flask import Blueprint, request, render_template, abort, jsonify
-import os
 from datetime import datetime
 
 from flask_login import login_required, current_user
@@ -97,12 +96,62 @@ def interactions_home():
     limit = request.args.get("l", 10, type=int)
     query = request.args.get("q", "", type=str)
 
+    # Paramètres d'ordre provenant de l'UI: 'ord-t' = target, 'ord' = direction
+    ord_target = request.args.get('ord-t')
+    ord_dir = request.args.get('ord', 'asc')
+
+    # Mapper ord_target vers un sort_by compréhensible par Database.get_all_interactions
+    sort_by = None
+    sort_dir = ord_dir if ord_dir and ord_dir.lower() in ('asc', 'desc') else 'asc'
+    if ord_target:
+        t = ord_target.lower()
+        if t in ('id', 'interaction_id'):
+            sort_by = 'interaction_id'
+        elif t in ('client', 'nom_entreprise', 'entreprise'):
+            sort_by = 'client.nom_entreprise'
+        elif t in ('interlocuteur', 'utilisateur', 'user'):
+            # tri composite : nom + prenom
+            sort_by = 'utilisateur.nom_prenom'
+        elif t in ('date', 'date_time', 'datetime', 'date_time_interaction'):
+            # alias pour la date/heure de l'interaction
+            sort_by = 'date'
+        elif t in ('titre', 'title'):
+            sort_by = 'titre'
+
     db = get_db()
     # Calculer offset pour la pagination (fenêtre). offset est appliqué seulement si limit>0.
     offset = max(page, 0) * max(limit, 0)
-    interactions = db.get_all_interactions(limit=limit, offset=offset, key=lambda i: interaction_filter(query, i))
+
+    # Calculer le nombre total d'éléments correspondant si pagination demandée
+    total_count = None
+    last_page = None
+    if limit and limit > 0:
+        # Utiliser une requête SQL COUNT optimisée pour déterminer le nombre total d'éléments
+        try:
+            total_count = db.count_interactions(text=query)
+        except Exception:
+            # Fallback: si count_interactions échoue pour une raison quelconque, essayer la méthode précédente
+            all_filtered = db.get_all_interactions(limit=0, sort_by=sort_by, sort_dir=sort_dir, key=lambda i: interaction_filter(query, i))
+            total_count = len(all_filtered) if all_filtered is not None else 0
+        last_page = max(0, (total_count - 1) // limit) if total_count > 0 else 0
+    # Pour détecter s'il y a une page suivante, demander limit+1 éléments
+    fetch_limit = limit + 1 if limit and limit > 0 else 0
+    raw_interactions = db.get_all_interactions(limit=fetch_limit, offset=offset, sort_by=sort_by, sort_dir=sort_dir, text=query, key=lambda i: interaction_filter(query, i))
+    has_next = False
+    if limit and limit > 0 and raw_interactions is not None:
+        if len(raw_interactions) > limit:
+            has_next = True
+            interactions = raw_interactions[:limit]
+        else:
+            interactions = raw_interactions
+    else:
+        interactions = raw_interactions
+
+    has_prev = page > 0
+
     return render_template("interactions/interactions.html", interactions=interactions, Interaction=Interaction,
-                           page=page, limit=limit)
+                           page=page, limit=limit, has_next=has_next, has_prev=has_prev,
+                           total_count=total_count, last_page=last_page)
 
 
 @interactions_bp.route('/<int:interaction_id>')

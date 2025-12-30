@@ -521,7 +521,7 @@ a:hover {
     font-size: 16px;
     border: none;
     border-radius: 0 4px 4px 0;
-    background-color: var(--danger);
+    background-color: var(--primary);
     color: var(--white);
     cursor: pointer;
     transition: background-color 0.2s;
@@ -531,7 +531,7 @@ a:hover {
 .search-form-clients button:hover,
 .search-form-conventions button:hover,
 .search-form button:hover {
-    background-color: var(--danger-hover);
+    background-color: var(--primary-variant);
 }
 
 .documents-users {
@@ -820,7 +820,9 @@ a:hover {
     height: 100%;
     width: 100%;
     outline: none;
-    border: none;
+    border-radius: 6px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
     color: var(--text-main);
     font-size: 1rem;
     background: var(--input-bg);
@@ -1002,429 +1004,106 @@ dialog .container .actions {
 }
 
 
-.interaction-details {
-    max-width: 800px;
-    margin: 20px auto;
-    background-color: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 15px;
-    box-shadow: 0 3px 6px var(--shadow-1);
+.order-button {
+    /* Sans background */
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all ease-in-out 0.2s;
+    font-size: 20px;
+    color: var(--white);
 }
-.interaction-details h2 {
-    margin-top: 0;
+
+.order-button:hover {
     color: var(--primary);
 }
-.interaction-details p {
-    line-height: 1.5;
-    color: var(--text-light);
-}
 
-/* Style pour le contenu à l'intérieur des détails d'interaction, faire une boîte autour du contenu */
-.interaction-details .content {
-    margin-top: 10px;
-    color: var(--text-main);
-    background-color:  var(--input-bg);
-    border-radius: 6px;
-    padding: 10px;
-    border: 1px solid var(--border);
-    white-space: pre-wrap; /* conserver les sauts de ligne */
-    word-wrap: break-word;
-}
-
-/* Rendre le lien parent du dropdown (ex: Interactions) réactif au hover/focus */
-.main-menu-items .menu-dropdown > a {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    color: var(--text-light);
-    text-decoration: none;
-}
-
-.main-menu-items .menu-dropdown > a:hover,
-.menu-dropdown:focus-within > a {
-    background-color: rgba(37,61,165,0.12); /* palette primaire */
-    color: var(--white);
-    transition: background-color 0.12s ease, color 0.12s ease;
-}
-
-/* Si on veut un effet plus marqué quand le dropdown est ouvert */
-.menu-dropdown:hover > a,
-.menu-dropdown:focus-within > a {
-    background-color: rgba(37,61,165,0.18); /* palette primaire */
-    color: var(--white);
-}
-
-
-.interactions-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.interaction-card {
-    background: #2c2c2c;
-    border: 1px solid #444;
-    padding: 12px;
-    margin-bottom: 15px;
-    border-radius: 8px;
-    max-width: 800px;
-    width: 100%;
-    word-wrap: break-word;
-}
-
-.interaction-header {
-    display: flex;
-    justify-content: space-between;
-    font-weight: bold;
-    margin-bottom: 8px;
-}
-
-.interaction-text {
-    overflow: hidden;
-    transition: max-height 0.4s ease;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    word-break: break-word;
-}
-
-.interaction-text.collapsed {
-    max-height: 80px;
-    position: relative;
-}
-
-.interaction-text.collapsed::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 30px;
-    background: linear-gradient(to bottom, transparent, #2c2c2c);
-}
-
-.interaction-toggle {
-    margin-top: 10px;
-    padding: 6px 12px;
-    cursor: pointer;
-    border-radius: 6px;
-}
-
-/* Partie du CSS générée avec aide d'une AI */
-.timeline_jalons {
-  position: relative;
-  max-width: 800px;
-  margin: 2rem auto;
-  padding-left: 3rem;
-}
-
-.timeline_jalons::before {
-  content: "";
-  position: absolute;
-  left: 1rem;
-  top: 0;
-  bottom: 0;
-  border-left: 2px dotted #475eab;
-
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 2.5rem;
-}
-.timeline-item::before {
-  content: "";
-  position: absolute;
-  left: -2.4rem;
-  top: 1rem;
-  width: 12px;
-  height: 12px;
-  background-color: #1b1b1b;
-  border: 2px solid #475eab;
-  border-radius: 50%;
-
-}
-
-.timeline-card {
-  background-color: #292929;
-  padding: 1rem 1.25rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-}
-/* Partie du CSS générée avec aide d'une AI */
-
-.bouton-terminer-projet {
-    display: inline-block;
-    padding: 12px 24px;
-    font-size: 16px;
+.selected {
+    color: var(--primary);
     font-weight: 600;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    background-color: #555d55;
-    color: #fff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-.bouton-terminer-projet:hover {
-    background-color: #78947a;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
-}
-
-.bouton-exporter,
-.bouton-importer {
-    display: inline-block;
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    background-color: #475eab;
-    color: #fff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.bouton-supprimer-utilisateur {
-    display: inline-block;
-    padding: 8px 16px;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    text-align: center;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    background-color: #ab4747;
-    color: #fff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.form-create-user {
-    max-width: 400px;
-    margin: 20px auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.bouton-ajouter-utilisateur {
-    display: inline-block;
-    padding: 10px 14px;
-    background-color: #475eab;
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    border-radius: 6px;
-    margin-bottom: 15px;
-}
-
-
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-}
-
-.modal-content {
-    background: #282828;
-    margin: 10% auto;
-    padding: 20px;
-    width: 400px;
-    border-radius: 12px;
-}
-
-.close {
-    float: right;
-    font-size: 24px;
-    cursor: pointer;
-}
-
-#form-jalon-modification,
-#form-jalon-creation {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-
-.jalon_boutton{
-    padding: 10px;
-    background-color: #475eab;
-    color:  rgb(204, 204, 204);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.lien_doc_projet{
-    display: inline-block;
-    padding: 10px 14px;
-    background-color: #9c948f;
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    border-radius: 6px;
-    margin-top: 10px;
-}
-
-.progress-bar-container {
-    width: 500px;
-    background-color: #ddd;
-    border-radius: 5px;
-    overflow: hidden;
-    height: 20px;
-    margin-bottom: 10px;
-    width: 50%;
-    margin: 0 auto;
-}
-
-.progress-bar {
-    height: 500px;
-    background-color: #4caf50;
-    text-align: center;
-    color: black;
-    line-height: 20px;
-    font-size: 12px;
-}
-
-/* From Uiverse.io by xerith_8140 */
-/* Notification container */
-
-.notification-container {
-  position: fixed;
-  top: 2%;
-  right: 2%;
-  z-index: 10000;
-  max-width: 80%;
-
-  --content-color: var(--text-main);
-  --background-color: rgba(255,255,255,0.02);
-  --font-size-content: 0.9em;
-  --icon-size: 1em;
-  /* durée de la notif (ms) — définie par JS via style.setProperty('--notif-duration', '5000ms') */
-  --notif-duration: 5000ms;
-
+.pagination {
   display: flex;
-  flex-direction: column;
-  gap: 0.5em;
-  list-style-type: none;
-  font-family: sans-serif;
-  color: var(--content-color);
+  justify-content: center;
+  list-style: none;
+  padding: 0;
 }
 
-/* Notification Item */
+.pagination li a {
+  display: block;
+  padding: 8px 12px;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text-main);
+  margin: 0 4px;
+  border-radius: 5px;
+  transition: background-color 1s;
+}
 
-.notification-item {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
+.pagination .ellipsis {
+  display: inline-flex;
   align-items: center;
-  flex-direction: row;
-  gap: 1em;
-  overflow: hidden;
-  padding: 10px 15px;
-  border-radius: 8px;
-  box-shadow: rgba(0, 0, 0, 0.35) 0px 6px 18px;
-  background-color: var(--surface); /* fallback */
-  transition: transform 300ms ease, opacity 300ms ease;
-  opacity: 1;
+  justify-content: center;
+  padding: 8px 10px;
+  margin: 0 4px;
+  color: var(--muted-2);
+  background: transparent;
+  border: none;
 }
 
-/* hiding state used when JS déclenche la suppression : fondu court avant suppression du DOM */
-.notification-item.hiding {
-  opacity: 0;
-  transform: translateY(-6px) scale(0.995);
+.pagination li a.first-page, .pagination li a.last-page {
+  font-weight: 600;
 }
 
-.notification-item svg {
-  transition: 250ms ease;
+/* Ensure pagination container is centered on the page */
+.pagination {
+  justify-content: center;
+  margin: 0 auto;
 }
 
-.notification-item:hover { transform: translateY(-2px); }
-.notification-item:active { transform: translateY(0); }
-
-.notification-item .notification-close:hover { background-color: rgba(255,255,255,0.08); }
-.notification-item .notification-close:hover svg { color: inherit; }
-
-.notification-item .notification-close:active svg { transform: scale(1.1); }
-
-/* Notification Icons */
-.notification-item .notification-close { padding: 2px; border-radius: 5px; transition: all 250ms; }
-.notification-container svg { width: var(--icon-size); height: var(--icon-size); color: var(--content-color); }
-.notification-icon { display: flex; align-items: center; }
-
-/* Filled backgrounds (plein, sans transparence) - utilise les couleurs du thème */
-.notification-item.success {
-  background-color: var(--success);
+/* Make active page more prominent */
+.pagination li a.active {
+  background-color: var(--primary);
   color: var(--white);
-}
-.notification-item.success .notification-icon i,
-.notification-item.success svg { color: var(--white); }
-
-.notification-item.info {
-  background-color: var(--accent);
-  color: var(--white);
-}
-.notification-item.info .notification-icon i,
-.notification-item.info svg { color: var(--white); }
-
-.notification-item.warning {
-  background-color: var(--warning);
-  color: var(--white);
-}
-.notification-item.warning .notification-icon i,
-.notification-item.warning svg { color: var(--white); }
-
-.notification-item.error {
-  background-color: var(--danger);
-  color: var(--white);
-}
-.notification-item.error .notification-icon i,
-.notification-item.error svg { color: var(--white); }
-
-/* Notification content */
-.notification-content { display: flex; justify-content: flex-start; align-items: center; gap: 0.5em; }
-.notification-text { font-size: var(--font-size-content); user-select: none; }
-.notification-close { cursor: pointer; color: inherit; }
-
-/* Notification progress bar - utilise la variable --notif-duration définie par JS */
-.notification-progress-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 4px;
-  width: 100%;
-  background: rgba(255,255,255,0.12);
-  transform: translateX(0);
-  /* animation controlled by --notif-duration; JS doit définir cette variable sur l'élément .notification-item */
-  animation: progressBar var(--notif-duration, 5000ms) linear forwards;
+  font-weight: 700;
 }
 
-/* Bar color per type (contraste sur fond plein) */
-.notification-item.success .notification-progress-bar { background: rgba(255,255,255,0.18); }
-.notification-item.info .notification-progress-bar { background: rgba(255,255,255,0.18); }
-.notification-item.warning .notification-progress-bar { background: rgba(255,255,255,0.18); }
-.notification-item.error .notification-progress-bar { background: rgba(255,255,255,0.18); }
-
-/* progressBar Animation — fait partir la barre vers la gauche sur la durée fournie */
-@keyframes progressBar {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+/* Ensure disabled pagination links are not interactive */
+.pagination a.disabled,
+.pagination a[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: default;
 }
 
+/* Pagination buttons should match the anchor appearance */
+.pagination li button {
+  display: inline-block;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text-main);
+  margin: 0 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+  font: inherit;
+}
+
+.pagination li button:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.08);
+}
+
+.pagination li button.disabled,
+.pagination li button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Keep visual parity with anchor hover */
+.pagination li button:hover:not(.disabled):not([disabled]) {
+  background-color: var(--primary-variant);
+}

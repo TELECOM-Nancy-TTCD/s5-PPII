@@ -196,22 +196,63 @@ class Database:
         users = [Utilisateur.from_db_row(self, row) for row in rows]
         return users
 
-    def get_all_users(self, limit: int = 0, *, key=lambda x: True) -> List['Utilisateur']:
+    def get_all_users(self, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, key=lambda x: True) -> List['Utilisateur']:
         """
         Récupère tous les utilisateurs de la base de données.
         :param limit: Nombre maximum d'utilisateurs à récupérer (0 pour aucune limite)
+        :param sort_by: nom de champ pour trier (doit être dans Utilisateur.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
         :param key: Fonction de filtrage optionnelle
         :return: Liste des objets Utilisateur
         """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                # Normaliser pour la comparaison: None -> (1, None) pour les pousser en fin
+                if v is None:
+                    return (1, None)
+                # Les chaînes en minuscules pour tri insensible à la casse
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
         cached_users = self.redis_client.get(redis_key(Utilisateur.DATABASE_NAME.lower(), None, "all"))
         if cached_users:
             all_users_id = json.loads(cached_users)
             users = [self.get_user_by_id(uid) for uid in all_users_id]
             users = [user for user in users if user is not None and key(user)]
+            if sort_by:
+                if sort_by not in getattr(Utilisateur, 'FIELD_NAMES', []):
+                    raise ValueError(f"Invalid sort_by field for users: {sort_by}")
+                users = _apply_python_sort(users, sort_by, sort_dir)
+            # Appliquer offset+limit côté cache si demandés (offset pris en compte seulement si limit>0)
             if limit > 0:
+                if offset and offset > 0:
+                    users = users[offset:]
                 return users[:limit]
             return users
-        cursor = self.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        # Construire la clause ORDER BY si nécessaire (sécurisée en vérifiant les champs autorisés)
+        order_clause = ""
+        if sort_by:
+            if sort_by not in getattr(Utilisateur, 'FIELD_NAMES', []):
+                raise ValueError(f"Invalid sort_by field for users: {sort_by}")
+            if sort_dir.lower() not in ('asc', 'desc'):
+                raise ValueError('sort_dir must be "asc" or "desc"')
+            order_clause = f" ORDER BY {sort_by} {sort_dir.upper()}"
+        # Si limit>0, appliquer LIMIT et OFFSET en SQL (OFFSET utile pour pagination fenêtre).
+        if limit > 0:
+            query_tail = f" LIMIT ? OFFSET ?"
+            sql_params = (limit, offset)
+        else:
+            query_tail = ""
+            sql_params = ()
+        cursor = self.execute(f"SELECT * FROM {Utilisateur.DATABASE_NAME}" + order_clause + query_tail, sql_params)
         rows = cursor.fetchall()
         cursor.close()
 
@@ -222,6 +263,8 @@ class Database:
 
         users = [Utilisateur.from_db_row(self, row) for row in rows]
         users = [user for user in users if key(user)]
+        if sort_by:
+            users = _apply_python_sort(users, sort_by, sort_dir)
         return users
 
     def get_client_by_id(self, client_id: int) -> Optional['Client']:
@@ -237,22 +280,58 @@ class Database:
             return client
         return None
 
-    def get_all_clients(self, limit: int = 0, *, key=lambda x: True) -> List['Client']:
+    def get_all_clients(self, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, key=lambda x: True) -> List['Client']:
         """
         Récupère tous les clients de la base de données.
         :param limit: Nombre maximum de clients à récupérer (0 pour aucune limite)
+        :param sort_by: nom de champ pour trier (doit être dans Client.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
         :param key: Fonction de filtrage optionnelle
         :return: Liste des objets Client
         """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                if v is None:
+                    return (1, None)
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
         cached_clients = self.redis_client.get(redis_key(Client.DATABASE_NAME.lower(), None, "all"))
         if cached_clients:
             all_clients_id = json.loads(cached_clients)
             clients = [self.get_client_by_id(cid) for cid in all_clients_id]
             clients = [client for client in clients if client is not None and key(client)]
+            if sort_by:
+                if sort_by not in getattr(Client, 'FIELD_NAMES', []):
+                    raise ValueError(f"Invalid sort_by field for clients: {sort_by}")
+                clients = _apply_python_sort(clients, sort_by, sort_dir)
             if limit > 0:
+                if offset and offset > 0:
+                    clients = clients[offset:]
                 return clients[:limit]
             return clients
-        cursor = self.execute(f"SELECT * FROM {Client.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        order_clause = ""
+        if sort_by:
+            if sort_by not in getattr(Client, 'FIELD_NAMES', []):
+                raise ValueError(f"Invalid sort_by field for clients: {sort_by}")
+            if sort_dir.lower() not in ('asc', 'desc'):
+                raise ValueError('sort_dir must be "asc" or "desc"')
+            order_clause = f" ORDER BY {sort_by} {sort_dir.upper()}"
+        if limit > 0:
+            query_tail = " LIMIT ? OFFSET ?"
+            sql_params = (limit, offset)
+        else:
+            query_tail = ""
+            sql_params = ()
+        cursor = self.execute(f"SELECT * FROM {Client.DATABASE_NAME}" + order_clause + query_tail, sql_params)  # TODO: Décider si la coupe doit être faite en SQL ou en Python
         rows = cursor.fetchall()
         cursor.close()
 
@@ -263,6 +342,8 @@ class Database:
 
         clients = [Client.from_db_row(self, row) for row in rows]
         clients = [client for client in clients if key(client)]
+        if sort_by:
+            clients = _apply_python_sort(clients, sort_by, sort_dir)
         return clients
 
     def get_role_by_id(self, role_id: int) -> Optional['Role']:
@@ -278,34 +359,74 @@ class Database:
             return role
         return None
 
-    def get_all_roles(self, limit: int = 0, *, key=lambda x: True) -> List['Role']:
+    def get_all_roles(self, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, key=lambda x: True) -> List['Role']:
         """Récupère tous les rôles
 
         :param limit: nombre maximum de rôles à récupérer (0 = aucun)
+        :param sort_by: nom de champ pour trier (doit être dans Role.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
         :param key: fonction de filtrage optionnelle
         :return: liste d'objets Role
         """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                if v is None:
+                    return (1, None)
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
         cached_roles = self.redis_client.get(redis_key(Role.DATABASE_NAME.lower(), None, "all"))
         if cached_roles:
             all_roles_id = json.loads(cached_roles)
             roles = [self.get_role_by_id(cid) for cid in all_roles_id]
             roles = [role for role in roles if role is not None and key(role)]
+            if sort_by:
+                if sort_by not in getattr(Role, 'FIELD_NAMES', []):
+                    raise ValueError(f"Invalid sort_by field for roles: {sort_by}")
+                roles = _apply_python_sort(roles, sort_by, sort_dir)
             if limit > 0:
+                if offset and offset > 0:
+                    roles = roles[offset:]
                 return roles[:limit]
             return roles
-        cursor = self.execute(f"SELECT * FROM {Role.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""),
-                              (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        order_clause = ""
+        if sort_by:
+            if sort_by not in getattr(Role, 'FIELD_NAMES', []):
+                raise ValueError(f"Invalid sort_by field for roles: {sort_by}")
+            if sort_dir.lower() not in ('asc', 'desc'):
+                raise ValueError('sort_dir must be "asc" or "desc"')
+            order_clause = f" ORDER BY {sort_by} {sort_dir.upper()}"
+        if limit > 0:
+            query_tail = " LIMIT ? OFFSET ?"
+            sql_params = (limit, offset)
+        else:
+            query_tail = ""
+            sql_params = ()
+        cursor = self.execute(f"SELECT * FROM {Role.DATABASE_NAME}" + order_clause + query_tail, sql_params)  # TODO: Décider si la coupe doit être faite en SQL ou en Python
         rows = cursor.fetchall()
         cursor.close()
 
         if limit == 0:
             # Mettre en cache les IDs des roles
             all_roles_id = [row[0] for row in rows]  # Supposant que l'ID est dans la première colonne
-            self.redis_client.setex(redis_key(Convention.DATABASE_NAME.lower(), None, "all"), 1_800,
-                                    json.dumps(all_roles_id))
+            # Note: utiliser Role.DATABASE_NAME ici (correction d'une clef erronée précédemment)
+            try:
+                self.redis_client.setex(redis_key(Role.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_roles_id))
+            except Exception:
+                pass
 
         roles = [Role.from_db_row(self, row) for row in rows]
         roles = [role for role in roles if key(role)]
+        if sort_by:
+            roles = _apply_python_sort(roles, sort_by, sort_dir)
         return roles
 
 
@@ -327,22 +448,58 @@ class Database:
             return project
         return None
 
-    def get_all_projects(self, limit: int = 0, *, key=lambda x: True) -> List['Projet']:
+    def get_all_projects(self, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, key=lambda x: True) -> List['Projet']:
         """Récupère tous les projets (optionnellement limités et filtrés).
 
         :param limit: limite sur le nombre de projets (0 = aucun)
+        :param sort_by: nom de champ pour trier (doit être dans Projet.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
         :param key: fonction de filtrage optionnelle
         :return: liste d'objets Projet
         """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                if v is None:
+                    return (1, None)
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
         cached_projects = self.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), None, "all"))
         if cached_projects:
             all_projects_id = json.loads(cached_projects)
             projects = [self.get_project_id(pid) for pid in all_projects_id]
             projects = [project for project in projects if project is not None and key(project)]
+            if sort_by:
+                if sort_by not in getattr(Projet, 'FIELD_NAMES', []):
+                    raise ValueError(f"Invalid sort_by field for projects: {sort_by}")
+                projects = _apply_python_sort(projects, sort_by, sort_dir)
             if limit > 0:
+                if offset and offset > 0:
+                    projects = projects[offset:]
                 return projects[:limit]
             return projects
-        cursor = self.execute(f"SELECT * FROM {Projet.DATABASE_NAME} " + (" LIMIT ?" if limit > 0 else ""), (limit,) if limit > 0 else ())  # TODO: Décider si la coupe doit être faite en SQL ou en Python
+        order_clause = ""
+        if sort_by:
+            if sort_by not in getattr(Projet, 'FIELD_NAMES', []):
+                raise ValueError(f"Invalid sort_by field for projects: {sort_by}")
+            if sort_dir.lower() not in ('asc', 'desc'):
+                raise ValueError('sort_dir must be "asc" or "desc"')
+            order_clause = f" ORDER BY {sort_by} {sort_dir.upper()}"
+        if limit > 0:
+            query_tail = " LIMIT ? OFFSET ?"
+            sql_params = (limit, offset)
+        else:
+            query_tail = ""
+            sql_params = ()
+        cursor = self.execute(f"SELECT * FROM {Projet.DATABASE_NAME}" + order_clause + query_tail, sql_params)  # TODO: Décider si la coupe doit être faite en SQL ou en Python
         rows = cursor.fetchall()
         cursor.close()
         if limit == 0:
@@ -351,6 +508,8 @@ class Database:
             self.redis_client.setex(redis_key(Projet.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_projects_id))
         projects = [Projet.from_db_row(self, row) for row in rows]
         projects = [project for project in projects if key(project)]
+        if sort_by:
+            projects = _apply_python_sort(projects, sort_by, sort_dir)
         return projects
 
     def get_interaction_by_id(self, interaction_id: int) -> Optional['Interaction']:
@@ -371,16 +530,54 @@ class Database:
             return interaction
         return None
 
-    def get_all_interactions(self, project_id : int | None = None, user_id: int | None = None, limit: int = 0, *, key=lambda x: True) -> List['Interaction']:
+    def get_all_interactions(self, project_id : int | None = None, user_id: int | None = None, limit: int = 0, *, sort_by: Optional[str] = None, sort_dir: str = 'asc', offset: int = 0, text: Optional[str] = None, key=lambda x: True) -> List['Interaction']:
         """Récupère les interactions, optionnellement filtrées par projet ou utilisateur.
 
         Utilise le cache Redis si disponible. Retourne une liste d'objets Interaction.
         :param project_id: filtrer par projet_id (optionnel)
         :param user_id: filtrer par utilisateur_id (optionnel)
         :param limit: nombre maximal d'interactions (0 = aucun)
+        :param sort_by: nom de champ pour trier (doit être dans Interaction.FIELD_NAMES)
+        :param sort_dir: 'asc' ou 'desc'
+        :param offset: Nombre d'enregistrements à ignorer avant de commencer à collecter le résultat (pour la pagination)
         :param key: fonction de filtrage optionnelle
         :return: liste d'objets Interaction
         """
+        def _apply_python_sort(objs: List[Any], attr: str, direction: str) -> List[Any]:
+            reverse = direction.lower() == 'desc'
+            def _k(o: Any):
+                v = getattr(o, attr, None)
+                if v is None:
+                    return (1, None)
+                if isinstance(v, str):
+                    return (0, v.lower())
+                return (0, v)
+            try:
+                return sorted(objs, key=_k, reverse=reverse)
+            except Exception:
+                return objs
+
+        # Mappage d'alias pour faciliter l'utilisation de paramètres courts
+        INTERACTION_FIELD_ALIASES = {
+            'date': 'date_time_interaction',
+            'date_time': 'date_time_interaction',
+            'datetime': 'date_time_interaction',
+            'titre': 'titre',
+            'title': 'titre'
+        }
+
+        def _map_interaction_field(name: Optional[str]) -> Optional[str]:
+            """Mappe un alias de champ vers le nom réel attendu dans Interaction.FIELD_NAMES.
+            Conserve les formes pointées (relation.colonne) telles quelles.
+            """
+            if not name:
+                return None
+            s = str(name)
+            # Si la valeur contient un point, c'est une relation (ex: client.nom_entreprise) -> laisser telle quelle
+            if '.' in s:
+                return s
+            return INTERACTION_FIELD_ALIASES.get(s, s)
+
         cached_interactions = self.redis_client.get(redis_key(Interaction.DATABASE_NAME.lower(), None, "all"))
         if cached_interactions:
             all_interactions_id = json.loads(cached_interactions)
@@ -390,23 +587,142 @@ class Database:
                 interactions = [interaction for interaction in interactions if getattr(interaction, 'projet_id', None) == project_id]
             if user_id is not None:
                 interactions = [interaction for interaction in interactions if getattr(interaction, 'utilisateur_id', None) == user_id]
+            if sort_by:
+                # Normaliser quelques alias de relation utilisés dans les templates
+                REL_ALIAS = {
+                    'interlocuteur': 'utilisateur',
+                    'interlocuteurs': 'utilisateur',
+                    'user': 'utilisateur',
+                    'entreprise': 'client',
+                    'client': 'client',
+                    'utilisateur': 'utilisateur'
+                }
+                sb = str(sort_by)
+                # mapper les alias (ex: 'date' -> 'date_time_interaction', 'title' -> 'titre')
+                sb = _map_interaction_field(sort_by)
+                # Supporter uniquement la forme pointée: 'client.nom_entreprise' ou 'utilisateur.nom_prenom'
+                if '.' in sb:
+                    rel, col = sb.split('.', 1)
+                    rel = rel.lower().strip()
+                    col = col.strip()
+                    rel_norm = REL_ALIAS.get(rel, rel)
+                    if rel_norm == 'client':
+                        # N'accepter que la forme avec underscore pour la colonne (ex: 'nom_entreprise')
+                        col_norm = col
+                        if '.' in col_norm:
+                            raise ValueError(f"Invalid client sort field format: {col} (use underscore, e.g. 'nom_entreprise')")
+                        if col_norm not in getattr(Client, 'FIELD_NAMES', []):
+                            raise ValueError(f"Invalid client sort field: {col}")
+                        interactions = sorted(interactions, key=lambda i: ((getattr(i.client, col_norm) or '').lower()), reverse=(sort_dir.lower() == 'desc'))
+                    elif rel_norm == 'utilisateur':
+                        # Support tri composite nom + prenom
+                        if col == 'nom_prenom':
+                            interactions = sorted(interactions, key=lambda i: (((getattr(i.utilisateur, 'nom') or '').lower(), (getattr(i.utilisateur, 'prenom') or '').lower())), reverse=(sort_dir.lower() == 'desc'))
+                        else:
+                            if col not in getattr(Utilisateur, 'FIELD_NAMES', []):
+                                raise ValueError(f"Invalid utilisateur sort field: {col}")
+                            interactions = sorted(interactions, key=lambda i: ((getattr(i.utilisateur, col) or '').lower()), reverse=(sort_dir.lower() == 'desc'))
+                    else:
+                        raise ValueError(f"Unsupported relation for sort_by in cache: {rel}")
+                else:
+                    # Tri sur un champ de la table Interaction (tri Python) — n'accepte pas les variantes avec '_'
+                    # Appliquer le mapping d'alias (ex: 'date' -> 'date_time_interaction')
+                    sb_mapped = _map_interaction_field(sb)
+                    if sb_mapped not in getattr(Interaction, 'FIELD_NAMES', []):
+                        raise ValueError(f"Invalid sort_by field for interactions: {sb}")
+                    interactions = _apply_python_sort(interactions, sb_mapped, sort_dir)
+            # Appliquer offset+limit côté cache si demandés (offset pris en compte seulement si limit>0)
             if limit > 0:
+                if offset and offset > 0:
+                    interactions = interactions[offset:]
                 return interactions[:limit]
             return interactions
-        query = f"SELECT * FROM {Interaction.DATABASE_NAME}"
+        # Construire la requête en supportant d'éventuels JOINs si on trie sur des champs liés
+        # Par défaut on interroge la table d'interactions aliasée en 'i'
+        base_table = Interaction.DATABASE_NAME
+        query = f"SELECT i.* FROM {base_table} i"
         params: List[Any] = []
+        joins: List[str] = []
         conditions: List[str] = []
         if project_id is not None:
-            conditions.append("projet_id = ?")
+            conditions.append("i.projet_id = ?")
             params.append(project_id)
         if user_id is not None:
-            conditions.append("utilisateur_id = ?")
+            conditions.append("i.utilisateur_id = ?")
             params.append(user_id)
+
+        # Détecter si le tri porte sur une colonne liée (client.xxx ou utilisateur.xxx)
+        order_clause = ""
+        if sort_by:
+            # Support explicite du tri composite pour l'utilisateur (nom + prenom)
+            # mapper les alias si besoin (ex: 'date' -> 'date_time_interaction') mais garder la forme pointée
+            s_raw = str(sort_by)
+            s_mapped = _map_interaction_field(s_raw)
+            if s_mapped == 'utilisateur.nom_prenom' or s_raw == 'utilisateur.nom_prenom':
+                joins.append(f"JOIN {Utilisateur.DATABASE_NAME} u ON i.utilisateur_id = u.utilisateur_id")
+                if sort_dir.lower() not in ('asc', 'desc'):
+                    raise ValueError('sort_dir must be "asc" or "desc"')
+                order_clause = f" ORDER BY u.nom {sort_dir.upper()}, u.prenom {sort_dir.upper()}"
+            else:
+                # On n'accepte que la syntaxe avec '.' pour relation.colonne (ex: client.nom_entreprise)
+                s = s_mapped if s_mapped is not None else str(sort_by)
+                if '.' in s:
+                    rel, col = s.split('.', 1)
+                    rel = rel.lower()
+                    col = col.strip()
+                    # Normaliser quelques alias de relation utilisés dans les templates
+                    REL_ALIAS = {
+                        'interlocuteur': 'utilisateur',
+                        'interlocuteurs': 'utilisateur',
+                        'user': 'utilisateur',
+                        'entreprise': 'client',
+                        'client': 'client',
+                        'utilisateur': 'utilisateur'
+                    }
+                    rel_norm = REL_ALIAS.get(rel, rel)
+                    if rel_norm == 'client':
+                        # N'accepter que la forme avec underscore pour la colonne (ex: 'nom_entreprise')
+                        col_norm = col
+                        if '.' in col_norm:
+                            raise ValueError(f"Invalid client sort field format: {col} (use underscore, e.g. 'nom_entreprise')")
+                        if col_norm not in getattr(Client, 'FIELD_NAMES', []):
+                            raise ValueError(f"Invalid client sort field: {col}")
+                        # Ajouter JOIN vers la table Clients
+                        joins.append(f"JOIN {Client.DATABASE_NAME} c ON i.client_id = c.client_id")
+                        if sort_dir.lower() not in ('asc', 'desc'):
+                            raise ValueError('sort_dir must be "asc" or "desc"')
+                        order_clause = f" ORDER BY c.{col_norm} {sort_dir.upper()}"
+                    elif rel_norm in ('utilisateur', 'user', 'utilisateur_id', 'utilisateur'):
+                        # Valider le champ côté Utilisateur
+                        if col not in getattr(Utilisateur, 'FIELD_NAMES', []):
+                            raise ValueError(f"Invalid utilisateur sort field: {col}")
+                        joins.append(f"JOIN {Utilisateur.DATABASE_NAME} u ON i.utilisateur_id = u.utilisateur_id")
+                        if sort_dir.lower() not in ('asc', 'desc'):
+                            raise ValueError('sort_dir must be "asc" or "desc"')
+                        order_clause = f" ORDER BY u.{col} {sort_dir.upper()}"
+                    else:
+                        raise ValueError(f"Unsupported relation for sort_by: {rel}")
+                else:
+                    # Tri sur un champ de la table Interaction (après mapping d'alias)
+                    sort_field = _map_interaction_field(str(sort_by))
+                    if sort_field not in getattr(Interaction, 'FIELD_NAMES', []):
+                        raise ValueError(f"Invalid sort_by field for interactions: {sort_by}")
+                    if sort_dir.lower() not in ('asc', 'desc'):
+                        raise ValueError('sort_dir must be "asc" or "desc"')
+                    order_clause = f" ORDER BY i.{sort_field} {sort_dir.upper()}"
+
+        # Assembler JOINs et conditions
+        if joins:
+            query += ' ' + ' '.join(joins)
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
+        # Ajouter clause ORDER BY si nécessaire
+        query += order_clause
+        # Appliquer LIMIT/OFFSET si demandé
         if limit > 0:
-            query += " LIMIT ?"
+            query += " LIMIT ? OFFSET ?"
             params.append(limit)
+            params.append(offset)
         cursor = self.execute(query, tuple(params))
         rows = cursor.fetchall()
         cursor.close()
@@ -416,7 +732,58 @@ class Database:
             self.redis_client.setex(redis_key(Interaction.DATABASE_NAME.lower(), None, "all"), 1_800, json.dumps(all_interactions_id))
         interactions = [Interaction.from_db_row(self, row) for row in rows]
         interactions = [interaction for interaction in interactions if key(interaction)]
+        # Si un sort_by est demandé, appliquer le tri Python final uniquement si c'est un champ d'Interaction
+        if sort_by:
+            mapped_final = _map_interaction_field(sort_by)
+            # Si mapped_final contient un point c'est un tri lié (déjà appliqué par SQL/join) -> ne rien faire
+            if mapped_final and '.' not in mapped_final and mapped_final in getattr(Interaction, 'FIELD_NAMES', []):
+                interactions = _apply_python_sort(interactions, mapped_final, sort_dir)
         return interactions
+
+    def count_interactions(self, project_id: int | None = None, user_id: int | None = None, text: Optional[str] = None) -> int:
+        """
+        Compte le nombre d'interactions correspondant aux filtres fournis en SQL.
+
+        :param project_id: filtrer par projet_id (optionnel)
+        :param user_id: filtrer par utilisateur_id (optionnel)
+        :param text: recherche texte libre (appliquée sur plusieurs colonnes via LIKE)
+        :return: nombre d'interactions correspondantes
+        """
+        base_table = Interaction.DATABASE_NAME
+        query = f"SELECT COUNT(*) FROM {base_table} i"
+        params: List[Any] = []
+        joins: List[str] = []
+        conditions: List[str] = []
+
+        # join clients/utilisateurs only if needed for text search
+        if text:
+            # We'll need client and utilisateur columns in the WHERE (nom_entreprise, contact_email, nom, prenom)
+            joins.append(f"JOIN {Client.DATABASE_NAME} c ON i.client_id = c.client_id")
+            joins.append(f"JOIN {Utilisateur.DATABASE_NAME} u ON i.utilisateur_id = u.utilisateur_id")
+            like = f"%{text.lower()}%"
+            # search across several columns similar to interaction_filter, use LOWER(...) to be case-insensitive
+            conditions.append("(CAST(i.interaction_id AS TEXT) LIKE ? OR LOWER(c.nom_entreprise) LIKE ? OR LOWER(c.contact_email) LIKE ? OR LOWER(u.nom) LIKE ? OR LOWER(u.prenom) LIKE ? OR LOWER(i.type_interaction_id) LIKE ? OR LOWER(i.titre) LIKE ? OR LOWER(i.contenu) LIKE ?)")
+            params.extend([like] * 8)
+
+        if project_id is not None:
+            conditions.append("i.projet_id = ?")
+            params.append(project_id)
+        if user_id is not None:
+            conditions.append("i.utilisateur_id = ?")
+            params.append(user_id)
+
+        if joins:
+            query += ' ' + ' '.join(joins)
+        if conditions:
+            query += ' WHERE ' + ' AND '.join(conditions)
+
+        cursor = self.execute(query, tuple(params))
+        row = cursor.fetchone()
+        cursor.close()
+        try:
+            return int(row[0]) if row and row[0] is not None else 0
+        except Exception:
+            return 0
 
 
 class DBObject:
@@ -1416,7 +1783,7 @@ class Projet(DBObject, _RowInitMixin):
         """
         # Tentative d'utilisation du cache Redis. Le cache stocke une liste d'objets simples
         # contenant {"utilisateur_id": ..., "poste": ...} afin de pouvoir reconstituer
-        # des objets Intervenant avec leur poste sans dupliquer la totalité des données utilisateur.
+        # des objets Intervenant avec leur poste/projet sans dupliquer la totalité des données utilisateur.
         cached = None
         try:
             cached = self.db.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "intervenants"))
