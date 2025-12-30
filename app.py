@@ -118,10 +118,8 @@ def login():
         c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
 
         corresp = c.fetchone()
-        print(corresp)
         has_failed_login = False
         if corresp != None: # Si on trouve un utilisateur avec cet email
-            print("Utilisateur trouvé")
             if verify_password(mdp, corresp[1]):
 
                 to_login = corresp[0]
