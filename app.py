@@ -153,6 +153,38 @@ def accueil():
     return render_template("accueil.html")
 
 
+# Oui cette fonction est ici pour raison de facilité, je souhaiterais que quelqu'un la bouge dans les conventions si possible
+@app.route("/convention/create", methods=["GET", "POST"])
+@login_required
+def create_convention():
+
+    if not has_permission(current_user, 'peut_gerer_projets'):
+        abort(403)
+
+    added_successfully= False
+    c = get_db().cursor()
+
+
+    if request.method == 'POST' :
+        e = request.form
+        l=[None]
+        for i in e.keys() :
+            l.append(e[i])
+        
+        l=tuple(l)
+
+        #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
+        c.execute("INSERT INTO Conventions VALUES (?, ?, ?, ?, ?, ?, ?)", l)
+        get_db().commit()
+
+        added_successfully = True
+
+    #Obtention des clients possibles
+    clients = get_db().get_all_clients()
+    
+    return render_template("create_convention.html", context={"success":added_successfully, "clients": clients})
+
+
 @app.route("/clients", methods=['GET'])
 @login_required
 def clients():
@@ -246,7 +278,7 @@ def client_detail(client_id):
 def create_client():
     """Fonction pour la route /client/create \n
     C'est la page pour creer un nouveau client"""
-    if not (has_permission(current_user, 'peut_gerer_clients') or has_permission(current_user, 'administrateur')):
+    if not has_permission(current_user, 'peut_gerer_clients'):
         abort(403)
 
     client_added_successfully= False
@@ -271,7 +303,7 @@ def create_client():
         client_added_successfully = True
 
     #Obtention des interlocuteurs possibles
-    interlocuteurs_dispo = get_db().get_all_users(sort_by='role_id')
+    interlocuteurs_dispo = get_db().get_all_users(sort_by='nom')
     
     return render_template("create_client.html", context={"success":client_added_successfully, "interlocuteurs": interlocuteurs_dispo})
 
