@@ -1,0 +1,37 @@
+{% extends "menu.html" %}
+
+{% block title %}Création d'utilisateur{% endblock %}
+
+{% block content %}
+  <h1> Ajout d'un nouveau Client/Prospect/Ancien Client de TNS</h1>
+  {% if context.success %}
+  <h2 style="color: green;"> Client ajouté avec succès! </h2>
+  {% endif %}
+  <br>
+    <form class="form-create-client" method="post" style="display : flex; flex-direction: column; gap: 5px;">
+      <input name="nom_entreprise" type="text" placeholder="Nom de l'entreprise cliente" required>
+      <input name="contact_nom" type="text" placeholder="Nom du contact" required>
+      <input name="contact_email" type="email" placeholder="Mail du contact">
+      <input name="contact_telephone" type="text" placeholder="Téléphone du contact">
+      <select name="type_client" required>
+          <option value=""> --Sélectionnez un type-- </option>
+          <option value="Prospect"> Prospect </option>
+          <option value="Actif"> Actif </option>
+          <option value="Ancien"> Ancien </option>
+      </select>
+      <select name="interlocuteur" required>
+          <option value=""> -- Qui est l'interlocuteur principal? -- </option>
+          {% for i in context.interlocuteurs %}
+          <option value={{i.utilisateur_id}}> {{i.nom}} {{i.prenom}} </option>
+          {% endfor %}
+      </select>
+
+      <input name="loc_lat" type="text" placeholder="Latitude de l'entreprise">
+      <input name="loc_lng" type="text" placeholder="Longitude de l'entreprise">
+      <input name="address" type="text" placeholder="Adresse de l'entreprise">
+      <input type="submit" class="bouton-ajouter-client" value="Ajouter le client">  
+    </form>
+
+    
+  </div>
+{%endblock%}

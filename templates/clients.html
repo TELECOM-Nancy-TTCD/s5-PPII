@@ -4,10 +4,11 @@
 
 {% block content %}
 
-
+<div>
 <h1>Liste des clients</h1>
-<p style="font-size: large;">Ici se trouve tout les clients répertoriés.</p>
-
+<p style="font-size: large;">Ici se trouvent tous les clients répertoriés.</p>
+    <a href="{{ url_for('create_client') }}" class="bouton-ajouter-client">Ajouter un client</a>
+</div>
 
 <form class="search-form-clients" method="get" action="/clients" >
     <input type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
@@ -47,7 +48,7 @@
             <span class="col">{{ client['contact_email'] }}</span>
             <span class="col">{{ client['contact_telephone'] }}</span>
             <span class="col">{{ client['type_client'] }}</span>
-            <span class="col">{{ client['interlocuteur_principal_id'] }}</span>
+            <span class="col">{{ affichage_int[loop.index0] }}</span>
             <span class="col">{{ client['address'] }}</span>
         </div>
     </div>

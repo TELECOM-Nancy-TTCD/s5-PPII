@@ -20,4 +20,4 @@ def has_permission(user, permission: str) -> bool:
     role = user.role
     if role is None:
         return False
-    return getattr(role, permission, False)
+    return getattr(role, permission, False) or getattr(role, 'administrateur', False)

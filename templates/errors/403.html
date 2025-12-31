@@ -1,0 +1,9 @@
+{% extends "menu.html" %}
+
+{% block title %}Accès interdit{% endblock %}
+
+{% block content %}
+<h1>Erreur 403</h1>
+<p>Vous n'êtes pas autorisé à accéder à ce contenu.</p>
+<a class="lien-erreur-retour" href="{{ url_for('accueil') }}" >Retour à l'accueil</a>
+{% endblock %}

@@ -177,7 +177,15 @@ def clients():
             or recherche_clients in u["type_client"].lower()
         ]
 
-    return render_template("clients.html", clients_db=clients_db, recherche_clients=recherche_clients)
+    liste_interloc_principaux = []
+    db = get_db()
+    for c in clients_db :
+        # Bon affichage de l'interlocuteur principal
+        interlocuteur =db.get_user_by_id(c[6])
+        affichage_interlocuteur = interlocuteur.nom + " " + interlocuteur.prenom
+        liste_interloc_principaux.append(affichage_interlocuteur)
+
+    return render_template("clients.html", clients_db=clients_db, recherche_clients=recherche_clients, affichage_int = liste_interloc_principaux)
 
 
 @app.route("/clients/<int:client_id>")
@@ -194,6 +202,10 @@ def client_detail(client_id):
     client = c.fetchone()
     if client is None:
         abort(404)
+    
+    # Bon affichage de l'interlocuteur principal
+    interlocuteur =get_db().get_user_by_id(client[6])
+    affichage_interlocuteur = interlocuteur.nom + " " + interlocuteur.prenom
 
     c.execute("""SELECT p.* FROM Projets p JOIN Conventions c ON p.convention_id = c.convention_id WHERE c.client_id = ?""", (client_id,))
 
@@ -226,7 +238,42 @@ def client_detail(client_id):
     interactions = c.fetchall()
     conn.close()
 
-    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets, interactions=interactions)
+    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets, interactions=interactions, inter = affichage_interlocuteur)
+
+
+@app.route("/client/create", methods=["GET", "POST"])
+@login_required
+def create_client():
+    """Fonction pour la route /client/create \n
+    C'est la page pour creer un nouveau client"""
+    if not (has_permission(current_user, 'peut_gerer_clients') or has_permission(current_user, 'administrateur')):
+        abort(403)
+
+    client_added_successfully= False
+    c = get_db().cursor()
+
+
+    if request.method == 'POST' :
+        nom_e= request.form["nom_entreprise"]
+        nom_c = request.form["contact_nom"]
+        email = request.form["contact_email"]
+        phone = request.form["contact_telephone"] 
+        type = request.form["type_client"]
+        interlocuteur = request.form["interlocuteur"]
+        lat = request.form["loc_lat"]
+        lng = request.form["loc_lng"]
+        addr = request.form["address"]
+
+        #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
+        c.execute("INSERT INTO Clients VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",(None, nom_e, nom_c, email, phone, type, interlocuteur, lat, lng, addr))
+        get_db().commit()
+
+        client_added_successfully = True
+
+    #Obtention des interlocuteurs possibles
+    interlocuteurs_dispo = get_db().get_all_users(sort_by='role_id')
+    
+    return render_template("create_client.html", context={"success":client_added_successfully, "interlocuteurs": interlocuteurs_dispo})
 
 
 @app.route("/import_clients", methods=["POST"])
@@ -589,7 +636,7 @@ def supprimer_utilisateur(user_id):
     Permet de faire fonctionner le bouton de suppression de l'utilisateur"""
 
     # On vérifier que la personne est bien un ADMIN
-    if getattr(current_user, 'role_id', None) != 1:
+    if not has_permission(current_user, 'administrateur'):
         abort(403)
 
     user = get_db().get_user_by_id(user_id)
@@ -715,6 +762,11 @@ def page_not_found(error):
 def serveur_error(error):
     """Fonction pour l'erreur 500"""
     return render_template("errors/500.html"), 500
+
+@app.errorhandler(403)
+def serveur_error(error):
+    """Fonction pour l'erreur 403"""
+    return render_template("errors/403.html"), 403
 
 
 @app.teardown_appcontext
