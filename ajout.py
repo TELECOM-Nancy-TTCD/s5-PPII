@@ -33,6 +33,10 @@ def main():
                 INSERT INTO Roles
                 VALUES (NULL, 'Membre', 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                 """)
+    cur.execute("""
+                INSERT INTO Roles
+                VALUES (3, 'TESTING', 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0)
+                """)
     print("   ✔ Rôles ajoutés.\n")
 
     # ==========================
@@ -42,7 +46,7 @@ def main():
 
     users = [
         ("john@admin.tns.com", "superadmin", "ADMIN", "John TNS", 1, 0, 169, None, None, None, None),
-        ("bob@tns.com", "bob", "Bob", "Client", 2, 0, 0, None, None, None, None),
+        ("bob@tns.com", "bob", "Bob", "Client", 3, 0, 0, None, None, None, None),
         ("bob2@tns.com", "bob", "BobDoc", "Client", 2, 0, 12,
          "https://drive.google.com/file/d/1PzE1K6lxY1Yiqr1kLwApwygojMHcDOgK/view?usp=sharing",
          None, None, None)

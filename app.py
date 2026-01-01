@@ -19,6 +19,7 @@ from tools import get_db, has_permission
 # Importation des blueprints
 from interactions import interactions_bp
 from clients import clients_bp
+from utilisateurs import bp_utilisateurs
 
 
 
@@ -74,6 +75,7 @@ app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36
 app.register_blueprint(conventions_bp)
 app.register_blueprint(interactions_bp)
 app.register_blueprint(clients_bp)
+app.register_blueprint(bp_utilisateurs)
 
 def hash_password(mdp : str):
     """Fonction qui hash et sale le mot de passe,

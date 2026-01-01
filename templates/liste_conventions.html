@@ -39,11 +39,8 @@
 
         <div class="convention-row">
             <div class="button-col">
-                 <button type="button" class="collapseur" onclick="show_projets(this, event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
-                        <!-- Icon from Material Symbols by Google - https://github.com/google/material-design-icons/blob/master/LICENSE -->
-                    <path fill="linen" d="M9 15H6q-.425 0-.712-.288T5 14t.288-.712T6 13h4q.425 0 .713.288T11 14v4q0 .425-.288.713T10 19t-.712-.288T9 18zm6-6h3q.425 0 .713.288T19 10t-.288.713T18 11h-4q-.425 0-.712-.288T13 10V6q0-.425.288-.712T14 5t.713.288T15 6z"/>
-                    </svg>
+                <button type="button" class="collapseur" onclick="show_projets(this, event)">
+                    <i class="fa-solid fa-xl fa-angle-right"></i>
                 </button>
             </div>
 
@@ -82,11 +79,16 @@
 function show_projets(btn, event) {
     event.stopPropagation()
     const content = btn.closest(".client-card").querySelector(".collapsed-row");
+    const icon = btn.querySelector("i");
 
     if (content.style.display === "none" || content.style.display === "") {
         content.style.display = "block";
+        icon.classList.remove("fa-angle-right");
+        icon.classList.add("fa-angle-down");
     } else {
         content.style.display = "none";
+        icon.classList.remove("fa-angle-down");
+        icon.classList.add("fa-angle-right");
     }
 }
 </script>

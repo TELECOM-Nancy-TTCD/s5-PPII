@@ -7,19 +7,19 @@
     --menu-img-bg: #2a2d39;
 
     /* Couleurs primaires/auxiliaires (charte fournie) */
-    --primary: #253da5;       /* Bleu primaire */
+    --primary: #253da5; /* Bleu primaire */
     --primary-variant: #1d4c9c; /* variante */
-    --accent: #42b9bc;        /* accent / teal */
+    --accent: #42b9bc; /* accent / teal */
 
-    --danger: #d13651;        /* auxiliaire rouge */
-    --danger-hover: #e05555;  /* hover danger */
+    --danger: #d13651; /* auxiliaire rouge */
+    --danger-hover: #e05555; /* hover danger */
 
-    --success: #65b231;       /* vert succès */
-    --success-2: #4fb271;     /* second vert */
+    --success: #65b231; /* vert succès */
+    --success-2: #4fb271; /* second vert */
 
-    --warning: #e29320;       /* warning orange */
-    --highlight: #d3c116;     /* jaune highlight */
-    --accent-2: #af38d6;      /* violet accent */
+    --warning: #e29320; /* warning orange */
+    --highlight: #d3c116; /* jaune highlight */
+    --accent-2: #af38d6; /* violet accent */
 
     /* Gradient exemples depuis la charte */
     --gradient-start: #68a4d9;
@@ -32,6 +32,7 @@
     --black: #000000;
     --muted: #757779;
     --muted-2: #888888;
+    --muted-3: #e6e6e6;
     --border: #444444;
     --input-bg: #3a3a3a;
     --shadow-1: rgba(0, 0, 0, 0.2);
@@ -39,12 +40,12 @@
     --shadow-3: rgba(0, 0, 0, 0.4);
 
     /* RGB helpers for notification translucent backgrounds and gradients */
-    --primary-rgb: 37,61,165;   /* #253da5 */
-    --accent-rgb: 66,185,188;   /* #42b9bc */
-    --success-rgb: 101,178,49;  /* #65b231 */
-    --warning-rgb: 226,147,32;  /* #e29320 */
-    --danger-rgb: 209,54,81;    /* #d13651 */
-    --accent2-rgb: 175,56,214;  /* #af38d6 */
+    --primary-rgb: 37, 61, 165; /* #253da5 */
+    --accent-rgb: 66, 185, 188; /* #42b9bc */
+    --success-rgb: 101, 178, 49; /* #65b231 */
+    --warning-rgb: 226, 147, 32; /* #e29320 */
+    --danger-rgb: 209, 54, 81; /* #d13651 */
+    --accent2-rgb: 175, 56, 214; /* #af38d6 */
 }
 
 html, body {
@@ -189,7 +190,7 @@ a:hover {
     left: 0;
     top: 100%; /* align directly under parent to preserve hover when moving pointer */
     background-color: var(--surface);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
     border-radius: 8px;
     padding: 6px 0;
     min-width: 160px;
@@ -320,7 +321,6 @@ a:hover {
 }
 
 
-
 .footer-menu {
     height: 100px;
     display: flex;
@@ -396,22 +396,31 @@ a:hover {
     justify-content: center;
 }
 
+
 .collapseur {
-    display:flex;
+    display: flex;
     border: none;
-    background:transparent;
+    background: transparent;
     border-radius: 50%;
     align-items: center;
-    padding: 0;
+    padding: 10px;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
     color: var(--text-light);
-    margin: 0px
+    width: 44px;
+    height: 44px;
+    box-sizing: border-box;
+}
+
+.collapseur:focus-visible {
+    outline: none;
 }
 
 .collapseur:hover {
-    background-color: #475eab;
+    background: var(--primary-variant);
+    color: var(--white);
+    transform: translateY(-2px) scale(1.02);
 }
 
 .convention-row {
@@ -429,7 +438,7 @@ a:hover {
     display: flex;
     background-color: #2b2b2b;
     font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
     z-index: 10;
     border-radius: 10px 10px 0 0;
     padding: 12px 15px;
@@ -496,7 +505,6 @@ a:hover {
 }
 
 
-
 .search-form-utilisateurs, .search-form-clients, .search-form-conventions, .search-form {
     margin: 20px auto;
     display: flex;
@@ -504,6 +512,7 @@ a:hover {
     align-items: center;
 
 }
+
 .search-form-utilisateurs input[type="text"],
 .search-form-clients input[type="text"],
 .search-form-conventions input[type="text"],
@@ -632,7 +641,7 @@ a:hover {
 .interactions-container {
     display: flex;
     flex-direction: column;
-    align-items: center; 
+    align-items: center;
 }
 
 .interaction-card {
@@ -642,13 +651,13 @@ a:hover {
     margin-bottom: 15px;
     border-radius: 8px;
     max-width: 800px;
-    width: 100%; 
+    width: 100%;
     word-wrap: break-word;
 }
 
 .interaction-header {
     display: flex;
-    justify-content: space-between; 
+    justify-content: space-between;
     font-weight: bold;
     margin-bottom: 8px;
 }
@@ -683,48 +692,50 @@ a:hover {
     border-radius: 6px;
 }
 
-/* Partie du CSS générée avec aide d'une IA */
+/* Partie du CSS générée avec aide d'une AI */
 .timeline_jalons {
-  position: relative;
-  max-width: 800px;
-  margin: 2rem auto;
-  padding-left: 3rem;
+    position: relative;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding-left: 3rem;
 }
 
 .timeline_jalons::before {
-  content: "";
-  position: absolute;
-  left: 1rem;
-  top: 0;
-  bottom: 0;
-  border-left: 2px dotted #475eab;
+    content: "";
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    border-left: 2px dotted #475eab;
 
 }
 
 .timeline-item {
-  position: relative;
-  margin-bottom: 2.5rem;
+    position: relative;
+    margin-bottom: 2.5rem;
 }
+
 .timeline-item::before {
-  content: "";
-  position: absolute;
-  left: -2.4rem;
-  top: 1rem;
-  width: 12px;
-  height: 12px;
-  background-color: #1b1b1b;
-  border: 2px solid #475eab;
-  border-radius: 50%;
+    content: "";
+    position: absolute;
+    left: -2.4rem;
+    top: 1rem;
+    width: 12px;
+    height: 12px;
+    background-color: #1b1b1b;
+    border: 2px solid #475eab;
+    border-radius: 50%;
 
 }
 
 .timeline-card {
-  background-color: #292929;
-  padding: 1rem 1.25rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    background-color: #292929;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
-/* Partie du CSS générée avec aide d'une IA */
+
+/* Partie du CSS générée avec aide d'une AI */
 
 .bouton-terminer-projet {
     display: inline-block;
@@ -737,15 +748,15 @@ a:hover {
     text-align: center;
     text-decoration: none;
     transition: all 0.3s ease;
-    background-color: #555d55; 
+    background-color: #555d55;
     color: #fff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .bouton-terminer-projet:hover {
     background-color: #78947a;
     transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
 }
 
 .bouton-exporter,
@@ -760,9 +771,9 @@ a:hover {
     text-align: center;
     text-decoration: none;
     transition: all 0.3s ease;
-    background-color: #475eab; 
+    background-color: #475eab;
     color: #fff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .bouton-supprimer-utilisateur {
@@ -776,9 +787,9 @@ a:hover {
     text-align: center;
     text-decoration: none;
     transition: all 0.3s ease;
-    background-color: #ab4747; 
+    background-color: #ab4747;
     color: #fff;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .form-create-user {
@@ -809,7 +820,7 @@ a:hover {
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
 }
 
 .modal-content {
@@ -834,16 +845,16 @@ a:hover {
 }
 
 
-.jalon_boutton{
+.jalon_boutton {
     padding: 10px;
     background-color: #475eab;
-    color:  rgb(204, 204, 204);
+    color: rgb(204, 204, 204);
     border: none;
     border-radius: 6px;
     cursor: pointer;
 }
 
-.lien_doc_projet{
+.lien_doc_projet {
     display: inline-block;
     padding: 10px 14px;
     background-color: #9c948f;
@@ -855,23 +866,23 @@ a:hover {
 }
 
 .progress-bar-container {
-    width: 500px;
     background-color: #ddd;
     border-radius: 5px;
     overflow: hidden;
     height: 20px;
-    margin-bottom: 10px;
-    width: 50%; 
-    margin: 0 auto;
+    margin: 0 auto 10px auto;
+    max-width: 500px; /* limite la largeur maximale mais reste responsive */
+    width: 50%;
 }
 
 .progress-bar {
-    height: 500px;
+    height: 100%;
     background-color: #4caf50;
     text-align: center;
     color: black;
     line-height: 20px;
     font-size: 12px;
+    transition: width 0.3s ease;
 }
 
 
@@ -911,7 +922,7 @@ a:hover {
 }
 
 .danger-button {
-    background-color: var(--danger);
+    background-color: var(--danger) !important;
     border: none;
     border-radius: 0.9em;
     cursor: pointer;
@@ -930,7 +941,7 @@ a:hover {
 }
 
 .danger-button:hover {
-    background-color: var(--danger-hover);
+    background-color: var(--danger-hover) !important;
 }
 
 .secondary-button {
@@ -1008,7 +1019,7 @@ a:hover {
 
 .input-box input:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(37,61,165,0.08); /* palette primaire */
+    box-shadow: 0 0 0 4px rgba(37, 61, 165, 0.08); /* palette primaire */
 }
 
 .input-box textarea {
@@ -1028,7 +1039,7 @@ a:hover {
 
 .input-box textarea:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(37,61,165,0.08); /* palette primaire */
+    box-shadow: 0 0 0 4px rgba(37, 61, 165, 0.08); /* palette primaire */
 }
 
 .text-danger {
@@ -1161,7 +1172,7 @@ dialog .container {
 
 dialog::backdrop {
     /* slightly darker backdrop so page content (navbar) isn't visible through rounded corners */
-    background: rgba(0,0,0,0.65);
+    background: rgba(0, 0, 0, 0.65);
 }
 
 dialog .container .actions .icon-button {
@@ -1218,7 +1229,7 @@ dialog .container .actions {
     width: 100%;
     max-height: 260px;
     overflow: auto;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
     list-style: none;
 }
 
@@ -1231,7 +1242,7 @@ dialog .container .actions {
 
 .client-suggestions .client-suggestion:hover,
 .client-suggestions .client-suggestion.highlight {
-    background: rgba(37,61,165,0.08); /* palette primaire */
+    background: rgba(37, 61, 165, 0.08); /* palette primaire */
 }
 
 /* Styles pour indiquer un champ invalide */
@@ -1240,6 +1251,7 @@ dialog .container .actions {
     box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.08);
     background-clip: padding-box;
 }
+
 .invalid-field:focus {
     outline: none;
     box-shadow: 0 0 0 6px rgba(255, 107, 107, 0.16);
@@ -1247,35 +1259,57 @@ dialog .container .actions {
 
 /* Shake animation for invalid fields */
 @keyframes shake {
-  0% { transform: translateX(0); }
-  10% { transform: translateX(-6px); }
-  20% { transform: translateX(6px); }
-  30% { transform: translateX(-6px); }
-  40% { transform: translateX(6px); }
-  50% { transform: translateX(-4px); }
-  60% { transform: translateX(4px); }
-  70% { transform: translateX(-2px); }
-  80% { transform: translateX(2px); }
-  90% { transform: translateX(-1px); }
-  100% { transform: translateX(0); }
+    0% {
+        transform: translateX(0);
+    }
+    10% {
+        transform: translateX(-6px);
+    }
+    20% {
+        transform: translateX(6px);
+    }
+    30% {
+        transform: translateX(-6px);
+    }
+    40% {
+        transform: translateX(6px);
+    }
+    50% {
+        transform: translateX(-4px);
+    }
+    60% {
+        transform: translateX(4px);
+    }
+    70% {
+        transform: translateX(-2px);
+    }
+    80% {
+        transform: translateX(2px);
+    }
+    90% {
+        transform: translateX(-1px);
+    }
+    100% {
+        transform: translateX(0);
+    }
 }
 
 .shake {
-    animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+    animation: shake 0.6s cubic-bezier(.36, .07, .19, .97) both;
     will-change: transform;
 }
 
 /* Responsive: on small screens, stack the column items vertically to avoid overlap/scroll */
 @media (max-width: 520px) {
-  .form .column {
-    flex-direction: column;
-    gap: 8px;
-  }
+    .form .column {
+        flex-direction: column;
+        gap: 8px;
+    }
 
-  .form .column .input-box {
-    min-width: 0;
-    flex-basis: 100%;
-  }
+    .form .column .input-box {
+        min-width: 0;
+        flex-basis: 100%;
+    }
 }
 
 
@@ -1299,86 +1333,832 @@ dialog .container .actions {
 }
 
 .pagination {
-  display: flex;
-  justify-content: center;
-  list-style: none;
-  padding: 0;
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    padding: 0;
 }
 
 .pagination li a {
-  display: block;
-  padding: 8px 12px;
-  text-decoration: none;
-  border: 1px solid var(--border);
-  background-color: var(--surface);
-  color: var(--text-main);
-  margin: 0 4px;
-  border-radius: 5px;
-  transition: background-color 1s;
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    color: var(--text-main);
+    margin: 0 4px;
+    border-radius: 5px;
+    transition: background-color 1s;
 }
 
 .pagination .ellipsis {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 10px;
-  margin: 0 4px;
-  color: var(--muted-2);
-  background: transparent;
-  border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    margin: 0 4px;
+    color: var(--muted-2);
+    background: transparent;
+    border: none;
 }
 
 .pagination li a.first-page, .pagination li a.last-page {
-  font-weight: 600;
+    font-weight: 600;
+    cursor: grab;
 }
 
 /* Ensure pagination container is centered on the page */
 .pagination {
-  justify-content: center;
-  margin: 0 auto;
+    justify-content: center;
+    margin: 0 auto;
 }
 
 /* Make active page more prominent */
 .pagination li a.active {
-  background-color: var(--primary);
-  color: var(--white);
-  font-weight: 700;
+    background-color: var(--primary);
+    color: var(--white);
+    font-weight: 700;
 }
 
 /* Ensure disabled pagination links are not interactive */
 .pagination a.disabled,
 .pagination a[aria-disabled="true"] {
-  pointer-events: none;
-  opacity: 0.5;
-  cursor: default;
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: default;
 }
 
 /* Pagination buttons should match the anchor appearance */
 .pagination li button {
-  display: inline-block;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  background-color: var(--surface);
-  color: var(--text-main);
-  margin: 0 4px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.12s ease;
-  font: inherit;
+    display: inline-block;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    color: var(--text-main);
+    margin: 0 4px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+    font: inherit;
 }
 
 .pagination li button:focus {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.08);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.08);
 }
 
 .pagination li button.disabled,
 .pagination li button[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Keep visual parity with anchor hover */
 .pagination li button:hover:not(.disabled):not([disabled]) {
-  background-color: var(--primary-variant);
+    background-color: var(--primary-variant);
+}
+
+/* From Uiverse.io by xerith_8140 */
+/* Notification container */
+
+.notification-container {
+    position: fixed;
+    top: 2%;
+    right: 2%;
+    z-index: 10000;
+    max-width: 80%;
+
+    --content-color: var(--text-main);
+    --background-color: rgba(255, 255, 255, 0.02);
+    --font-size-content: 0.9em;
+    --icon-size: 1em;
+    /* durée de la notif (ms) — définie par JS via style.setProperty('--notif-duration', '5000ms') */
+    --notif-duration: 5000ms;
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    list-style-type: none;
+    font-family: sans-serif;
+    color: var(--content-color);
+}
+
+/* Notification Item */
+
+.notification-item {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    gap: 1em;
+    overflow: hidden;
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: rgba(0, 0, 0, 0.35) 0 6px 18px;
+    background-color: var(--surface); /* fallback */
+    transition: transform 300ms ease, opacity 300ms ease;
+    opacity: 1;
+    margin-top: 12px;
+}
+
+/* hiding state used when JS déclenche la suppression : fondu court avant suppression du DOM */
+.notification-item.hiding {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.995);
+}
+
+.notification-item svg {
+    transition: 250ms ease;
+}
+
+.notification-item:hover {
+    transform: translateY(-2px);
+}
+
+.notification-item:active {
+    transform: translateY(0);
+}
+
+.notification-item .notification-close:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.notification-item .notification-close:hover svg {
+    color: inherit;
+}
+
+.notification-item .notification-close:active svg {
+    transform: scale(1.1);
+}
+
+/* Notification Icons */
+.notification-item .notification-close {
+    padding: 2px;
+    border-radius: 5px;
+    transition: all 250ms;
+}
+
+.notification-container svg {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    color: var(--content-color);
+}
+
+.notification-icon {
+    display: flex;
+    align-items: center;
+}
+
+/* Filled backgrounds (plein, sans transparence) - utilise les couleurs du thème */
+.notification-item.success {
+    background-color: var(--success);
+    color: var(--white);
+}
+
+.notification-item.success .notification-icon i,
+.notification-item.success svg {
+    color: var(--white);
+}
+
+.notification-item.info {
+    background-color: var(--accent);
+    color: var(--white);
+}
+
+.notification-item.info .notification-icon i,
+.notification-item.info svg {
+    color: var(--white);
+}
+
+.notification-item.warning {
+    background-color: var(--warning);
+    color: var(--white);
+}
+
+.notification-item.warning .notification-icon i,
+.notification-item.warning svg {
+    color: var(--white);
+}
+
+.notification-item.error {
+    background-color: var(--danger);
+    color: var(--white);
+}
+
+.notification-item.error .notification-icon i,
+.notification-item.error svg {
+    color: var(--white);
+}
+
+/* Notification content */
+.notification-content {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.notification-text {
+    font-size: var(--font-size-content);
+    user-select: none;
+}
+
+.notification-close {
+    cursor: pointer;
+    color: inherit;
+}
+
+/* Notification progress bar - utilise la variable --notif-duration définie par JS */
+.notification-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(0);
+    /* animation controlled by --notif-duration; JS doit définir cette variable sur l'élément .notification-item */
+    animation: progressBar var(--notif-duration, 5000ms) linear forwards;
+}
+
+/* Bar color per type (contraste sur fond plein) */
+.notification-item.success .notification-progress-bar {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.notification-item.info .notification-progress-bar {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.notification-item.warning .notification-progress-bar {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.notification-item.error .notification-progress-bar {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* progressBar Animation — fait partir la barre vers la gauche sur la durée fournie */
+@keyframes progressBar {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* From Uiverse.io by varoonrao */
+.checkbox-con {
+    margin: 10px;
+    display: flex;
+    align-items: center;
+    color: white;
+}
+
+.checkbox-con input[type="checkbox"] {
+    appearance: none;
+    width: 48px;
+    height: 27px;
+    border: 2px solid #ff0000;
+    border-radius: 20px;
+    background: #f1e1e1;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.checkbox-con input[type="checkbox"]::before {
+    content: "";
+    width: 14px;
+    height: 14px;
+    background: rgba(234, 7, 7, 0.5);
+    border: 2px solid #ea0707;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(13%, 15%);
+    transition: all 0.3s ease-in-out;
+}
+
+.checkbox-con input[type="checkbox"]::after {
+    content: url("data:image/svg+xml,%3Csvg xmlns='://www.w3.org/2000/svg' width='23' height='23' viewBox='0 0 23 23' fill='none'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M6.55021 5.84315L17.1568 16.4498L16.4497 17.1569L5.84311 6.55026L6.55021 5.84315Z' fill='%23EA0707' fill-opacity='0.89'/%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M17.1567 6.55021L6.55012 17.1568L5.84302 16.4497L16.4496 5.84311L17.1567 6.55021Z' fill='%23EA0707' fill-opacity='0.89'/%3E%3C/svg%3E");
+    position: absolute;
+    top: 0;
+    left: 20px;
+}
+
+.checkbox-con input[type="checkbox"]:checked {
+    border: 2px solid #02c202;
+    background: #e2f1e1;
+}
+
+.checkbox-con input[type="checkbox"]:checked::before {
+    background: rgba(2, 194, 2, 0.5);
+    border: 2px solid #02c202;
+    transform: translate(133%, 13%);
+    transition: all 0.3s ease-in-out;
+}
+
+.checkbox-con input[type="checkbox"]:checked::after {
+    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='13' viewBox='0 0 15 13' fill='none'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M14.8185 0.114533C15.0314 0.290403 15.0614 0.605559 14.8855 0.818454L5.00187 12.5L0.113036 6.81663C-0.0618274 6.60291 -0.0303263 6.2879 0.183396 6.11304C0.397119 5.93817 0.71213 5.96967 0.886994 6.18339L5.00187 11L14.1145 0.181573C14.2904 -0.0313222 14.6056 -0.0613371 14.8185 0.114533Z' fill='%2302C202' fill-opacity='0.9'/%3E%3C/svg%3E");
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
+.checkbox-con label {
+    margin-left: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.permissions-list {
+    display: grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.form-actions {
+    margin-top: 18px;
+    display: flex;
+    gap: 8px;
+}
+
+/* Strong overrides to ensure the roles page layout works even if other rules collide */
+.roles-container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+}
+
+main .roles-container .roles-sidebar {
+    flex: 0 0 25% !important;
+}
+
+main .roles-container .role-detail {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Sidebar list: keep visible and scrollable */
+main .roles-container .roles-list {
+    max-height: calc(100vh - 160px);
+    overflow: auto;
+}
+
+/* Ensure each role item stretches and shows as a card */
+main .roles-container .role-item {
+    display: block;
+}
+
+main .roles-container .role-item a.role-link {
+    display: block;
+    padding: 10px;
+}
+
+/* Ensure permissions grid is stable */
+main .roles-container .permissions-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+/* Minor: ensure selected highlight visible on dark backgrounds */
+main .roles-container .role-item.selected {
+    box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.14);
+    border-color: rgba(31, 111, 235, 0.28);
+}
+
+.permission-desc {
+    font-size: 0.9em;
+    color: var(--text-light);
+    font-style: italic;
+    text-align: left;
+}
+
+/* Roles header: align left/create button, center title, right actions */
+.roles-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.roles-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.roles-header h2 {
+    margin: 0;
+    flex: 1;
+    text-align: center;
+}
+
+.roles-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Role item layout: drag handle on the left then main content */
+.role-item-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.role-drag-handle {
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.role-drag-handle .order-button {
+    font-size: 16px;
+    width: 34px;
+    height: 34px;
+    padding: 6px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    cursor: grab;
+}
+
+.role-drag-handle .order-button:active {
+    cursor: grabbing;
+}
+
+.role-main {
+    flex: 1;
+    text-align: left;
+}
+
+/* Support for left and right drag handles */
+.role-item-inner {
+    display: flex;
+    align-items: center;
+}
+
+.role-drag-handle.left {
+    margin-right: 8px;
+}
+
+.role-drag-handle.right {
+    margin-left: 8px;
+}
+
+/* Ensure the link occupies remaining space between handles */
+.role-link {
+    flex: 1;
+    display: block;
+}
+
+.role-main {
+    padding: 8px 6px;
+}
+
+/* Slightly reduce clickable area of handles to avoid accidental navigation */
+.role-drag-handle .order-button {
+    background: transparent;
+    border: none;
+    padding: 6px;
+}
+
+.role-name {
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+/* Selected role: make it visually prominent */
+.role-item.selected {
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.06), rgba(255, 255, 255, 0.01));
+    border-left: 4px solid var(--primary);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.role-item.selected .role-name {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* Remove underline on hover for role links and ensure hover highlight is subtle */
+.role-link:hover {
+    text-decoration: none !important;
+    color: var(--primary); /* subtle color change on hover */
+}
+
+/* Also make sure anchor doesn't get underlined by global a:hover */
+.roles-list .role-link {
+    text-decoration: none;
+}
+
+/* Visual feedback for touch dragging */
+.role-item.dragging-touch {
+    transform: scale(0.995);
+    opacity: 0.95;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    border-left-color: rgba(var(--primary-rgb), 0.38);
+    z-index: 50;
+    position: relative;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Make selected role contrast stronger */
+.main .roles-container .role-item.selected,
+.role-item.selected {
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.12), rgba(255, 255, 255, 0.02));
+    border-left: 4px solid var(--primary);
+    box-shadow: 0 8px 28px rgba(31, 111, 235, 0.12);
+    color: var(--white);
+}
+
+.role-item.selected .role-name {
+    color: var(--primary);
+    font-weight: 800;
+}
+
+/* Improve visible focus / selected state when text is small */
+.role-item.selected .role-link {
+    text-decoration: none !important;
+}
+
+/* Make drag handle visible and large enough for touch targets */
+.role-drag-handle {
+    flex: 0 0 44px; /* slightly larger touch target */
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.role-drag-handle .order-button {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted-2);
+}
+
+.role-drag-handle .order-button:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--primary);
+}
+
+/* On mobile, expand the clickable area of the handle and make icon more prominent */
+@media (max-width: 768px) {
+    .role-drag-handle {
+        flex: 0 0 56px;
+        width: 56px;
+        height: 56px;
+    }
+
+    .role-drag-handle .order-button {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+    }
+
+    .roles-container {
+        gap: 12px;
+    }
+}
+
+/* Accessibility: ensure handle has visible hit area even if icon small */
+.role-drag-handle .order-button::after {
+    content: '';
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    left: 0;
+    top: 0;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+/* Remove default underline hover for links inside roles list */
+.roles-list .role-link:hover {
+    text-decoration: none;
+}
+
+/* Roles UI styles */
+.roles-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px
+}
+
+.roles-sidebar {
+    width: 320px
+}
+
+.role-detail {
+    flex: 1;
+    text-align: left
+}
+
+.roles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 70vh;
+    overflow: auto;
+    padding: 8px
+}
+
+.role-item {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    display: block
+}
+
+.role-item.selected {
+    outline: 2px solid var(--primary);
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.06), var(--surface));
+}
+
+.role-item .role-item-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between
+}
+
+.role-main {
+    display: flex;
+    align-items: center;
+    gap: 10px
+}
+
+.role-name {
+    font-weight: 700
+}
+
+.role-meta {
+    font-size: 12px;
+    color: var(--muted)
+}
+
+.role-drag-handle {
+    display: flex;
+    align-items: center
+}
+
+.role-drag-handle .order-button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 8px;
+    border-radius: 6px
+}
+
+.role-drag-handle .order-button:focus {
+    outline: none
+}
+
+/* Disabled/locked role visuals */
+.role-disabled {
+    opacity: 0.6;
+    cursor: not-allowed; /* still clickable to view but not editable */
+}
+
+.role-disabled .role-link {
+    pointer-events: auto
+}
+
+.role-disabled .role-link .role-name {
+    color: var(--muted)
+}
+
+.role-lock {
+    margin-left: 8px;
+    color: var(--muted);
+    font-size: 14px
+}
+
+/* Permission row disabled */
+.permission-row.disabled {
+    opacity: 0.6
+}
+
+.permission-row .perm-lock {
+    margin-left: 8px
+}
+
+/* no-drop visual feedback when trying to drop into forbidden zone */
+.no-drop {
+    outline: 2px dashed var(--danger);
+    transform: translateX(4px)
+}
+
+/* Ensure drag handle visible on mobile / large touch target */
+@media (max-width: 768px) {
+    .role-drag-handle {
+        display: flex
+    }
+
+    .role-drag-handle .order-button {
+        padding: 12px;
+        border-radius: 8px
+    }
+}
+
+/* small helper for locked permission icon */
+.perm-lock i {
+    color: var(--muted);
+}
+
+/* remove underline on hover for role links specifically */
+.role-link:hover {
+    text-decoration: none
+}
+
+#empty-message {
+    text-align: center;
+    margin-top: 40px;
+}
+
+/* Drag visuals: placeholder and custom dragging */
+.role-placeholder {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.06);
+    margin: 6px 0;
+    border-radius: 6px
+}
+
+.role-item.dragging-custom {
+    opacity: 0.9;
+    transform: scale(0.995);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    z-index: 100;
+    position: relative
+}
+
+.role-item .role-link {
+    user-select: none
+}
+
+/* Avoid pointer events on inner link during custom dragging to prevent selection */
+.role-item.dragging-custom .role-link {
+    pointer-events: none
+}
+
+/* Locked permission state: grisé et curseur not-allowed */
+.permission-row.perm-locked,
+.permission-row.perm-locked label,
+.permission-row.perm-locked span {
+    opacity: 0.45;
+    color: var(--muted-2);
+}
+
+.permission-row.perm-locked input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+.permission-row.perm-locked {
+    cursor: not-allowed;
+    /* Ne pas désactiver pointer-events: on veut voir le curseur not-allowed */
+    pointer-events: auto;
+}
+
+.permission-row.perm-locked label {
+    cursor: not-allowed;
+}
+
+/* si on veut que l'input apparaisse disabled mais visible */
+.permission-row.perm-locked input[disabled] {
+    filter: grayscale(60%);
+}
+
+/* Role disabled: visuel pour les rôles que l'utilisateur ne peut modifier */
+.role-item.role-disabled {
+    opacity: 0.6;
+}
+
+.role-item.no-drop {
+    border-left: 3px solid rgba(255, 0, 0, 0.08);
+}
+
+/* small helper for drag handle on mobile to be more visible */
+.role-drag-handle .order-button {
+    background: transparent;
+    border: none;
+    color: var(--muted-2);
+}
+
+.role-drag-handle .order-button:focus {
+    outline: 2px solid rgba(var(--primary-rgb), 0.25);
 }
