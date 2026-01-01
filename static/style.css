@@ -636,6 +636,11 @@ a:hover {
     margin-bottom: 15px;
 }
 
+.bouton-ajouter-client:hover {
+    color: var(--text-main);
+    text-decoration-color: var(--text-main);
+}
+
 
 /*CSS effacé par le merge*/
 
@@ -809,6 +814,12 @@ a:hover {
     border-radius: 6px;
     margin-bottom: 15px;
 }
+
+.bouton-ajouter-client:hover {
+    color: var(--text-main);
+    text-decoration-color: var(--text-main);
+}
+
 
 
 .modal {
