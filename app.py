@@ -216,7 +216,7 @@ def create_projet_convention(convention_id):
         else:
 
             #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
+            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
             get_db().commit()
 
             added_successfully = True
@@ -251,7 +251,7 @@ def create_projet_sans_convention_connue():
         else:
 
             #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
+            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
             get_db().commit()
 
             added_successfully = True

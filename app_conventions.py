@@ -18,9 +18,9 @@ def get_projets_by_convention(id_convention):
     for projet in c.fetchall():
         projets.append( {"id":projet[0],"convention_id":projet[1],
                 "nom_projet":projet[2],"description":projet[3],
-                "budget":projet[4],"date_debut":projet[5],
-                "date_fin":projet[6],"statut":projet[7],
-                "doc_dossier":projet[8]})
+                "budget":projet[4],"date_debut":projet[6],
+                "date_fin":projet[7],"statut":projet[8],
+                "doc_dossier":projet[9]})
     return projets
 
 def get_client(id):

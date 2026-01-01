@@ -17,6 +17,7 @@
 {% endif %}
 
 <p>Statut du projet : {{projet.statut}}</p>
+<p>Charge de travail totale: {{projet.charge_travail}} heures-homme </p>
 {% if projet.statut == 'En attente'%}
 <p> Date de début prévue : {{projet.date_debut}} </p>
 {% else %}
