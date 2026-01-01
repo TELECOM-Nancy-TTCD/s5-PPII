@@ -1404,7 +1404,8 @@ dialog .container .actions {
   background-color: var(--primary-variant);
 }
 
-.table-utilisateur-competences {
+.table-utilisateur-competences, 
+.table-projet-competences {
     border-collapse: collapse;
     margin: 0 auto;
     font-family: Arial, sans-serif;
@@ -1414,12 +1415,15 @@ dialog .container .actions {
 }
 
 .table-utilisateur-competences th,
-.table-utilisateur-competences td {
+.table-utilisateur-competences td,
+.table-projet-competences th,
+.table-projet-competences td {
     border: 1px solid #ccc;
     padding: 6px 10px;
     text-align: center;
 }
 
-.table-utilisateur-competences th {
+.table-utilisateur-competences th,
+.table-projet-competences th {
     font-weight: bold;
 }
