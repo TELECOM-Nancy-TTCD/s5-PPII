@@ -47,6 +47,7 @@ class Database:
             raise ValueError("A valid redis_client must be provided")
         if not database:
             raise ValueError("A valid database path must be provided")
+
         self.redis_client = redis_client
         try:
             self.db = sqlite3.connect(database, **kwargs)
