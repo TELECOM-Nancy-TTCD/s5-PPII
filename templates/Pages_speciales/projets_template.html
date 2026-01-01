@@ -37,6 +37,26 @@
 <a href={{projet.doc_dossier}} class="lien_doc_projet"> Documents associés au projet </a>
 
 <p>-----</p>
+<h2> Compétences requises par le projet </h2>
+
+<div style="justify-content: center;">
+<table style="border: 1px solid linen;  ">
+    <tr>
+        <th> Compétence </th>
+        <th> Niveau </th>
+    </tr>
+    {% for u in competences_requises%}
+    <tr>
+        <td> {{ u[0] }}</td>
+        <td> {{ u[1] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+
+<a href="{{ url_for( 'projet_ajouter_competences', projet_id=projet.projet_id ) }}" class="bouton-ajouter-client">Ajouter des compétences</a>
+
+<p>-----</p>
 
 <h2>Jalons du projet</h2>
 

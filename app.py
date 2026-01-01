@@ -195,7 +195,7 @@ def create_projet_convention(convention_id):
     conv = get_db().get_convention_by_id(convention_id)
     #Tentative d'entrée de projet sur une convention qui n'existe pas
     if conv == None:
-        abort(403)
+        abort(404)
 
 
     added_successfully= False
@@ -528,7 +528,7 @@ def export_clients():
 @login_required
 def projet_detail(projet_id):
     """Fonction pour la route /projet/id_projet \n
-    Affiche la page dédié à un projet"""
+    Affiche la page dédiée à un projet"""
 
     projet = get_db().get_project_id(projet_id)
 
@@ -543,7 +543,50 @@ def projet_detail(projet_id):
         if u.date_fin!= None :
             projet.jalons[j].date_fin = datetime.fromisoformat(u.date_fin).strftime("%d/%m/%Y")
 
-    return render_template("Pages_speciales/projets_template.html", projet = projet)
+    # Obtention des compétences requises et du niveau
+    comp_requises = get_db().cursor().execute("SELECT c.nom, pc.niveau_requis FROM competences c JOIN projet_competences pc ON c.competence_id = pc.competence_id WHERE pc.projet_id = ?", (projet_id,)).fetchall()
+
+    print(comp_requises, "aldsqojdq")
+    return render_template("Pages_speciales/projets_template.html", projet = projet, competences_requises=comp_requises)
+
+
+@app.route("/projet/<int:projet_id>/ajouter_comp", methods=["GET", "POST"])
+@login_required
+def projet_ajouter_competences(projet_id):
+
+    if not has_permission(current_user, 'peut_gerer_competences'):
+        abort(403)
+
+    # Ajout de compétences requises à un projet inexistant renvoie 404
+    if get_db().get_project_id(projet_id) is None:
+        abort(404)
+    
+    c = get_db().cursor()
+    c.execute("SELECT * FROM Competences ORDER BY competence_id ASC")
+    toutes_competences = c.fetchall()
+    success=False
+
+    if request.method== "POST":
+        comp_requises = list(map(int, request.form.getlist("skills[]")))
+        niveaux = list(map(int, request.form.getlist("levels[]")))
+        s = c.execute("Select competence_id from projet_competences where projet_id=?", (projet_id,)).fetchall()
+        for i in range(len(s)):
+            s[i]=s[i][0]
+        print(s)
+        for i, u in enumerate(comp_requises):
+            # Si la compétence est déjà dedans, on skip
+            if u in s:
+                continue
+            
+            s.append(u)
+            niveau_associe = niveaux[i]
+            c.execute("INSERT INTO projet_competences VALUES (?, ?, ?)", (projet_id, u, niveau_associe))
+            get_db().commit()
+        
+        success= True
+
+
+    return render_template("ajouter_competences.html", competences=toutes_competences, success=success )
 
 
 @app.post("/projet/<int:projet_id>/terminer")
