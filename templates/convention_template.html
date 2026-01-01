@@ -24,6 +24,10 @@
 
 
         <h2>Projet(s) lié(s) à la convention</h2>
+        <div>
+          <a href="{{ url_for('create_projet_convention', convention_id= context.convention.id) }}" class="bouton-ajouter-client">Ajouter un projet</a>
+        </div>
+
 
         {% if context.projets %}
           <div class="clients-projets-liste">

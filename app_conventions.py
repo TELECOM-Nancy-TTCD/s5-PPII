@@ -86,6 +86,6 @@ def index():
 def convention(id : int) :
     conv =  get_convention(id)
     client = get_client( conv["client_id"] )
-    return render_template('convention.html',context={"convention":conv, 
+    return render_template('convention_template.html',context={"convention":conv, 
     "client":get_client( conv["client_id"] ) , "projets": get_projets_by_convention(id), "utilisateur" : get_utilisateur(client["interlocuteur_principal"]) } 
     )

@@ -1,0 +1,59 @@
+{% extends "menu.html" %}
+
+{% block title %}Création d'un nouveau projet{% endblock %}
+
+{% block content %}
+    {% if context.default_convention %}
+  <h1> Ajout d'un nouveau projet pour {{context.default_convention.nom_convention}} </h1>
+    {% else %}
+    <h1> Ajout d'un nouveau projet </h1>
+    {% endif %}
+  {% if context.success %}
+  <h2 style="color: green;"> Projet ajouté avec succès! </h2>
+  {% endif %}
+  <br>
+    <form class="form-create-client" method="post" style="display : flex; flex-direction: column; gap: 5px;">
+      {% if not context.default_convention %}
+      <select name="conv_id" required>
+        <option value=""> -- Convention -- </option>
+        {% for i in context.list_conv%}
+        <option value="{{i.convention_id}}"> {{i.nom_convention}} </option>
+        {% endfor %}
+      </select>
+
+      {% endif %}
+      <input name="nom_proj" type="text" placeholder="Nom du projet" required>
+      <input name="desc_proj" type="text" placeholder="Description du projet" >
+      <input name="budget" type="number" placeholder="Budget du projet">
+      <label> Date de début du projet (si applicable)
+      <input name="date_deb" type="date" id="date_deb">
+      </label>
+      <label> Date de fin du projet (si applicable)<br>
+      <input name="date_fin" type="date" id="date_fin">
+      </label>
+      <select name="statut" required>
+          <option value=""> -- Statut du projet -- </option>
+            <option value="En attente"> En attente </option>
+            <option value="En cours"> En cours </option>
+            <option value="Terminé"> Terminé </option>
+            <option value="Annulé"> Annulé </option>  
+        </select>
+      <input name="doc_dossier" type="text" placeholder="Lien vers le dossier de documents du projet">
+
+      <input type="submit" class="bouton-ajouter-client" value="Ajouter la convention">  
+    </form>
+
+    
+  </div>
+
+<script>
+    const deb = document.getElementById("date_deb");
+    const fin = document.getElementById("date_fin");
+
+    function forcedate() {
+        fin.min = deb.value;
+    }
+
+    deb.addEventListener("change", forcedate)
+</script>
+{%endblock%}
