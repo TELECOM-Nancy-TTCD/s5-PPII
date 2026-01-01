@@ -735,7 +735,50 @@ def utilisateurs_detail(uid):
     if utilisateur is None:
         abort(404)
 
-    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur)
+    # Obtention des compétences requises et du niveau
+    comp_requises = get_db().cursor().execute("SELECT c.nom, ic.niveau FROM competences c JOIN intervenant_competences ic ON c.competence_id = ic.competence_id WHERE ic.intervenant_id = ?", (uid,)).fetchall()
+
+
+    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur, competences_requises=comp_requises)
+
+
+@app.route("/utilisateurs/<int:uid>/ajouter_comp", methods=["GET", "POST"])
+@login_required
+def utilisateur_ajouter_competences(uid):
+
+    if not has_permission(current_user, 'peut_gerer_competences'):
+        abort(403)
+
+    # Ajout de compétences requises à un projet inexistant renvoie 404
+    if get_db().get_user_by_id(uid) is None:
+        abort(404)
+    
+    c = get_db().cursor()
+    c.execute("SELECT * FROM Competences ORDER BY competence_id ASC")
+    toutes_competences = c.fetchall()
+    success=False
+
+    if request.method== "POST":
+        comp_requises = list(map(int, request.form.getlist("skills[]")))
+        niveaux = list(map(int, request.form.getlist("levels[]")))
+        s = c.execute("Select competence_id from intervenant_competences where intervenant_id=?", (uid,)).fetchall()
+        for i in range(len(s)):
+            s[i]=s[i][0]
+        print(s)
+        for i, u in enumerate(comp_requises):
+            # Si la compétence est déjà dedans, on skip
+            if u in s:
+                continue
+            
+            s.append(u)
+            niveau_associe = niveaux[i]
+            c.execute("INSERT INTO intervenant_competences VALUES (?, ?, ?)", (uid, u, niveau_associe))
+            get_db().commit()
+        
+        success= True
+
+
+    return render_template("ajouter_competences.html", competences=toutes_competences, success=success )
 
 
 @app.route("/utilisateurs/create", methods=["GET", "POST"])
@@ -901,6 +944,29 @@ def download_rgpd():
         mimetype="text/csv",
         headers={"Content-Disposition":"attachment;filename=rgpd_export.csv"}
     )
+
+
+@app.route('/creer_competence', methods=['POST'])
+def creer_competence():
+    nom = request.form.get('nom_competence', '').strip()
+    if not nom:
+        return "Nom de compétence requis", 400
+
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+
+    cur.execute("SELECT competence_id FROM Competences WHERE nom = ?", (nom,))
+    exist = cur.fetchone()
+    if exist:
+        conn.close()
+        return f"La compétence '{nom}' existe déjà.", 400
+    
+    cur.execute("INSERT INTO Competences (nom, competence_parent) VALUES (?, NULL)", (nom,))
+    conn.commit()
+    conn.close()
+
+    # Rediriger vers la page précédente ou formulaire
+    return redirect(request.referrer or url_for('index'))
 
 
 #Ici les pages d'erreur.

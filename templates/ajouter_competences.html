@@ -29,8 +29,18 @@
 
   <button type="button" id="add-skill" class="bouton-ajouter-client"> Compétence supplémentaire </button>
   <button type="submit" class="bouton-ajouter-client">Enregistrer</button>
+
+  
+
 </form>
 
+<hr>
+  <label for="new-skill">Créer une nouvelle compétence :</label>
+  <form method="POST" action="{{ url_for('creer_competence') }}">
+      <input type="text" name="nom_competence" id="new-skill" placeholder="Nom de la compétence" required>
+      <button type="submit" class="bouton-ajouter-client">Ajouter la compétence</button>
+  </form>
+  
 <script>
 const container = document.getElementById('skills-container');
 
@@ -44,10 +54,13 @@ document.getElementById('add-skill').addEventListener('click', () => {
 });
 
 container.addEventListener('click', (e) => {
-  if (e.target.classList.contains('remove-skill')) {
+  const button = e.target.closest('button.remove-skill'); 
+  if (button) {
     const rows = container.querySelectorAll('.skill-row');
     if (rows.length > 1) {
-      e.target.closest('.skill-row').remove();
+      button.closest('.skill-row').remove();
+    } else {
+      alert("Action imposible");
     }
   }
 });

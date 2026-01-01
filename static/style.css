@@ -1403,3 +1403,24 @@ dialog .container .actions {
 .pagination li button:hover:not(.disabled):not([disabled]) {
   background-color: var(--primary-variant);
 }
+
+
+.table-utilisateur-competences {
+    border-collapse: collapse;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    width: 30%;
+    margin-bottom: 50px;
+    
+}
+
+.table-utilisateur-competences th,
+.table-utilisateur-competences td {
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    text-align: center;
+}
+
+.table-utilisateur-competences th {
+    font-weight: bold;
+}
