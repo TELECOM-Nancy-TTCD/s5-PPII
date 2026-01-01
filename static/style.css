@@ -396,22 +396,32 @@ a:hover {
     justify-content: center;
 }
 
+
+
 .collapseur {
     display:flex;
     border: none;
     background:transparent;
     border-radius: 50%;
     align-items: center;
-    padding: 0;
+    padding: 10px;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
     color: var(--text-light);
-    margin: 0px
+    width: 44px;
+    height: 44px;
+    box-sizing: border-box;
+}
+
+.collapseur:focus-visible {
+    outline: none;
 }
 
 .collapseur:hover {
-    background-color: #475eab;
+    background: var(--primary-variant);
+    color: var(--white);
+    transform: translateY(-2px) scale(1.02);
 }
 
 .convention-row {
