@@ -21,17 +21,17 @@ def main():
     # ==========================
     print("➤ Ajout des rôles...")
     roles = [
-        (1, "Admin", 10, 1, 1),
-        (2, "Manager", 7, 1, 0),
-        (3, "Chef de projet", 5, 0, 0),
-        (4, "Intervenant senior", 3, 0, 0),
-        (5, "Intervenant junior", 1, 0, 0)
+        (1, "Admin", 10, 1, 1, 1, 1),
+        (2, "Manager", 7, 0, 1, 0, 0),
+        (3, "Chef de projet", 5,0, 0, 0, 0),
+        (4, "Intervenant senior", 3,0, 0, 0, 0),
+        (5, "Intervenant junior", 1, 0,0, 0, 0)
     ]
     for r in roles:
         cur.execute("""
             INSERT OR IGNORE INTO Roles
-            (role_id, nom, hierarchie, peut_gerer_utilisateurs, peut_gerer_roles)
-            VALUES (?, ?, ?, ?, ?)
+            (role_id, nom, hierarchie, administrateur, peut_gerer_utilisateurs, peut_gerer_roles, peut_gerer_competences)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """, r)
     print("   ✔ Rôles ajoutés.\n")
 
