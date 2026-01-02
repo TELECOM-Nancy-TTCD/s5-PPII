@@ -26,11 +26,10 @@
 
 {% if projet.statut == 'Terminé'%}
 <p> Date de fin : {{projet.date_fin}} </p>
-{% elif projet.statut == 'Annulé' and projet.date_fin != None %}
+{% elif projet.statut == 'Annulé' and projet.date_fin != None %} 
 <p> Date d'abandon : {{projet.date_fin}} </p>
-{% elif projet.statut != 'Annulé' and projet.date_fin != None %}
+{% elif projet.statut != 'Annulé' and projet.date_fin != None %} 
 <p> Date de fin prévue : {{projet.date_fin}} </p>
-
 {% endif %}
 
 <p> Budget : {{projet.budget}} € </p>
@@ -56,6 +55,53 @@
 </div>
 
 <a href="{{ url_for( 'projet_ajouter_competences', projet_id=projet.projet_id ) }}" class="bouton-ajouter-client">Ajouter des compétences</a>
+
+<p>-----</p>
+
+<h2>Algorithme</h2>
+
+{# On vérifie si un groupe est déjà sélectionné #}
+{% set groupe_existe = False %}
+{% for g in groupes %}
+    {% if g.selectionne %}
+        {% set groupe_existe = True %}
+    {% endif %}
+{% endfor %}
+
+{# Affiche le bouton de l'algorithme seulement si aucun groupe n'existe #}
+{% if not groupe_existe %}
+<button id="btnAfficherGroupes" class="jalon_boutton">
+    Lancer l'algorithme
+</button>
+{% endif %}
+
+<div id="resultats_groupes" class="groupes-container" style="{% if not groupe_affiche %}display:none;{% endif %}">
+    {% for g in groupes %}
+        <form method="POST" action="{{ url_for('selectionner_groupe', projet_id=projet.projet_id) }}" class="groupe-form">
+            <input type="hidden" name="groupe_ids" value="{{ g.ids | join(',') }}">
+            <button type="submit"
+                    class="groupe-carte {% if g.selectionne %}selectionne{% endif %}"
+                    data-groupe-id="{{ loop.index }}"
+                    {% if g.selectionne %}disabled{% endif %}>
+                <h3 class="groupe-titre">Membres : </h3>
+                <ul class="membres-liste">
+                    {% for nom in g.noms %}
+                        <li class="membre-item">{{ nom }}</li>
+                    {% endfor %}
+                </ul>
+                {% if g.score %}
+                <p class="groupe-score">Score : {{ g.score }} %</p>
+                {% endif %}
+
+            </button>
+        </form>
+    {% endfor %}
+</div>
+
+
+<a href="{{ url_for('ajouter_membres', projet_id=projet.projet_id) }}" class="jalon_boutton">
+    Ajouter des membres manuellement
+</a>
 
 <p>-----</p>
 
@@ -97,14 +143,10 @@ une none pour faire disparaitre la pop up et l'autre pour afficher les élément
             <label>Description</label>
             <input type="text" name="description" id="jalon_description" required>
 
-
-
             <label class="checkbox">
                 <input type="checkbox" name="est_complete" id="jalon_est_complete">
                 Terminé
             </label>
-
-
 
             <label>Date fin</label>
             <input type="date" name="date_fin" id="jalon_date_fin">
@@ -169,12 +211,40 @@ function fermerCreationJalon() {
     document.getElementById("modal-jalon-creation").style.display = "none";
 }
 
+document.addEventListener("DOMContentLoaded", () => {
+    const cartes = document.querySelectorAll(".groupe-carte");
+    const btn = document.getElementById("btnAfficherGroupes");
+    const container = document.getElementById("resultats_groupes");
 
 
+    let groupeSelectionne = Array.from(cartes).find(c => c.classList.contains("selectionne"));
 
+    if(groupeSelectionne){
+        btn.style.display = "none";
+        cartes.forEach(c => c.style.display = (c === groupeSelectionne) ? "flex" : "none");
+        container.style.display = "flex";
+    } else {
+        btn.style.display = "inline-block";
+        cartes.forEach(c => c.style.display = "none");
+        container.style.display = "none";
+    }
+
+
+    btn.addEventListener("click", () => {
+        cartes.forEach(c => c.style.display = "flex");
+        container.style.display = "flex";
+        btn.style.display = "none";
+    });
+
+    cartes.forEach(carte => {
+        carte.addEventListener("click", () => {
+            cartes.forEach(c => {
+                if(c !== carte) c.style.display = "none";
+            });
+            carte.classList.add("selectionne");
+        });
+    });
+});
 </script>
-
-
-
 
 {% endblock %}
