@@ -10,12 +10,18 @@ from database import Database, Interaction, Client, Utilisateur, redis_key
 
 
 def ensure_interactions_table(db: Database):
+    try:
+        db.execute("DROP TABLE IF EXISTS Interactions")
+    except Exception:
+        pass
     db.execute(
         """
-        CREATE TABLE IF NOT EXISTS Interactions (
+        CREATE TABLE Interactions (
             interaction_id INTEGER PRIMARY KEY,
             date_time_interaction TEXT,
+            titre TEXT,
             contenu TEXT,
+            type_interaction_id TEXT DEFAULT 'other',
             client_id INTEGER,
             utilisateur_id INTEGER
         )
@@ -33,8 +39,8 @@ def test_interaction_crud_and_cache(db, fake_redis):
                (2001, 'Cli2001', 'c2001@example.com', 'Actif'))
 
     # insert interaction
-    db.execute("INSERT INTO Interactions (interaction_id, date_time_interaction, contenu, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?)",
-               (3001, '2025-01-01 12:00:00', 'Hello world', 2001, 1001))
+    db.execute("INSERT INTO Interactions (interaction_id, date_time_interaction, titre, contenu, type_interaction_id, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+               (3001, '2025-01-01 12:00:00', 'Hello', 'Hello world', 'other', 2001, 1001))
     db.commit()
 
     inter = db.get_interaction_by_id(3001)
@@ -58,8 +64,8 @@ def test_interaction_client_and_user_properties_and_cache(db, fake_redis):
                (1101, 'u1101@example.com', 'hp', None, 'U1101', 'P1101', 1, 0))
     db.execute("INSERT OR IGNORE INTO Clients (client_id, nom_entreprise, contact_email, type_client) VALUES (?, ?, ?, ?)",
                (2101, 'Cli2101', 'c2101@example.com', 'Actif'))
-    db.execute("INSERT OR IGNORE INTO Interactions (interaction_id, date_time_interaction, contenu, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?)",
-               (3101, '2025-02-02 09:00:00', 'Interaction1', 2101, 1101))
+    db.execute("INSERT OR IGNORE INTO Interactions (interaction_id, date_time_interaction, titre, contenu, type_interaction_id, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+               (3101, '2025-02-02 09:00:00', 'Interaction1', 'Interaction1', 'other', 2101, 1101))
     db.commit()
 
     inter = db.get_interaction_by_id(3101)
@@ -99,12 +105,12 @@ def test_get_all_interactions_and_filter_and_cache(db, fake_redis):
     db.execute("INSERT OR IGNORE INTO Clients (client_id, nom_entreprise, contact_email, type_client) VALUES (?, ?, ?, ?)",
                (2201, 'Cli2201', 'c2201@example.com', 'Actif'))
 
-    db.execute("INSERT OR IGNORE INTO Interactions (interaction_id, date_time_interaction, contenu, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?)",
-               (3201, '2025-03-01 10:00:00', 'A', 2201, 1201))
-    db.execute("INSERT OR IGNORE INTO Interactions (interaction_id, date_time_interaction, contenu, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?)",
-               (3202, '2025-03-02 11:00:00', 'B', 2201, 1202))
-    db.execute("INSERT OR IGNORE INTO Interactions (interaction_id, date_time_interaction, contenu, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?)",
-               (3203, '2025-03-03 12:00:00', 'C', 2201, 1201))
+    db.execute("INSERT OR IGNORE INTO Interactions (interaction_id, date_time_interaction, titre, contenu, type_interaction_id, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+               (3201, '2025-03-01 10:00:00', 'A', 'A', 'other', 2201, 1201))
+    db.execute("INSERT OR IGNORE INTO Interactions (interaction_id, date_time_interaction, titre, contenu, type_interaction_id, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+               (3202, '2025-03-02 11:00:00', 'B', 'B', 'other', 2201, 1202))
+    db.execute("INSERT OR IGNORE INTO Interactions (interaction_id, date_time_interaction, titre, contenu, type_interaction_id, client_id, utilisateur_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+               (3203, '2025-03-03 12:00:00', 'C', 'C', 'other', 2201, 1201))
     db.commit()
 
     # get_all_interactions should return all interactions and populate 'interactions:all' cache

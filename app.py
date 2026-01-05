@@ -19,6 +19,7 @@ from tools import get_db, has_permission
 # Importation des blueprints
 from interactions import interactions_bp
 from clients import clients_bp
+from utilisateurs import bp_utilisateurs
 import matching
 
 
@@ -76,6 +77,7 @@ app.secret_key = b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36
 app.register_blueprint(conventions_bp)
 app.register_blueprint(interactions_bp)
 app.register_blueprint(clients_bp)
+app.register_blueprint(bp_utilisateurs)
 
 def hash_password(mdp : str):
     """Fonction qui hash et sale le mot de passe,
@@ -567,8 +569,8 @@ def projet_detail(projet_id):
     groupes = []
 
     for g in groupes_bruts:
-        membres_ids = g[0] 
-        score = g[1] if len(g) > 1 else None  
+        membres_ids = g[0]
+        score = g[1] if len(g) > 1 else None
         groupes.append({
             "ids": membres_ids,
             "noms": [id_to_nom.get(uid, f"Utilisateur {uid}") for uid in membres_ids],
@@ -580,7 +582,7 @@ def projet_detail(projet_id):
         groupes.append({
             "ids": list(utilisateurs_affectes),
             "noms": [id_to_nom.get(uid, f"Utilisateur {uid}") for uid in utilisateurs_affectes],
-            "selectionne": True 
+            "selectionne": True
         })
 
     return render_template(
@@ -643,7 +645,7 @@ def ajouter_membres(projet_id):
 
         db.cursor().execute("DELETE FROM Travaille_sur WHERE projet_id = ?", (projet_id,))
         db.commit()
-        
+
         for uid in utilisateur_ids:
             db.cursor().execute(
                 "INSERT INTO Travaille_sur (utilisateur_id, projet_id) VALUES (?, ?)",
@@ -653,7 +655,7 @@ def ajouter_membres(projet_id):
 
         flash("Nouveau groupe créé avec succès.", "success")
         return redirect(url_for("projet_detail", projet_id=projet_id))
-    
+
     utilisateurs = db.cursor().execute(
         "SELECT utilisateur_id, prenom, nom FROM Utilisateurs ORDER BY utilisateur_id"
     ).fetchall()
@@ -673,7 +675,7 @@ def projet_ajouter_competences(projet_id):
 
     if get_db().get_project_id(projet_id) is None:
         abort(404)
-    
+
     c = get_db().cursor()
     c.execute("SELECT * FROM Competences ORDER BY competence_id ASC")
     toutes_competences = c.fetchall()
@@ -690,12 +692,12 @@ def projet_ajouter_competences(projet_id):
             # Si la compétence est déjà dedans, on skip
             if u in s:
                 continue
-            
+
             s.append(u)
             niveau_associe = niveaux[i]
             c.execute("INSERT INTO projet_competences VALUES (?, ?, ?)", (projet_id, u, niveau_associe))
             get_db().commit()
-        
+
         success= True
 
 
@@ -867,7 +869,7 @@ def utilisateur_ajouter_competences(uid):
 
     if get_db().get_user_by_id(uid) is None:
         abort(404)
-    
+
     c = get_db().cursor()
     c.execute("SELECT * FROM Competences ORDER BY competence_id ASC")
     toutes_competences = c.fetchall()
@@ -883,12 +885,12 @@ def utilisateur_ajouter_competences(uid):
         for i, u in enumerate(comp_requises):
             if u in s:
                 continue
-            
+
             s.append(u)
             niveau_associe = niveaux[i]
             c.execute("INSERT INTO intervenant_competences VALUES (?, ?, ?)", (uid, u, niveau_associe))
             get_db().commit()
-        
+
         success= True
 
 
@@ -1075,7 +1077,7 @@ def creer_competence():
     if exist:
         conn.close()
         return f"La compétence '{nom}' existe déjà.", 400
-    
+
     cur.execute("INSERT INTO Competences (nom, competence_parent) VALUES (?, NULL)", (nom,))
     conn.commit()
     conn.close()

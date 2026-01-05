@@ -31,7 +31,9 @@ def ensure_interactions_table(db: Database):
         CREATE TABLE IF NOT EXISTS Interactions (
             interaction_id INTEGER PRIMARY KEY,
             date_time_interaction TEXT,
+            titre TEXT,
             contenu TEXT,
+            type_interaction_id TEXT DEFAULT 'other',
             client_id INTEGER,
             utilisateur_id INTEGER
         )
