@@ -33,15 +33,27 @@ const REORDER_DEBOUNCE_MS = 350;
 function showEmptyMessage() {
     const empty = qs('#empty-message');
     const form = qs('#role-form');
-    if (empty) empty.style.display = ''; form.classList.remove("hidden");
-    if (form) form.style.display = 'none'; form.classList.add("hidden");
+    if (empty) {
+        empty.classList.remove('hidden');
+        empty.style.display = '';
+    }
+    if (form) {
+        form.classList.add('hidden');
+        form.style.display = 'none';
+    }
 }
 
 function showForm() {
     const empty = qs('#empty-message');
     const form = qs('#role-form');
-    if (empty) empty.style.display = 'none'; form.classList.add("hidden");
-    if (form) form.classList.remove("hidden"), form.style.display = '';
+    if (empty) {
+        empty.classList.add('hidden');
+        empty.style.display = 'none';
+    }
+    if (form) {
+        form.classList.remove('hidden');
+        form.style.display = '';
+    }
 }
 
 function clearSelection() {
@@ -475,9 +487,7 @@ function canEditRole(roleObj) {
         // If we have explicit permissions, require manage roles or administrator
         const perms = getCurrentUserPermissions();
         if (perms) {
-            if (perms.administrateur) return true;
-            if (perms.peut_gerer_roles) return true;
-            return false;
+            return !!(perms.administrateur || perms.peut_gerer_roles);
         }
         // If we don't have permission info, be permissive and allow editing (server will enforce)
         return true;
@@ -654,9 +664,7 @@ if (rolesListEl) {
         // snapshot before any DOM movement
         try {
             lastOrderSnapshot = qsa('.role-item').map(el => Number(el.dataset.roleId));
-        } catch (_) {
-            lastOrderSnapshot = null;
-        }
+        } catch (_) { lastOrderSnapshot = null; }
 
         // if the item is marked role-disabled (i.e. higher than current user), prevent dragging
         if (item.classList.contains('role-disabled')) {
@@ -673,6 +681,8 @@ if (rolesListEl) {
         console.debug('dragend');
         // clear flags on all items
         qsa('.role-item').forEach(i => delete i.dataset.dragAllowed);
+        // remove any temporary no-drop visuals now that the drop finished
+        clearNoDrop();
         // After drag end, collect new order and send to server
         const ids = qsa('.role-item').map(el => Number(el.dataset.roleId));
         dragged = null;
@@ -812,6 +822,8 @@ if (rolesListEl) {
         touchDragging.classList.remove('dragging-touch');
         // clear flags on all items
         qsa('.role-item').forEach(i => delete i.dataset.dragAllowed);
+        // remove any no-drop markers now that the touch drag finished
+        clearNoDrop();
         // collect new order and send to server (reuse same endpoint as desktop dragend)
         const ids = qsa('.role-item').map(el => Number(el.dataset.roleId));
         try {
@@ -933,6 +945,8 @@ function attachDragHandlers(item) {
         if (item) item.style.opacity = '';
         // clear flags
         qsa('.role-item').forEach(i => delete i.dataset.dragAllowed);
+        // remove no-drop markers now
+        clearNoDrop();
         const ids = qsa('.role-item').map(el => Number(el.dataset.roleId));
         dragged = null;
         try {
@@ -1050,6 +1064,8 @@ function attachDragHandlers(item) {
                 pointerDragState.placeholder.remove();
             }
             item.style.opacity = '';
+            // clear no-drop visuals
+            clearNoDrop();
             const ids = qsa('.role-item').map(el => Number(el.dataset.roleId));
             sendReorder(ids).catch(e => console.error(e));
 
@@ -1105,6 +1121,15 @@ function notifyNoDropOnce(el, message) {
             } catch (_) {
             }
         }, 1200);
+    } catch (e) {
+        // ignore
+    }
+}
+
+// Utility: clear all no-drop markers from role items
+function clearNoDrop() {
+    try {
+        qsa('.role-item').forEach(i => i.classList.remove('no-drop'));
     } catch (e) {
         // ignore
     }
