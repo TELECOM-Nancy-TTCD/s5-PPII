@@ -1,0 +1,69 @@
+{% extends "menu.html" %}
+
+{% block title %}Ajout de compétences{% endblock %}
+
+{% block content %}
+
+<h1> Ajout de compétences </h1>
+<p> Pour chaque compétence souhaitée, renseigner un nom et un niveau (entre 0 et 5) </p>
+
+{% if success %}
+<h2 style="color: green;"> Compétences ajoutées avec succès! </h2>
+{% endif %}
+<form method="post" class="form-create-client">
+  <!-- Création des champs ajoutables réalisée à l'aide d'un outil d'IA, d'ailleurs c'est capricieux -->
+    <div id="skills-container">
+    <div class="skill-row">
+      <select name="skills[]" required>
+        <option value="">-- Choisissez une compétence --</option>
+        {% for comp in competences %}
+        <option value="{{ comp[0]}}"> {{ comp[1] }} </option>
+        {% endfor %}
+      </select>
+
+      <input type="number" name="levels[]" min="0" max="5" required>
+
+      <button type="button" class="remove-skill"> <!-- trash icon --> <i class="fa-solid fa-trash"></i> </button>
+    </div>
+  </div>
+
+  <button type="button" id="add-skill" class="bouton-ajouter-client"> Compétence supplémentaire </button>
+  <button type="submit" class="bouton-ajouter-client">Enregistrer</button>
+
+  
+
+</form>
+
+<hr>
+  <label for="new-skill">Créer une nouvelle compétence :</label>
+  <form method="POST" action="{{ url_for('creer_competence') }}">
+      <input type="text" name="nom_competence" id="new-skill" placeholder="Nom de la compétence" required>
+      <button type="submit" class="bouton-ajouter-client">Ajouter la compétence</button>
+  </form>
+  
+<script>
+const container = document.getElementById('skills-container');
+
+document.getElementById('add-skill').addEventListener('click', () => {
+  const row = container.querySelector('.skill-row').cloneNode(true);
+
+  row.querySelector('select').value = '';
+  row.querySelector('input').value = '';
+
+  container.appendChild(row);
+});
+
+container.addEventListener('click', (e) => {
+  const button = e.target.closest('button.remove-skill'); 
+  if (button) {
+    const rows = container.querySelectorAll('.skill-row');
+    if (rows.length > 1) {
+      button.closest('.skill-row').remove();
+    } else {
+      alert("Action imposible");
+    }
+  }
+});
+</script>
+
+{% endblock%}

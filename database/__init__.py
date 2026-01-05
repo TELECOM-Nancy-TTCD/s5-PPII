@@ -1816,7 +1816,7 @@ class Projet(DBObject, _RowInitMixin):
     """
 
     FIELD_NAMES = [
-        'projet_id', 'convention_id', 'nom_projet', 'description', 'budget', 'date_debut', 'date_fin', 'statut',
+        'projet_id', 'convention_id', 'nom_projet', 'description', 'budget', 'charge_travail', 'date_debut', 'date_fin', 'statut',
         'doc_dossier'
     ]
     DATABASE_NAME = "Projets"
@@ -1825,6 +1825,7 @@ class Projet(DBObject, _RowInitMixin):
     nom_projet: str
     description: str
     budget: float
+    charge_travail : int
     date_debut: str
     date_fin: str
     statut: str

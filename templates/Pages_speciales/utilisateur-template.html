@@ -18,8 +18,28 @@
 
 <p>Nombre d'heure disponible (par semaine) : {{utilisateur['heures_dispo_semaine']}}</p>
 <p>-----</p>
-<h2>Documents</h2>
+<h2>Compétences</h2>
 
+<div style="justify-content: center;">
+<table style="border: 1px solid linen;  ", class="table-utilisateur-competences">
+    <tr>
+        <th> Compétence </th>
+        <th> Niveau </th>
+    </tr>
+    {% for u in competences_requises%}
+    <tr>
+        <td> {{ u[0] }}</td>
+        <td> {{ u[1] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+
+<a href="{{ url_for( 'utilisateur_ajouter_competences', uid=utilisateur['utilisateur_id'] ) }}" class="bouton-ajouter-client">Ajouter des compétences</a>
+
+
+<p>-----</p>
+<h2>Documents</h2>
 
 
 <div class="documents-users">

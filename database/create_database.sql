@@ -84,6 +84,7 @@ CREATE TABLE Projets (
     nom_projet VARCHAR NOT NULL,
     description TEXT,
     budget FLOAT,
+    charge_travail INT,
     date_debut TEXT,
     date_fin TEXT,
     statut TEXT NOT NULL
@@ -147,7 +148,7 @@ CREATE TABLE Projet_competences (
     projet_id INT,
     competence_id INT,
     niveau_requis INT NOT NULL
-        CHECK (niveau_requis BETWEEN 0 AND 5),
+        CHECK (niveau_requis BETWEEN 0 AND 10),
     FOREIGN KEY (projet_id) REFERENCES Projets(projet_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (competence_id) REFERENCES Competences(competence_id) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (projet_id, competence_id)

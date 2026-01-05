@@ -1,6 +1,6 @@
 from typing import cast, Literal
 
-from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request
+from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, session
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 
 from app_conventions import conventions_bp
@@ -20,6 +20,8 @@ from tools import get_db, has_permission
 from interactions import interactions_bp
 from clients import clients_bp
 from utilisateurs import bp_utilisateurs
+import matching
+
 
 
 
@@ -197,7 +199,7 @@ def create_projet_convention(convention_id):
     conv = get_db().get_convention_by_id(convention_id)
     #Tentative d'entrée de projet sur une convention qui n'existe pas
     if conv == None:
-        abort(403)
+        abort(404)
 
 
     added_successfully= False
@@ -218,7 +220,7 @@ def create_projet_convention(convention_id):
         else:
 
             #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
+            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
             get_db().commit()
 
             added_successfully = True
@@ -253,7 +255,7 @@ def create_projet_sans_convention_connue():
         else:
 
             #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
+            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
             get_db().commit()
 
             added_successfully = True
@@ -530,22 +532,176 @@ def export_clients():
 @login_required
 def projet_detail(projet_id):
     """Fonction pour la route /projet/id_projet \n
-    Affiche la page dédié à un projet"""
+    Affiche la page dédiée à un projet"""
 
-    projet = get_db().get_project_id(projet_id)
-
-    if projet == None:
+    db = get_db()
+    projet = db.get_project_id(projet_id)
+    if projet is None:
         abort(404)
 
-    # Conversion des dates vers le format usuel
     projet.date_debut = format_date(projet.date_debut)
     projet.date_fin = format_date(projet.date_fin)
-
     for j, u in enumerate(projet.jalons):
-        if u.date_fin!= None :
+        if u.date_fin is not None:
             projet.jalons[j].date_fin = datetime.fromisoformat(u.date_fin).strftime("%d/%m/%Y")
 
-    return render_template("Pages_speciales/projets_template.html", projet = projet)
+    comp_requises = db.cursor().execute(
+        "SELECT c.nom, pc.niveau_requis FROM competences c "
+        "JOIN projet_competences pc ON c.competence_id = pc.competence_id "
+        "WHERE pc.projet_id = ?",
+        (projet_id,)
+    ).fetchall()
+
+    matching.db = db
+    groupes_bruts = matching.best_composition(projet_id)
+
+    rows = db.cursor().execute(
+        "SELECT utilisateur_id FROM Travaille_sur WHERE projet_id = ?",
+        (projet_id,)
+    ).fetchall()
+    utilisateurs_affectes = {r[0] for r in rows}
+
+    utilisateurs = db.cursor().execute(
+        "SELECT utilisateur_id, prenom, nom FROM Utilisateurs"
+    ).fetchall()
+    id_to_nom = {u[0]: f"{u[1]} {u[2]}" for u in utilisateurs}
+
+    groupes = []
+
+    for g in groupes_bruts:
+        membres_ids = g[0]
+        score = g[1] if len(g) > 1 else None
+        groupes.append({
+            "ids": membres_ids,
+            "noms": [id_to_nom.get(uid, f"Utilisateur {uid}") for uid in membres_ids],
+            "selectionne": all(uid in utilisateurs_affectes for uid in membres_ids),
+            "score": score
+        })
+
+    if utilisateurs_affectes and not any(g["selectionne"] for g in groupes):
+        groupes.append({
+            "ids": list(utilisateurs_affectes),
+            "noms": [id_to_nom.get(uid, f"Utilisateur {uid}") for uid in utilisateurs_affectes],
+            "selectionne": True
+        })
+
+    return render_template(
+        "Pages_speciales/projets_template.html",
+        projet=projet,
+        competences_requises=comp_requises,
+        groupes=groupes
+    )
+
+@app.route("/projet/<int:projet_id>/selectionner_groupe", methods=["POST"])
+@login_required
+def selectionner_groupe(projet_id):
+    """Fonction qui sert à la selections de l'algorithme de matching"""
+    db = get_db()
+
+    groupe_ids_str = request.form.get("groupe_ids", "")
+    if not groupe_ids_str:
+        flash("Aucun groupe sélectionné.", "error")
+        return redirect(url_for("projet_detail", projet_id=projet_id))
+
+    utilisateur_ids = [int(uid) for uid in groupe_ids_str.split(",")]
+
+    db.cursor().execute("DELETE FROM Travaille_sur WHERE projet_id = ?", (projet_id,))
+    db.commit()
+
+    for uid in utilisateur_ids:
+        db.cursor().execute(
+            "INSERT INTO Travaille_sur (utilisateur_id, projet_id) VALUES (?, ?)",
+            (uid, projet_id)
+        )
+    db.commit()
+
+    flash("Groupe sélectionné avec succès.", "success")
+    return redirect(url_for("projet_detail", projet_id=projet_id))
+
+
+@app.route("/projet/<int:projet_id>/ajouter_membres", methods=["GET", "POST"])
+@login_required
+def ajouter_membres(projet_id):
+    """Fonction vers la route projet/id_projet/ajouter_membres \n
+    Sert à ajouter des membres manuellement à un projet"""
+    db = get_db()
+
+    projet = db.get_project_id(projet_id)
+    if projet is None:
+        abort(404)
+
+    if request.method == "POST":
+        ids_str = request.form.get("utilisateur_ids", "")
+        if not ids_str:
+            flash("Veuillez entrer au moins un ID d'utilsateur.", "error")
+            return redirect(url_for("ajouter_membres", projet_id=projet_id))
+
+        utilisateur_ids = [int(uid.strip()) for uid in ids_str.split(",") if uid.strip().isdigit()]
+
+        if not utilisateur_ids:
+            flash("IDs invalides.", "error")
+            return redirect(url_for("ajouter_membres", projet_id=projet_id))
+
+
+        db.cursor().execute("DELETE FROM Travaille_sur WHERE projet_id = ?", (projet_id,))
+        db.commit()
+
+        for uid in utilisateur_ids:
+            db.cursor().execute(
+                "INSERT INTO Travaille_sur (utilisateur_id, projet_id) VALUES (?, ?)",
+                (uid, projet_id)
+            )
+        db.commit()
+
+        flash("Nouveau groupe créé avec succès.", "success")
+        return redirect(url_for("projet_detail", projet_id=projet_id))
+
+    utilisateurs = db.cursor().execute(
+        "SELECT utilisateur_id, prenom, nom FROM Utilisateurs ORDER BY utilisateur_id"
+    ).fetchall()
+
+    return render_template("ajouter_membres.html", projet=projet, utilisateurs=utilisateurs)
+
+
+@app.route("/projet/<int:projet_id>/ajouter_comp", methods=["GET", "POST"])
+@login_required
+def projet_ajouter_competences(projet_id):
+    '''
+    Fonction pour ajouter des compétences à un projet
+    '''
+
+    if not has_permission(current_user, 'peut_gerer_competences'):
+        abort(403)
+
+    if get_db().get_project_id(projet_id) is None:
+        abort(404)
+
+    c = get_db().cursor()
+    c.execute("SELECT * FROM Competences ORDER BY competence_id ASC")
+    toutes_competences = c.fetchall()
+    success=False
+
+    if request.method== "POST":
+        comp_requises = list(map(int, request.form.getlist("skills[]")))
+        niveaux = list(map(int, request.form.getlist("levels[]")))
+        s = c.execute("Select competence_id from projet_competences where projet_id=?", (projet_id,)).fetchall()
+        for i in range(len(s)):
+            s[i]=s[i][0]
+        print(s)
+        for i, u in enumerate(comp_requises):
+            # Si la compétence est déjà dedans, on skip
+            if u in s:
+                continue
+
+            s.append(u)
+            niveau_associe = niveaux[i]
+            c.execute("INSERT INTO projet_competences VALUES (?, ?, ?)", (projet_id, u, niveau_associe))
+            get_db().commit()
+
+        success= True
+
+
+    return render_template("ajouter_competences.html", competences=toutes_competences, success=success )
 
 
 @app.post("/projet/<int:projet_id>/terminer")
@@ -581,6 +737,7 @@ def terminer_projet(projet_id):
         pass
 
     return redirect(url_for("projet_detail", projet_id=projet_id))
+
 
 @app.route("/logout")
 @login_required
@@ -624,6 +781,7 @@ def modifier_jalon(jalon_id):
 @app.post("/jalon/creer")
 @login_required
 def creer_jalon():
+    """Fonction pour la création d'un jalon"""
     db = get_db()
 
     projet_id = request.form.get("projet_id")
@@ -694,7 +852,49 @@ def utilisateurs_detail(uid):
     if utilisateur is None:
         abort(404)
 
-    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur)
+    # Obtention des compétences requises et du niveau
+    comp_requises = get_db().cursor().execute("SELECT c.nom, ic.niveau FROM competences c JOIN intervenant_competences ic ON c.competence_id = ic.competence_id WHERE ic.intervenant_id = ?", (uid,)).fetchall()
+
+
+    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur, competences_requises=comp_requises)
+
+
+@app.route("/utilisateurs/<int:uid>/ajouter_comp", methods=["GET", "POST"])
+@login_required
+def utilisateur_ajouter_competences(uid):
+    '''Fonction pour ajouter les compétences d'un utilisateur sur sa page'''
+
+    if not has_permission(current_user, 'peut_gerer_competences'):
+        abort(403)
+
+    if get_db().get_user_by_id(uid) is None:
+        abort(404)
+
+    c = get_db().cursor()
+    c.execute("SELECT * FROM Competences ORDER BY competence_id ASC")
+    toutes_competences = c.fetchall()
+    success=False
+
+    if request.method== "POST":
+        comp_requises = list(map(int, request.form.getlist("skills[]")))
+        niveaux = list(map(int, request.form.getlist("levels[]")))
+        s = c.execute("Select competence_id from intervenant_competences where intervenant_id=?", (uid,)).fetchall()
+        for i in range(len(s)):
+            s[i]=s[i][0]
+        print(s)
+        for i, u in enumerate(comp_requises):
+            if u in s:
+                continue
+
+            s.append(u)
+            niveau_associe = niveaux[i]
+            c.execute("INSERT INTO intervenant_competences VALUES (?, ?, ?)", (uid, u, niveau_associe))
+            get_db().commit()
+
+        success= True
+
+
+    return render_template("ajouter_competences.html", competences=toutes_competences, success=success )
 
 
 @app.route("/utilisateurs/create", methods=["GET", "POST"])
@@ -861,6 +1061,28 @@ def download_rgpd():
         headers={"Content-Disposition":"attachment;filename=rgpd_export.csv"}
     )
 
+
+@app.route('/creer_competence', methods=['POST'])
+def creer_competence():
+    '''Fonction pour la création des compétences'''
+    nom = request.form.get('nom_competence', '').strip()
+    if not nom:
+        return "Nom de compétence requis", 400
+
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+
+    cur.execute("SELECT competence_id FROM Competences WHERE nom = ?", (nom,))
+    exist = cur.fetchone()
+    if exist:
+        conn.close()
+        return f"La compétence '{nom}' existe déjà.", 400
+
+    cur.execute("INSERT INTO Competences (nom, competence_parent) VALUES (?, NULL)", (nom,))
+    conn.commit()
+    conn.close()
+
+    return redirect(request.referrer or url_for('index'))
 
 #Ici les pages d'erreur.
 @app.errorhandler(404)
