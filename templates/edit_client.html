@@ -1,0 +1,59 @@
+{% extends "menu.html" %}
+
+{% block title %}Modifier le client{% endblock %}
+
+{% block content %}
+
+  <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
+    <h1 style="flex:1">Modifier le client</h1>
+
+    <a href="/clients/{{ client.client_id }}" class="primary-button icon-button" aria-label="Annuler">
+      <!-- arrow-left / cancel icon -->
+      <i class="fa-solid fa-arrow-left"></i>
+    </a>
+
+
+
+    <form action="{{ url_for('supprimer_client', client_id=client.client_id  ) }}" method="post" 
+      onsubmit="return confirm('Voulez-vous vraiment supprimer ce client ? Cette action est irréversible !');">
+    <button type="submit" class="danger-button icon-button" aria-label="Supprimer" id="delete-interaction-button" title="Supprimer" data-id="{{ client.client_id }}">
+        <!-- trash icon -->
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </form>
+
+
+  </div>
+
+  <section class="container" style="margin-top:12px;">
+    
+    <form class="form-create-client" method="post" style="display : flex; flex-direction: column; gap: 5px;">
+      <input name="nom_entreprise" type="text" value="{{client.nom_entreprise}}" placeholder="Nom de l'entreprise cliente" required >
+      <input name="contact_nom" type="text" value="{{client.contact_nom}}" placeholder="Nom du contact" required>
+      <input name="contact_email" type="email" value="{{client.contact_email}}" placeholder="Mail du contact">
+      <input name="contact_telephone" type="text" value="{{client.contact_telephone}}" placeholder="Téléphone du contact">
+      <select name="type_client" required>
+          <option value=""> --Sélectionnez un type-- </option>
+          <option value="Prospect"  {% if client.type_client == "Prospect" %}selected{% endif %} > Prospect </option>
+          <option value="Actif" {% if client.type_client == "Actif" %}selected{% endif %}> Actif </option>
+          <option value="Ancien"{% if client.type_client == "Ancien" %}selected{% endif %}> Ancien </option>
+      </select>
+      <select name="interlocuteur" required>
+          <option value=""> -- Qui est l'interlocuteur principal? -- </option>
+          {% for i in context.interlocuteurs %}
+          <option value={{i.utilisateur_id}} {% if client.interlocuteur_principal_id == i.utilisateur_id %}selected{% endif %} > {{i.nom}} {{i.prenom}}  </option>
+          {% endfor %}
+      </select>
+
+      <input name="loc_lat" type="text" value="{{client.localisation_lat}}" placeholder="Latitude de l'entreprise">
+      <input name="loc_lng" type="text" value="{{client.localisation_lng}}" placeholder="Longitude de l'entreprise">
+      <input name="address" type="text" value="{{client.address}}" placeholder="Adresse de l'entreprise">
+      <input type="submit" class="bouton-ajouter-client" value="Modifier le client">  
+    </form>
+
+  </section>
+
+
+    <script src="/static/scripts/interactions.js"></script>
+
+{% endblock %}

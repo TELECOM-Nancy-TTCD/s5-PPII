@@ -2,11 +2,32 @@
 
 {% block content %}
 
+<h1 style="flex:1">Détails de l'utilisateur</h1>
+
 {% if current_user.role.administrateur or current_user.role.peut_gerer_utilisateurs%}
-<form action="{{ url_for('supprimer_utilisateur', user_id=utilisateur['utilisateur_id']) }}" method="post" 
+
+
+<div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;"> 
+
+    <a href="/utilisateurs/{{ utilisateur.utilisateur_id }}/edit" class="primary-button icon-button" aria-label="Modifier">
+      <!-- pencil / edit icon -->
+      <i class="fa-solid fa-pen"></i>
+    </a>
+
+    <form action="{{ url_for('supprimer_utilisateur', user_id=utilisateur['utilisateur_id']) }}" method="post" 
       onsubmit="return confirm('Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible !');">
-    <button type="submit", class="bouton-supprimer-utilisateur">Supprimer</button>
-</form>
+     <button type="submit" class="danger-button icon-button" aria-label="Supprimer" id="delete-interaction-button" title="Supprimer" data-id="{{ utilisateur.utilisateur_id }}">
+        <!-- trash icon -->
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </form>
+
+
+  </div>
+
+
+
+
 
 {% endif %}
 

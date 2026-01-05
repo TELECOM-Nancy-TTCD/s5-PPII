@@ -15,6 +15,8 @@ DATABASE= os.getenv('DATABASE')
 
 import os, base64, sqlite3
 from tools import get_db, has_permission
+from database import Client
+from database import Utilisateur
 
 # Importation des blueprints
 from interactions import interactions_bp
@@ -385,6 +387,82 @@ def create_client():
     
     return render_template("create_client.html", context={"success":client_added_successfully, "interlocuteurs": interlocuteurs_dispo})
 
+
+@app.route('/clients/<int:client_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_client(client_id):
+    db = get_db()
+    client = db.get_client_by_id(client_id)
+    if client is None:
+        return abort(404)
+
+    if not has_permission(current_user,
+                          'peut_gerer_clients') :
+        return abort(403)
+
+    # Gestion du formulaire soumis
+    if request.method == 'POST':
+        print("caca")
+        #errors = validate_interaction_form(request.form)
+        errors = False 
+        if errors:
+            return jsonify({'errors': errors}), 400
+        client.nom_entreprise = request.form["nom_entreprise"]
+        client.contact_nom = request.form["contact_nom"]
+        client.contact_email = request.form["contact_email"]
+        tel = request.form["contact_telephone"] 
+        if tel.isdigit() and len( tel ) == 10:
+            client.contact_telephone = request.form["contact_telephone"]
+        if request.form["type_client"] != '' : 
+            client.type_client = request.form["type_client"]
+        if request.form["interlocuteur"] != '': 
+            client.interlocuteur_principal_id = request.form["interlocuteur"]
+        loc_lat = request.form["loc_lat"]
+        try:
+            client.localisation_lat = float(loc_lat)
+        except ValueError:
+            client.localisation_lat = client.localisation_lat
+        loc_lng = request.form["loc_lng"]
+        try:
+            client.localisation_lng = float(loc_lng)
+        except ValueError:
+            client.localisation_lng = client.localisation_lng
+        if request.form["address"] != '': 
+            client.address = request.form["address"]
+        client.save()
+
+        return redirect(url_for("client_detail",client_id=client.client_id))
+
+        #return jsonify({'message': 'Interaction updated successfully'}), 200
+    print("oui")
+
+    #Obtention des interlocuteurs possibles
+    interlocuteurs_dispo = get_db().get_all_users(sort_by='nom')
+
+    return render_template("edit_client.html", context={"interlocuteurs":interlocuteurs_dispo},  client=client,Client=Client)
+
+
+@app.post("/clients/<int:client_id>/supprimer")
+@login_required
+def supprimer_client(client_id):
+    """Fonction pour la route /clients/id_client/supprimer \n
+    Permet de faire fonctionner le bouton de suppression du client"""
+
+    # On vérifier que la personne est bien un ADMIN
+    if not has_permission(current_user, 'administrateur'):
+        abort(403)
+
+    client = get_db().get_client_by_id(client_id)
+    if not client:
+        abort(404)
+
+    try:
+        client.delete()
+        flash("Client supprimé avec succès.", "success")
+    except Exception as e:
+        flash(f"Erreur lors de la suppression: {str(e)}", "danger")
+
+    return redirect(url_for("clients"))
 
 @app.route("/import_clients", methods=["POST"])
 def import_clients():
@@ -958,6 +1036,65 @@ def supprimer_utilisateur(user_id):
         flash(f"Erreur lors de la suppression: {str(e)}", "danger")
 
     return redirect(url_for("utilisateurs"))
+
+@app.route('/utilisateurs/<int:utilisateur_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_utilisateur(utilisateur_id):
+    db = get_db()
+    utilisateur = db.get_user_by_id(utilisateur_id)
+    if utilisateur is None:
+        return abort(404)
+
+    if not has_permission(current_user,
+                          'peut_gerer_utilisateurs') :
+        return abort(403)
+
+    # Gestion du formulaire soumis
+    if request.method == 'POST':
+        #errors = validate_interaction_form(request.form)
+        errors = False 
+        if errors:
+            return jsonify({'errors': errors}), 400
+
+        
+
+        email = request.form["e-mail"]
+        nom = request.form["nom"]
+        prenom = request.form["prenom"]
+        role_name = request.form["role"]
+        est_intervenant = request.form["est_intervenant"] == "True"
+        heures_dispo_semaine = request.form["h_disp"]
+        doc_carte_vitale = request.form["doc_car"]
+        doc_cni = request.form["doc_cni"]
+        doc_adhesion = request.form["doc_adh"]
+        doc_rib = request.form["doc_rib"]
+
+        utilisateur.email = email
+        utilisateur.nom = nom 
+        utilisateur.prenom = prenom 
+
+        role_id = db.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
+        utilisateur.role_id = role_id 
+
+        utilisateur.est_intervenant = est_intervenant
+        if heures_dispo_semaine.isdigit():
+            utilisateur.heures_dispo_semaine = heures_dispo_semaine
+        utilisateur.doc_carte_vitale = doc_carte_vitale
+        utilisateur.doc_cni = doc_cni
+        utilisateur.doc_adhesion = doc_adhesion 
+        utilisateur.doc_rib = doc_rib
+
+        
+        utilisateur.save()
+
+        return redirect(url_for("utilisateurs_detail",uid=utilisateur.utilisateur_id))
+
+        #return jsonify({'message': 'Interaction updated successfully'}), 200
+
+    #Obtention des interlocuteurs possibles
+    roles_possibles = db.execute("SELECT nom FROM Roles").fetchall()
+
+    return render_template("edit_utilisateur.html", context={"roles_possibles":roles_possibles},  utilisateur=utilisateur,Utilisateur=Utilisateur)
 
 
 
