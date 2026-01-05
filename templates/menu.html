@@ -25,7 +25,16 @@
                     interaction</a></li>
             </ul>
         </li>
-        <li><a href="{{ url_for('utilisateurs') }}">Utilisateurs</a></li>
+        <li  class="menu-dropdown">
+            <a href="{{ url_for('utilisateurs') }}">Utilisateurs</a>
+            <ul class="dropdown-content">
+                <li><a href="{{ url_for('utilisateurs') }}"><i class="fa-solid fa-list"></i> Liste
+                    des utilisateurs</a></li>
+                {% if current_user.is_authenticated and current_user.role and (current_user.role.peut_gerer_roles or current_user.role.administrateur) %}
+                <li><a href="{{ url_for('utilisateurs.roles') }}"><i class="fa-solid fa-at"></i> Rôles</a></li>
+                {% endif %}
+            </ul>
+        </li>
         <li><a href="{{ url_for('conventions.index') }}">Conventions</a></li>
         <li><a href="{{ url_for('recherche_avance') }}">Recherche</a></li>
     </ul>

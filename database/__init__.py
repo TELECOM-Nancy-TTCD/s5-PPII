@@ -928,8 +928,12 @@ class _RowInitMixin:
             for f in self.FIELD_NAMES:
                 setattr(self, f, data.get(f))
         elif isinstance(data, (list, tuple)):
-            assert len(data) == len(self.FIELD_NAMES), f"Data tuple must have exactly {len(self.FIELD_NAMES)} elements ({len(data)} given)"
-            for f, v in zip(self.FIELD_NAMES, data):
+            # Accept tuples that may be shorter than FIELD_NAMES (backwards compatibility with older schemas)
+            if len(data) != len(self.FIELD_NAMES):
+                logging.warning("Data tuple length (%d) doesn't match FIELD_NAMES (%d) for %s; filling missing fields with None",
+                                len(data), len(self.FIELD_NAMES), self.__class__.__name__)
+            # Assign available values and default missing ones to None
+            for f, v in zip(self.FIELD_NAMES, list(data) + [None] * max(0, len(self.FIELD_NAMES) - len(data))):
                 setattr(self, f, v)
         else:
             raise TypeError("data must be a dict, tuple/list or None")
@@ -1045,9 +1049,7 @@ class _RowInitMixin:
         key = self._cache_key()
         if key is None:
             return
-        # Sérialise uniquement les champs déclarés dans FIELD_NAMES
-        payload = json.dumps(self.to_dict())
-        # Utiliser setex pour définir TTL
+        payload = json.dumps(self.to_dict(), default=str)
         redis_client.setex(key, self.CACHE_TTL, payload)
 
     # Méthodes pour gérer les index secondaires Redis (recherches exactes)
@@ -1131,16 +1133,38 @@ class _RowInitMixin:
         if database_name is None:
             database_name = self.__class__.__name__ + "s"  # Pluriel simple par défaut
             logging.warning("Using default DATABASE_NAME '%s' for class %s. It's recommended to explicitly set DATABASE_NAME.", database_name, self.__class__.__name__)
-        # Sauvegarde l'objet dans la base de données
+        # Préparer les champs et valeurs
         fields = ', '.join(self.FIELD_NAMES)
         placeholders = ', '.join(['?'] * len(self.FIELD_NAMES))
-        values = (getattr(self, f) for f in self.FIELD_NAMES)
-        # Exécuter l'insertion
-        self.db.execute(
-            f"INSERT OR REPLACE INTO {database_name} ({fields}) VALUES ({placeholders})",
-            tuple(values)
-        )
-        self.db.commit()
+        values = tuple(getattr(self, f) for f in self.FIELD_NAMES)
+
+        # Exécuter l'insertion et récupérer le curseur si possible
+        cursor = None
+        try:
+            cursor = self.db.execute(
+                f"INSERT OR REPLACE INTO {database_name} ({fields}) VALUES ({placeholders})",
+                values
+            )
+            # Commit après exécution
+            self.db.commit()
+        except Exception as e:
+            # Propager l'exception pour que l'appelant puisse traiter l'erreur
+            raise
+
+        # Si l'objet n'avait pas d'ID et que SQLite a généré un lastrowid, l'affecter
+        try:
+            id_field = next((f for f in self.FIELD_NAMES if f.endswith('_id')), None)
+            if id_field:
+                current_id = getattr(self, id_field, None)
+                if (current_id is None or current_id == '') and cursor is not None:
+                    try:
+                        new_id = getattr(cursor, 'lastrowid', None)
+                        if new_id is not None and new_id != 0:
+                            setattr(self, id_field, int(new_id))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
         # Mettre à jour les index secondaires Redis
         try:
@@ -1148,27 +1172,53 @@ class _RowInitMixin:
         except Exception:
             pass
 
-        # Vérifier si l'identifiant était dans le cache de tous les objets
+        # Mettre à jour (ou invalider) le cache 'all' pour la ressource
         try:
-            cached_ids = self.db.redis_client.get(redis_key(database_name.lower(), None, "all"))
-        except Exception:
-            cached_ids = None
-        if cached_ids:
+            all_key = redis_key(database_name.lower(), None, "all")
             try:
-                ids_list = json.loads(cached_ids)
+                redis_client = getattr(self.db, 'redis_client', None)
             except Exception:
-                ids_list = []
-            id_field = next((f for f in self.FIELD_NAMES if f.endswith('_id')), None)
-            if id_field:
-                id_val = getattr(self, id_field, None)
-                if id_val is not None and id_val not in ids_list:
-                    ids_list.append(id_val)
+                redis_client = None
+
+            # If redis available, prefer to invalidate caches completely to avoid stale search/index results
+            if redis_client is not None:
+                try:
+                    # Supprimer la clé 'all' afin de forcer une reconstruction propre au prochain accès
                     try:
-                        self.db.redis_client.setex(redis_key(database_name.lower(), None, "all"), self.CACHE_TTL, json.dumps(ids_list))
+                        redis_client.delete(all_key)
                     except Exception:
                         pass
 
-        # Mettre à jour le cache Redis après la sauvegarde
+                    # Invalider les index secondaires pour cette table (pattern: index:<database_name>:*)
+                    index_pattern = f"index:{database_name.lower()}:*"
+                    try:
+                        # Utiliser scan_iter si disponible (plus sûr en production)
+                        if hasattr(redis_client, 'scan_iter'):
+                            keys_iter = redis_client.scan_iter(match=index_pattern)
+                            keys = list(keys_iter)
+                        elif hasattr(redis_client, 'keys'):
+                            keys = redis_client.keys(index_pattern)
+                        else:
+                            keys = []
+                        if keys:
+                            try:
+                                # delete accepts multiple args in redis-py
+                                redis_client.delete(*keys)
+                            except Exception:
+                                # fallback: delete one by one
+                                for k in keys:
+                                    try:
+                                        redis_client.delete(k)
+                                    except Exception:
+                                        pass
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Enfin, mettre en cache l'entrée individuelle
         try:
             self._try_cache()
         except Exception:

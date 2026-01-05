@@ -5,6 +5,9 @@ from database import Database
 
 # Utiliser une valeur par défaut si la variable d'environnement n'est pas fournie
 DATABASE = os.getenv('DATABASE', 'database/database.db')
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
+REDIS_DB = int(os.getenv('REDIS_DB', '0'))
 
 
 def get_db():

@@ -1,0 +1,126 @@
+{% extends "menu.html" %}
+
+{% block title %}Gestion des rôles{% endblock %}
+
+{% block content %}
+<div class="roles-container">
+  <!-- Sidebar: liste des rôles -->
+  <aside class="roles-sidebar">
+    <header class="roles-header">
+      <h2>Rôles</h2>
+      <div class="header-right">
+        <!-- Bouton de création déplacé à droite du header -->
+        <button id="create-role-btn" class="primary-button">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+    </header>
+
+    <div id="roles-list" class="roles-list">
+      {% for r in roles %}
+      {# determine if this role is 'higher' than the current user's role (smaller hierarchie => higher) #}
+      {% set disabled_for_user = false %}
+      {% if current_user and current_user.role and current_user.role.hierarchie is not none and r.hierarchie is not none %}
+        {% if r.hierarchie < current_user.role.hierarchie %}
+          {% set disabled_for_user = true %}
+        {% endif %}
+      {% endif %}
+      {# also prevent clicking your own role #}
+      {% set is_own_role = false %}
+      {% if current_user and current_user.role and (current_user.role.role_id == r.role_id) %}
+        {% set is_own_role = true %}
+        {% set disabled_for_user = true %}
+      {% endif %}
+      <div class="role-item card-utilisateurs {% if role and role.role_id == r.role_id %}selected{% endif %} {% if disabled_for_user %}role-disabled{% endif %}" draggable="true" data-role-id="{{ r.role_id }}" data-hierarchie="{{ r.hierarchie }}" data-own-role="{{ '1' if is_own_role else '0' }}">
+        <div class="role-item-inner">
+
+          {# If the role is disabled for the current user, render a non-link element without href/tabindex to make it non-clickable/focusable #}
+          {% if disabled_for_user %}
+            <div class="role-link role-link-disabled" aria-disabled="true" tabindex="-1">
+              <div class="role-main">
+                {% if r.hierarchie is not none and current_user and current_user.role and current_user.role.hierarchie is not none and r.hierarchie <= current_user.role.hierarchie %}
+                  <div class="role-lock" title="Rôle protégé"><i class="fa-solid fa-lock"></i></div>
+                {% endif %}
+                <div class="role-name">{{ r.nom }}</div>
+                <div class="role-meta">Hiérarchie: {{ r.hierarchie }}</div>
+              </div>
+            </div>
+          {% else %}
+            <a class="role-link" href="/utilisateurs/roles/{{ r.role_id }}" draggable="false">
+              <div class="role-main">
+                <div class="role-name">{{ r.nom }}</div>
+                <div class="role-meta">Hiérarchie: {{ r.hierarchie }}</div>
+              </div>
+            </a>
+          {% endif %}
+
+          <div class="role-drag-handle right">
+            <button class="order-button" aria-label="Déplacer"><i class="fa-solid fa-grip-lines"></i></button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <!-- Main panel: détails et permissions -->
+  <section class="role-detail">
+    <h2 id="detail-title">Détails du rôle</h2>
+
+    <!-- Message affiché quand aucun rôle n'est sélectionné -->
+    <div id="empty-message" class="empty-message{% if not role %}hidden{% endif %}">
+      <p class="empty-title">Aucun rôle sélectionné</p>
+      <p>Sélectionnez un rôle dans la liste à gauche ou créez-en un nouveau via le bouton ci‑dessous.</p>
+        <button class="create-role-secondary primary-button">
+            <i class="fa-solid fa-plus"></i> Créer un rôle
+        </button>
+    </div>
+
+    <form id="role-form" class="form {% if not role %}hidden{% endif %}">
+      <input type="hidden" name="role_id" id="role_id" value="{{ role.role_id if role else '' }}">
+        <input id="role_hierarchie" name="hierarchie" type="hidden" min="0" value="{{ role.hierarchie if role is not none else '' }}">
+
+      <div class="input-box">
+        <label for="role_nom">Nom du rôle</label>
+        <input id="role_nom" name="nom" type="text" placeholder="Nom du rôle" value="{{ role.nom if role else '' }}">
+      </div>
+
+      <div class="permissions-block">
+        <h3>Permissions</h3>
+        <div id="permissions-list" class="permissions-list" data-server-rendered="1">
+          {% for key, meta in permission_meta.items() %}
+          <div class="permission-row">
+            <label class="checkbox-con">
+              <input type="checkbox" name="{{ key }}" id="perm-{{ key }}" {% if role and role[key] %}checked{% endif %}>
+              <span style="margin-left:10px; font-weight:600">{{ meta.label }}</span>
+            </label>
+            <div class="permission-desc">{{ meta.desc }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button id="save-role" class="primary-button" type="button">Enregistrer</button>
+        <button id="delete-role" class="danger-button" type="button">Supprimer</button>
+      </div>
+    </form>
+  </section>
+</div>
+
+<script>
+  // server-side provided role object to avoid an extra fetch on page load
+  window.serverRole = {{ role.to_dict() | tojson if role else 'null' }};
+  window.initialRoleId = {{ (role.role_id if role else None) | tojson }};
+  // expose current user's role id and hierarchy safely
+  window.currentUserRoleId = {{ (current_user.role.role_id if (current_user and current_user.role) else None) | tojson }};
+  window.currentUserHier = {{ (current_user.role.hierarchie if (current_user and current_user.role and current_user.role.hierarchie is not none) else None) | tojson }};
+  // expose current user's permissions as JS booleans
+  window.currentUserPermissions = {
+    {% for key, meta in permission_meta.items() %}
+      {{ key|tojson }}: {{ ((current_user and current_user.role) and (current_user.role[key] if (current_user.role is not none) else False)) | default(false) | tojson }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  };
+</script>
+<script src="{{ url_for('static', filename='scripts/roles.js') }}"></script>
+{% endblock %}

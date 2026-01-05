@@ -3,7 +3,6 @@ import sys
 # Ensure project root is on sys.path so `import database` resolves to the local package
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import json
 import pytest
 
 from database import Database
@@ -62,11 +61,13 @@ def create_minimal_schema(db: Database):
             nom                        VARCHAR,
             hierarchie                 INT, -- pour la modification de rôles, on ne peut destituer un individu d'un role plus haut
 
+            administrateur             BOOLEAN DEFAULT false,
             peut_gerer_utilisateurs    BOOLEAN DEFAULT false,
             peut_gerer_roles           BOOLEAN DEFAULT false,
 
             peut_lire_clients          BOOLEAN DEFAULT false,
             peut_gerer_clients         BOOLEAN DEFAULT false,
+            peut_creer_interactions    BOOLEAN DEFAULT false,
             peut_gerer_interactions    BOOLEAN DEFAULT false,
 
             peut_lire_projets          BOOLEAN DEFAULT false,
@@ -89,11 +90,12 @@ def create_minimal_schema(db: Database):
         """
         CREATE TABLE Utilisateurs (
             utilisateur_id INTEGER PRIMARY KEY,
-            email TEXT,
+            email TEXT UNIQUE,
             mot_de_passe_hashed TEXT,
             mot_de_passe_expire DATE,
             nom TEXT,
             prenom TEXT,
+            avatar TEXT,
             role_id INTEGER,
             est_intervenant INTEGER,
             heures_dispo_semaine INTEGER,
