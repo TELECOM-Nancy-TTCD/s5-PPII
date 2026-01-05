@@ -40,6 +40,7 @@
             btnConfirm.classList.add('danger-button');
         } else if (btnConfirm) {
             btnConfirm.classList.remove('danger-button');
+            btnConfirm.classList.add('primary-button');
         }
 
         // Ensure any previous handlers are removed before adding new ones
