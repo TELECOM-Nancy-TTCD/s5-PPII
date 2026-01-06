@@ -14,9 +14,9 @@
       <input name="nom" type="text" placeholder="Nom">
       <input name="prenom" type="text" placeholder="Prénom">
       <select name="role" required>
-          <option value=""> --Sélectionnez un rôle-- </option>
+          <option hidden> --Sélectionnez un rôle-- </option>
           {% for i in context.roles_possibles %}
-          <option value={{i[0]}}> {{i[0]}} </option>
+          <option value={{i[0]}}> {{i[1]}} </option>
           {% endfor %}
       </select>
       <div>

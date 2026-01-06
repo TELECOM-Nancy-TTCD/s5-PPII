@@ -1,6 +1,7 @@
 from typing import cast, Literal
 
-from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, session, jsonify
+from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, session, \
+    jsonify
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 
 from app_conventions import conventions_bp
@@ -11,7 +12,7 @@ from dotenv import load_dotenv
 import os, csv, io
 
 load_dotenv()
-DATABASE= os.getenv('DATABASE')
+DATABASE = os.getenv('DATABASE')
 
 import os, base64, sqlite3
 from tools import get_db, has_permission
@@ -25,12 +26,10 @@ from utilisateurs import bp_utilisateurs
 import matching
 
 
-
-
 def get_clients():
     """Fonction qui renvoie tout les clients de la DB"""
     conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row 
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Clients")
     clients = cursor.fetchall()
@@ -38,10 +37,11 @@ def get_clients():
 
     return clients
 
+
 def get_utilisateurs():
     """Fonction qui renvoie tout les utilisateurs de la DB"""
     conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row 
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM Utilisateurs")
     utilisateurs = cursor.fetchall()
@@ -74,50 +74,51 @@ login_manager.login_view = "login"
 # Clé pour l'encodage des cookies de session
 app.secret_key = os.getenv('SECRET_KEY', b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867')
 
-
 # Blueprints are registered here
 app.register_blueprint(conventions_bp)
 app.register_blueprint(interactions_bp)
 app.register_blueprint(clients_bp)
 app.register_blueprint(bp_utilisateurs)
 
-def hash_password(mdp : str):
+
+def hash_password(mdp: str):
     """Fonction qui hash et sale le mot de passe,
     Les 16 premiers octets sont le salt, le reste le mdp."""
-    salt = os.urandom(16) # Génération d'un salt
+    salt = os.urandom(16)  # Génération d'un salt
 
-    mdp_hache = scrypt(mdp.encode(), salt=salt, n=2**14, r=8, p=1) # Hachage du mdp avec le salt
+    mdp_hache = scrypt(mdp.encode(), salt=salt, n=2 ** 14, r=8, p=1)  # Hachage du mdp avec le salt
 
     # Encodage en B64, et remise en forme texte pour stockage.
-    return base64.b64encode(salt+mdp_hache).decode()
+    return base64.b64encode(salt + mdp_hache).decode()
 
-def verify_password(mdp_entre : str, stored_hash):
+
+def verify_password(mdp_entre: str, stored_hash):
     """Fonction qui vérifie le mot de passe avec le hashé. \n
     Il est impossible de revenir au mdp depuis le hash,donc on hache l'entrée avec le même salt et on vérifie l'égalité \n
     Le résultat est un booléen"""
 
-    octets_decodes = base64.b64decode(stored_hash) # Bytes obtenus par décodage en B64
+    octets_decodes = base64.b64decode(stored_hash)  # Bytes obtenus par décodage en B64
     salt = octets_decodes[:16]
 
     mdp_hache_stocke = octets_decodes[16:]
-    mdp_hache_entre = scrypt(mdp_entre.encode(), salt=salt, n=2**14, r=8, p=1) # Hachage du mdp avec le salt
+    mdp_hache_entre = scrypt(mdp_entre.encode(), salt=salt, n=2 ** 14, r=8, p=1)  # Hachage du mdp avec le salt
 
     return mdp_hache_entre == mdp_hache_stocke
 
 
-
 @login_manager.user_loader
-def load_user(uid : str):
+def load_user(uid: str):
     """Fonction qui charge l'utilisateur"""
     return get_db().get_user_by_id(int(uid))
 
-@app.route("/login", methods = ["GET", "POST"])
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
     """Fonction pour la route /login \n
     Renvoie les page pour le login et vérifie le mdp"""
     has_failed_login = False
 
-    if request.method == 'POST' :
+    if request.method == 'POST':
         c = get_db().cursor()
         adressemail = request.form["Adresse e-mail"]
         mdp = request.form["Mot de passe"]
@@ -125,7 +126,7 @@ def login():
 
         corresp = c.fetchone()
         has_failed_login = False
-        if corresp != None: # Si on trouve un utilisateur avec cet email
+        if corresp != None:  # Si on trouve un utilisateur avec cet email
             if verify_password(mdp, corresp[1]):
 
                 to_login = corresp[0]
@@ -143,8 +144,7 @@ def login():
                     # TODO: Rendre sage la redirection "next" pour éviter les attaques open redirect
                     return redirect(next_page)
 
-
-        has_failed_login = True # Si pas d'utilisateur avec ce mail ou que le mdp est faux, on a raté le login
+        has_failed_login = True  # Si pas d'utilisateur avec ce mail ou que le mdp est faux, on a raté le login
 
     # Pour un login échouant, on ré-affiche la page avec un message supplémentaire
     # Pour le premier affichage, has_failed_login est à False.
@@ -159,13 +159,13 @@ def accueil():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    
+
     c.execute("""
-        SELECT p.* 
-        FROM Projets p 
-        JOIN Conventions c ON p.convention_id = c.convention_id
-        WHERE p.statut != 'Terminé'
-    """)
+              SELECT p.*
+              FROM Projets p
+                       JOIN Conventions c ON p.convention_id = c.convention_id
+              WHERE p.statut != 'Terminé'
+              """)
     projets_raw = c.fetchall()
 
     projets = []
@@ -196,40 +196,40 @@ def accueil():
     conn.close()
     return render_template("accueil.html", projets=projets)
 
+
 # Création de projet depuis la page de liste de conventions (il faut alors spécifier la convention)
 @app.route("/create_projet", methods=["GET", "POST"])
 @login_required
 def create_projet_sans_convention_connue():
-
     if not has_permission(current_user, 'peut_gerer_projets'):
         abort(403)
 
-    added_successfully= False
+    added_successfully = False
     c = get_db().cursor()
 
-
-    if request.method == 'POST' :
+    if request.method == 'POST':
         e = request.form
-        l=[None]
-        for i in e.keys() :
+        l = [None]
+        for i in e.keys():
             l.append(e[i])
-        
-        l=tuple(l)
-        
+
+        l = tuple(l)
+
         # Vérification de la contrainte de date
-        if l[5] > l[6] :
+        print(l, l[5], l[6])
+        if l[6] > l[7]:
             flash("Date de fin invalide", 'danger')
         else:
 
-            #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
+            # Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
             c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
             get_db().commit()
 
             added_successfully = True
 
     conventions = get_db().get_all_conventions()
-    
-    return render_template("create_projet.html", context={"success":added_successfully, "list_conv": conventions })
+
+    return render_template("create_projet.html", context={"success": added_successfully, "list_conv": conventions})
 
 
 @app.route("/clients", methods=['GET'])
@@ -252,8 +252,8 @@ def clients():
         clients_db = [
             u for u in clients_db
             if recherche_clients in u["nom_entreprise"].lower()
-            or recherche_clients in u["contact_email"].lower()
-            or recherche_clients in u["type_client"].lower()
+               or recherche_clients in u["contact_email"].lower()
+               or recherche_clients in u["type_client"].lower()
         ]
 
     liste_interloc_principaux = []
@@ -266,7 +266,8 @@ def clients():
             affichage_interlocuteur = "Aucun interlocuteur"
         liste_interloc_principaux.append(affichage_interlocuteur)
 
-    return render_template("clients.html", clients_db=clients_db, recherche_clients=recherche_clients, affichage_int = liste_interloc_principaux)
+    return render_template("clients.html", clients_db=clients_db, recherche_clients=recherche_clients,
+                           affichage_int=liste_interloc_principaux)
 
 
 @app.route("/clients/<int:client_id>")
@@ -283,20 +284,21 @@ def client_detail(client_id):
     client = c.fetchone()
     if client is None:
         abort(404)
-    
+
     # Bon affichage de l'interlocuteur principal
-    interlocuteur =get_db().get_user_by_id(client[6])
+    interlocuteur = get_db().get_user_by_id(client[6])
     affichage_interlocuteur = interlocuteur.nom + " " + interlocuteur.prenom
 
-    c.execute("""SELECT p.* FROM Projets p JOIN Conventions c ON p.convention_id = c.convention_id WHERE c.client_id = ?""", (client_id,))
-
+    c.execute("""SELECT p.*
+                 FROM Projets p
+                          JOIN Conventions c ON p.convention_id = c.convention_id
+                 WHERE c.client_id = ?""", (client_id,))
 
     projets_raw = c.fetchall()
 
     # Calcul du pourcentage de jalon terminés
     projets = []
     for p in projets_raw:
-
         c.execute("SELECT est_complete FROM Jalons WHERE projet_id = ?", (p["projet_id"],))
         jalons = c.fetchall()
         total_jalons = len(jalons)
@@ -311,15 +313,18 @@ def client_detail(client_id):
         })
 
     c.execute("""
-        SELECT i.*, u.nom || ' ' || u.prenom AS utilisateur_nom FROM Interactions i
-        JOIN Utilisateurs u ON i.utilisateur_id = u.utilisateur_id WHERE i.client_id = ?
-        ORDER BY i.date_time_interaction DESC
-    """, (client_id,))
+              SELECT i.*, u.nom || ' ' || u.prenom AS utilisateur_nom
+              FROM Interactions i
+                       JOIN Utilisateurs u ON i.utilisateur_id = u.utilisateur_id
+              WHERE i.client_id = ?
+              ORDER BY i.date_time_interaction DESC
+              """, (client_id,))
 
     interactions = c.fetchall()
     conn.close()
 
-    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets, interactions=interactions, inter = affichage_interlocuteur)
+    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets,
+                           interactions=interactions, inter=affichage_interlocuteur)
 
 
 @app.route("/client/create", methods=["GET", "POST"])
@@ -330,31 +335,32 @@ def create_client():
     if not has_permission(current_user, 'peut_gerer_clients'):
         abort(403)
 
-    client_added_successfully= False
+    client_added_successfully = False
     c = get_db().cursor()
 
-
-    if request.method == 'POST' :
-        nom_e= request.form["nom_entreprise"]
+    if request.method == 'POST':
+        nom_e = request.form["nom_entreprise"]
         nom_c = request.form["contact_nom"]
         email = request.form["contact_email"]
-        phone = request.form["contact_telephone"] 
+        phone = request.form["contact_telephone"]
         type = request.form["type_client"]
         interlocuteur = request.form["interlocuteur"]
         lat = request.form["loc_lat"]
         lng = request.form["loc_lng"]
         addr = request.form["address"]
 
-        #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-        c.execute("INSERT INTO Clients VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",(None, nom_e, nom_c, email, phone, type, interlocuteur, lat, lng, addr))
+        # Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
+        c.execute("INSERT INTO Clients VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  (None, nom_e, nom_c, email, phone, type, interlocuteur, lat, lng, addr))
         get_db().commit()
 
         client_added_successfully = True
 
-    #Obtention des interlocuteurs possibles
+    # Obtention des interlocuteurs possibles
     interlocuteurs_dispo = get_db().get_all_users(sort_by='nom')
-    
-    return render_template("create_client.html", context={"success":client_added_successfully, "interlocuteurs": interlocuteurs_dispo})
+
+    return render_template("create_client.html",
+                           context={"success": client_added_successfully, "interlocuteurs": interlocuteurs_dispo})
 
 
 @app.route('/clients/<int:client_id>/edit', methods=['GET', 'POST'])
@@ -366,25 +372,25 @@ def edit_client(client_id):
         return abort(404)
 
     if not has_permission(current_user,
-                          'peut_gerer_clients') :
+                          'peut_gerer_clients'):
         return abort(403)
 
     # Gestion du formulaire soumis
     if request.method == 'POST':
         print("caca")
-        #errors = validate_interaction_form(request.form)
-        errors = False 
+        # errors = validate_interaction_form(request.form)
+        errors = False
         if errors:
             return jsonify({'errors': errors}), 400
         client.nom_entreprise = request.form["nom_entreprise"]
         client.contact_nom = request.form["contact_nom"]
         client.contact_email = request.form["contact_email"]
-        tel = request.form["contact_telephone"] 
-        if tel.isdigit() and len( tel ) == 10:
+        tel = request.form["contact_telephone"]
+        if tel.isdigit() and len(tel) == 10:
             client.contact_telephone = request.form["contact_telephone"]
-        if request.form["type_client"] != '' : 
+        if request.form["type_client"] != '':
             client.type_client = request.form["type_client"]
-        if request.form["interlocuteur"] != '': 
+        if request.form["interlocuteur"] != '':
             client.interlocuteur_principal_id = request.form["interlocuteur"]
         loc_lat = request.form["loc_lat"]
         try:
@@ -396,19 +402,20 @@ def edit_client(client_id):
             client.localisation_lng = float(loc_lng)
         except ValueError:
             client.localisation_lng = client.localisation_lng
-        if request.form["address"] != '': 
+        if request.form["address"] != '':
             client.address = request.form["address"]
         client.save()
 
-        return redirect(url_for("client_detail",client_id=client.client_id))
+        return redirect(url_for("client_detail", client_id=client.client_id))
 
-        #return jsonify({'message': 'Interaction updated successfully'}), 200
+        # return jsonify({'message': 'Interaction updated successfully'}), 200
     print("oui")
 
-    #Obtention des interlocuteurs possibles
+    # Obtention des interlocuteurs possibles
     interlocuteurs_dispo = get_db().get_all_users(sort_by='nom')
 
-    return render_template("edit_client.html", context={"interlocuteurs":interlocuteurs_dispo},  client=client,Client=Client)
+    return render_template("edit_client.html", context={"interlocuteurs": interlocuteurs_dispo}, client=client,
+                           Client=Client)
 
 
 @app.post("/clients/<int:client_id>/supprimer")
@@ -432,6 +439,7 @@ def supprimer_client(client_id):
         flash(f"Erreur lors de la suppression: {str(e)}", "danger")
 
     return redirect(url_for("clients"))
+
 
 @app.route("/import_clients", methods=["POST"])
 def import_clients():
@@ -471,19 +479,20 @@ def import_clients():
                 return val.strip() if val and val.strip() != "" else None
 
             c.execute("""
-                INSERT INTO Clients (nom_entreprise, contact_nom, contact_email, contact_telephone, type_client, interlocuteur_principal_id, localisation_lat, localisation_lng, address
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                clean(row["nom_entreprise"]),
-                clean(row["contact_nom"]),
-                clean(row["contact_email"]),
-                clean(row["contact_telephone"]),
-                clean(row["type_client"]),
-                int(row["interlocuteur_principal_id"]) if clean(row["interlocuteur_principal_id"]) else None,
-                float(row["localisation_lat"]) if clean(row["localisation_lat"]) else None,
-                float(row["localisation_lng"]) if clean(row["localisation_lng"]) else None,
-                clean(row["address"]),
-            ))
+                      INSERT INTO Clients (nom_entreprise, contact_nom, contact_email, contact_telephone, type_client,
+                                           interlocuteur_principal_id, localisation_lat, localisation_lng, address)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                      """, (
+                          clean(row["nom_entreprise"]),
+                          clean(row["contact_nom"]),
+                          clean(row["contact_email"]),
+                          clean(row["contact_telephone"]),
+                          clean(row["type_client"]),
+                          int(row["interlocuteur_principal_id"]) if clean(row["interlocuteur_principal_id"]) else None,
+                          float(row["localisation_lat"]) if clean(row["localisation_lat"]) else None,
+                          float(row["localisation_lng"]) if clean(row["localisation_lng"]) else None,
+                          clean(row["address"]),
+                      ))
 
         conn.commit()
         conn.close()
@@ -506,9 +515,18 @@ def export_clients():
     c = conn.cursor()
 
     c.execute("""
-        SELECT client_id, nom_entreprise, contact_nom, contact_email, contact_telephone, type_client, interlocuteur_principal_id, localisation_lat, localisation_lng, address
-        FROM Clients
-    """)
+              SELECT client_id,
+                     nom_entreprise,
+                     contact_nom,
+                     contact_email,
+                     contact_telephone,
+                     type_client,
+                     interlocuteur_principal_id,
+                     localisation_lat,
+                     localisation_lng,
+                     address
+              FROM Clients
+              """)
     clients = c.fetchall()
     conn.close()
 
@@ -618,6 +636,7 @@ def projet_detail(projet_id):
         groupes=groupes
     )
 
+
 @app.route("/projet/<int:projet_id>/selectionner_groupe", methods=["POST"])
 @login_required
 def selectionner_groupe(projet_id):
@@ -668,7 +687,6 @@ def ajouter_membres(projet_id):
             flash("IDs invalides.", "error")
             return redirect(url_for("ajouter_membres", projet_id=projet_id))
 
-
         db.cursor().execute("DELETE FROM Travaille_sur WHERE projet_id = ?", (projet_id,))
         db.commit()
 
@@ -705,14 +723,14 @@ def projet_ajouter_competences(projet_id):
     c = get_db().cursor()
     c.execute("SELECT * FROM Competences ORDER BY competence_id ASC")
     toutes_competences = c.fetchall()
-    success=False
+    success = False
 
-    if request.method== "POST":
+    if request.method == "POST":
         comp_requises = list(map(int, request.form.getlist("skills[]")))
         niveaux = list(map(int, request.form.getlist("levels[]")))
         s = c.execute("Select competence_id from projet_competences where projet_id=?", (projet_id,)).fetchall()
         for i in range(len(s)):
-            s[i]=s[i][0]
+            s[i] = s[i][0]
         print(s)
         for i, u in enumerate(comp_requises):
             # Si la compétence est déjà dedans, on skip
@@ -724,10 +742,9 @@ def projet_ajouter_competences(projet_id):
             c.execute("INSERT INTO projet_competences VALUES (?, ?, ?)", (projet_id, u, niveau_associe))
             get_db().commit()
 
-        success= True
+        success = True
 
-
-    return render_template("ajouter_competences.html", competences=toutes_competences, success=success )
+    return render_template("ajouter_competences.html", competences=toutes_competences, success=success)
 
 
 @app.post("/projet/<int:projet_id>/terminer")
@@ -746,7 +763,7 @@ def terminer_projet(projet_id):
     projet.date_fin = format_date(projet.date_fin)
 
     for j, u in enumerate(projet.jalons):
-        if u.date_fin!= None :
+        if u.date_fin != None:
             projet.jalons[j].date_fin = datetime.fromisoformat(u.date_fin).strftime("%d/%m/%Y")
     projet = get_db().get_project_id(projet_id)
 
@@ -771,6 +788,7 @@ def logout():
     logout_user()
     return redirect(url_for("accueil"))
 
+
 @app.post("/jalon/<int:jalon_id>/modifier")
 @login_required
 def modifier_jalon(jalon_id):
@@ -793,16 +811,19 @@ def modifier_jalon(jalon_id):
     est_complete = 1 if request.form.get("est_complete") else 0
 
     db.execute("""
-        UPDATE Jalons
-        SET description = ?, date_fin = ?, est_complete = ?
-        WHERE jalon_id = ?
-    """, (description, date_fin, est_complete, jalon_id))
+               UPDATE Jalons
+               SET description  = ?,
+                   date_fin     = ?,
+                   est_complete = ?
+               WHERE jalon_id = ?
+               """, (description, date_fin, est_complete, jalon_id))
 
     db.commit()
 
     db.invalidate_project(projet_id)
 
     return redirect(url_for("projet_detail", projet_id=projet_id))
+
 
 @app.post("/jalon/creer")
 @login_required
@@ -819,18 +840,14 @@ def creer_jalon():
     est_complete = 1 if request.form.get("est_complete_creation") else 0
 
     db.execute("""
-        INSERT INTO Jalons (description, date_fin, est_complete, projet_id)
-        VALUES (?, ?, ?, ?)
-    """, (description, date_fin, est_complete, projet_id))
+               INSERT INTO Jalons (description, date_fin, est_complete, projet_id)
+               VALUES (?, ?, ?, ?)
+               """, (description, date_fin, est_complete, projet_id))
 
     db.commit()
     db.invalidate_project(projet_id)
 
     return redirect(url_for("projet_detail", projet_id=projet_id))
-
-
-
-
 
 
 @app.route("/utilisateurs", methods=["GET"])
@@ -845,7 +862,9 @@ def utilisateurs():
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    cursor.execute("""SELECT u.*, r.nom AS role_nom FROM Utilisateurs u LEFT JOIN Roles r ON u.role_id = r.role_id""")
+    cursor.execute("""SELECT u.*, r.nom AS role_nom
+                      FROM Utilisateurs u
+                               LEFT JOIN Roles r ON u.role_id = r.role_id""")
     utilisateurs_db = cursor.fetchall()
     conn.close()
 
@@ -853,12 +872,13 @@ def utilisateurs():
         utilisateurs_db = [
             u for u in utilisateurs_db
             if recherche_utilisateurs in u["nom"].lower()
-            or recherche_utilisateurs in u["prenom"].lower()
-            or recherche_utilisateurs in u["email"].lower()
-            or (u["role_nom"] and recherche_utilisateurs in u["role_nom"].lower())
+               or recherche_utilisateurs in u["prenom"].lower()
+               or recherche_utilisateurs in u["email"].lower()
+               or (u["role_nom"] and recherche_utilisateurs in u["role_nom"].lower())
         ]
 
-    return render_template("utilisateurs.html", utilisateurs_db=utilisateurs_db, recherche_utilisateurs=recherche_utilisateurs)
+    return render_template("utilisateurs.html", utilisateurs_db=utilisateurs_db,
+                           recherche_utilisateurs=recherche_utilisateurs)
 
 
 @app.route("/utilisateurs/<int:uid>")
@@ -879,10 +899,12 @@ def utilisateurs_detail(uid):
         abort(404)
 
     # Obtention des compétences requises et du niveau
-    comp_requises = get_db().cursor().execute("SELECT c.nom, ic.niveau FROM competences c JOIN intervenant_competences ic ON c.competence_id = ic.competence_id WHERE ic.intervenant_id = ?", (uid,)).fetchall()
+    comp_requises = get_db().cursor().execute(
+        "SELECT c.nom, ic.niveau FROM competences c JOIN intervenant_competences ic ON c.competence_id = ic.competence_id WHERE ic.intervenant_id = ?",
+        (uid,)).fetchall()
 
-
-    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur, competences_requises=comp_requises)
+    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur,
+                           competences_requises=comp_requises)
 
 
 @app.route("/utilisateurs/<int:uid>/ajouter_comp", methods=["GET", "POST"])
@@ -899,14 +921,14 @@ def utilisateur_ajouter_competences(uid):
     c = get_db().cursor()
     c.execute("SELECT * FROM Competences ORDER BY competence_id ASC")
     toutes_competences = c.fetchall()
-    success=False
+    success = False
 
-    if request.method== "POST":
+    if request.method == "POST":
         comp_requises = list(map(int, request.form.getlist("skills[]")))
         niveaux = list(map(int, request.form.getlist("levels[]")))
         s = c.execute("Select competence_id from intervenant_competences where intervenant_id=?", (uid,)).fetchall()
         for i in range(len(s)):
-            s[i]=s[i][0]
+            s[i] = s[i][0]
         print(s)
         for i, u in enumerate(comp_requises):
             if u in s:
@@ -917,10 +939,9 @@ def utilisateur_ajouter_competences(uid):
             c.execute("INSERT INTO intervenant_competences VALUES (?, ?, ?)", (uid, u, niveau_associe))
             get_db().commit()
 
-        success= True
+        success = True
 
-
-    return render_template("ajouter_competences.html", competences=toutes_competences, success=success )
+    return render_template("ajouter_competences.html", competences=toutes_competences, success=success)
 
 
 @app.route("/utilisateurs/create", methods=["GET", "POST"])
@@ -931,18 +952,17 @@ def create_user():
     if not has_permission(current_user, 'peut_gerer_utilisateurs'):
         abort(403)
 
-    user_added_successfully= False
+    user_added_successfully = False
     c = get_db().cursor()
 
-
-    if request.method == 'POST' :
+    if request.method == 'POST':
         email = request.form["e-mail"]
         hmdp = hash_password(request.form["mdp"])
         date_expiration_mdp = (datetime.now() + timedelta(days=365)).date()
         nom = request.form["nom"]
         prenom = request.form["prenom"]
         avatar = None
-        role_name = request.form["role"]
+        role_id = request.form["role"]
         est_intervenant = "est_intervenant" in request.form
         heures_dispo_semaine = request.form["h_disp"]
         doc_carte_vitale = request.form["doc_car"]
@@ -950,19 +970,19 @@ def create_user():
         doc_adhesion = request.form["doc_adh"]
         doc_rib = request.form["doc_rib"]
 
-        role_id = c.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
-
-        #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
+        # Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
         c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                 (None, email, hmdp, date_expiration_mdp, nom, prenom, avatar, role_id, est_intervenant, heures_dispo_semaine, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
+                  (None, email, hmdp, date_expiration_mdp, nom, prenom, avatar, role_id, est_intervenant,
+                   heures_dispo_semaine, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
         get_db().commit()
 
         user_added_successfully = True
 
-    #Obtention des noms de rôles possibles
-    roles_possibles = c.execute("SELECT nom FROM Roles").fetchall()
+    # Obtention des noms de rôles possibles
+    roles_possibles = c.execute("SELECT role_id, nom FROM Roles").fetchall()
 
-    return render_template("create_user.html", context={"success":user_added_successfully, "roles_possibles": roles_possibles})
+    return render_template("create_user.html",
+                           context={"success": user_added_successfully, "roles_possibles": roles_possibles})
 
 
 @app.post("/utilisateurs/<int:user_id>/supprimer")
@@ -987,6 +1007,7 @@ def supprimer_utilisateur(user_id):
 
     return redirect(url_for("utilisateurs"))
 
+
 @app.route('/utilisateurs/<int:utilisateur_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_utilisateur(utilisateur_id):
@@ -996,22 +1017,20 @@ def edit_utilisateur(utilisateur_id):
         return abort(404)
 
     if not has_permission(current_user,
-                          'peut_gerer_utilisateurs') :
+                          'peut_gerer_utilisateurs'):
         return abort(403)
 
     # Gestion du formulaire soumis
     if request.method == 'POST':
-        #errors = validate_interaction_form(request.form)
-        errors = False 
+        # errors = validate_interaction_form(request.form)
+        errors = False
         if errors:
             return jsonify({'errors': errors}), 400
-
-        
 
         email = request.form["e-mail"]
         nom = request.form["nom"]
         prenom = request.form["prenom"]
-        role_name = request.form["role"]
+        role_id = request.form["role"]
         est_intervenant = request.form["est_intervenant"] == "True"
         heures_dispo_semaine = request.form["h_disp"]
         doc_carte_vitale = request.form["doc_car"]
@@ -1020,41 +1039,30 @@ def edit_utilisateur(utilisateur_id):
         doc_rib = request.form["doc_rib"]
 
         utilisateur.email = email
-        utilisateur.nom = nom 
-        utilisateur.prenom = prenom 
+        utilisateur.nom = nom
+        utilisateur.prenom = prenom
 
-        role_id = db.execute("SELECT role_id FROM Roles WHERE nom = ?", (role_name,)).fetchone()[0]
-        utilisateur.role_id = role_id 
+        utilisateur.role_id = role_id
 
         utilisateur.est_intervenant = est_intervenant
         if heures_dispo_semaine.isdigit():
             utilisateur.heures_dispo_semaine = heures_dispo_semaine
         utilisateur.doc_carte_vitale = doc_carte_vitale
         utilisateur.doc_cni = doc_cni
-        utilisateur.doc_adhesion = doc_adhesion 
+        utilisateur.doc_adhesion = doc_adhesion
         utilisateur.doc_rib = doc_rib
 
-        
         utilisateur.save()
 
-        return redirect(url_for("utilisateurs_detail",uid=utilisateur.utilisateur_id))
+        return redirect(url_for("utilisateurs_detail", uid=utilisateur.utilisateur_id))
 
-        #return jsonify({'message': 'Interaction updated successfully'}), 200
+        # return jsonify({'message': 'Interaction updated successfully'}), 200
 
-    #Obtention des interlocuteurs possibles
-    roles_possibles = db.execute("SELECT nom FROM Roles").fetchall()
+    # Obtention des interlocuteurs possibles
+    roles_possibles = db.execute("SELECT role_id, nom FROM Roles").fetchall()
 
-    return render_template("edit_utilisateur.html", context={"roles_possibles":roles_possibles},  utilisateur=utilisateur,Utilisateur=Utilisateur)
-
-
-
-@app.route("/recherche_avance")
-@login_required
-def recherche_avance():
-    """Fonction pour la route /recherche_avance \n
-    Affiche la page de recherche avancé"""
-
-    return render_template("Page_recherche_avance.html")
+    return render_template("edit_utilisateur.html", context={"roles_possibles": roles_possibles},
+                           utilisateur=utilisateur, Utilisateur=Utilisateur)
 
 
 # Ci dessous les pages du pied de page
@@ -1105,8 +1113,9 @@ def download_rgpd():
     cur.execute("SELECT nom_entreprise, contact_email, contact_telephone, address FROM Clients")
     clients = cur.fetchall()
 
-
-    cur.execute("""SELECT u.nom, u.prenom, u.email, r.nom as role_nom FROM Utilisateurs u LEFT JOIN Roles r ON u.role_id = r.role_id""")
+    cur.execute("""SELECT u.nom, u.prenom, u.email, r.nom as role_nom
+                   FROM Utilisateurs u
+                            LEFT JOIN Roles r ON u.role_id = r.role_id""")
     utilisateurs = cur.fetchall()
 
     # Permt de mettre le délimiteur ";"
@@ -1143,7 +1152,7 @@ def download_rgpd():
     return Response(
         csv_data,
         mimetype="text/csv",
-        headers={"Content-Disposition":"attachment;filename=rgpd_export.csv"}
+        headers={"Content-Disposition": "attachment;filename=rgpd_export.csv"}
     )
 
 
@@ -1153,6 +1162,7 @@ def creer_competence():
     nom = request.form.get('nom_competence', '').strip()
     if not nom:
         return "Nom de compétence requis", 400
+    competence_parent = request.form.get("competence_parent", "")
 
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
@@ -1163,11 +1173,12 @@ def creer_competence():
         conn.close()
         return f"La compétence '{nom}' existe déjà.", 400
 
-    cur.execute("INSERT INTO Competences (nom, competence_parent) VALUES (?, NULL)", (nom,))
+    cur.execute("INSERT INTO Competences (nom, competence_parent) VALUES (?, ?)", (nom,competence_parent))
     conn.commit()
     conn.close()
 
     return redirect(request.referrer or url_for('index'))
+
 
 @app.route("/export_projets_termine")
 @login_required
@@ -1181,10 +1192,18 @@ def export_projets_termine():
     c = conn.cursor()
 
     c.execute("""
-        SELECT projet_id, convention_id, nom_projet, description, budget, charge_travail, date_debut, date_fin, doc_dossier
-        FROM Projets
-        WHERE statut = 'Terminé'
-    """)
+              SELECT projet_id,
+                     convention_id,
+                     nom_projet,
+                     description,
+                     budget,
+                     charge_travail,
+                     date_debut,
+                     date_fin,
+                     doc_dossier
+              FROM Projets
+              WHERE statut = 'Terminé'
+              """)
     projets_termine = c.fetchall()
     conn.close()
 
@@ -1226,6 +1245,7 @@ def export_projets_termine():
         as_attachment=True,
         download_name="projets_terminé_csv.csv"
     )
+
 
 @app.route("/import_projets_termine", methods=["POST"])
 def import_projets_termine():
@@ -1278,18 +1298,19 @@ def import_projets_termine():
             date_fin = clean(row["date_fin"])
 
             c.execute("""
-                INSERT INTO Projets (convention_id, nom_projet, description, budget, charge_travail, date_debut, date_fin, statut, doc_dossier
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'Terminé', ?)
-            """, (
-                int(clean(row["convention_id"])) if clean(row["convention_id"]) else None,
-                clean(row["nom_projet"]),
-                clean(row["description"]),
-                float(clean(row["budget"])) if clean(row["budget"]) else None,
-                int(clean(row["charge_travail"])) if clean(row["charge_travail"]) else None,
-                date_debut,
-                date_fin,
-                clean(row["doc_dossier"])
-            ))
+                      INSERT INTO Projets (convention_id, nom_projet, description, budget, charge_travail, date_debut,
+                                           date_fin, statut, doc_dossier)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, 'Terminé', ?)
+                      """, (
+                          int(clean(row["convention_id"])) if clean(row["convention_id"]) else None,
+                          clean(row["nom_projet"]),
+                          clean(row["description"]),
+                          float(clean(row["budget"])) if clean(row["budget"]) else None,
+                          int(clean(row["charge_travail"])) if clean(row["charge_travail"]) else None,
+                          date_debut,
+                          date_fin,
+                          clean(row["doc_dossier"])
+                      ))
 
         conn.commit()
         conn.close()
@@ -1300,17 +1321,18 @@ def import_projets_termine():
         return f"Erreur import CSV : {e}", 500
 
 
-
-#Ici les pages d'erreur.
+# Ici les pages d'erreur.
 @app.errorhandler(404)
 def page_not_found(error):
     """Fonction pour l'erreur 404"""
     return render_template("errors/404.html"), 404
 
+
 @app.errorhandler(500)
 def serveur_error(error):
     """Fonction pour l'erreur 500"""
     return render_template("errors/500.html"), 500
+
 
 @app.errorhandler(403)
 def serveur_error(error):

@@ -274,12 +274,7 @@ def main():
     # ==========================
     travaille_sur = [
         # utilisateur_id, projet_id, est_intervenant_sur_projet, poste
-        (6, 1, 1, None), (7, 1, 1, None), (4, 1, 0, None),
-        (8, 2, 1, None), (5, 2, 0, None),
-        (13, 8, 1, None),
-        (10, 7, 1, None),
-        (14, 9, 1, None),
-        (15, 10, 1, None)
+        (4, 1, 0, None),
     ]
 
     for ts in travaille_sur:
