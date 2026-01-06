@@ -26,8 +26,8 @@
           {% endfor %}
       </select>
 
-      <input name="loc_lat" type="text" placeholder="Latitude de l'entreprise">
-      <input name="loc_lng" type="text" placeholder="Longitude de l'entreprise">
+      <input name="loc_lat" type="number" placeholder="Latitude de l'entreprise" step="0.000000001">
+      <input name="loc_lng" type="number" placeholder="Longitude de l'entreprise" step="0.000000001">
       <input name="address" type="text" placeholder="Adresse de l'entreprise">
       <input type="submit" class="bouton-ajouter-client" value="Ajouter le client">  
     </form>
