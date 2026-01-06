@@ -4,75 +4,83 @@
 
 {% block content %}
 
-  <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
     <h1 style="flex:1">Modifier l'interaction</h1>
+    <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
 
-    <a href="/interactions/{{ interaction.interaction_id }}" class="primary-button icon-button" aria-label="Annuler">
-      <!-- arrow-left / cancel icon -->
-      <i class="fa-solid fa-arrow-left"></i>
-    </a>
-
-    <form data-id="{{ interaction.interaction_id }}" style="display:inline;" id="delete-interaction">
-      <button type="submit" class="danger-button icon-button" aria-label="Supprimer" id="delete-interaction-button" title="Supprimer" data-id="{{ interaction.interaction_id }}">
-        <!-- trash icon -->
-        <i class="fa-solid fa-trash"></i>
-      </button>
-    </form>
-  </div>
-
-  <section class="container" style="margin-top:12px;">
-    <form class="form" id="edit-interaction-form">
-      <div class="column">
-
-        <div class="input-box">
-          <label for="interaction-type">Support</label>
-          <div class="select-box">
-            <select name="type" id="interaction-type">
-              <option hidden>Type</option>
-              {% for t in Interaction.interactions_types %}
-                <option value="{{ t }}" {% if interaction.type_interaction_id == t %}selected{% endif %}>{{ Interaction.types_names.get(t, 'Inconnu') }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="field-error text-danger" id="error-type"></div>
-        </div>
-
-        <div class="input-box">
-          <label for="interaction-date">Date de l'interaction</label>
-          <input name="interaction-date" required placeholder="Date interaction" type="date" id="interaction-date" value="{{ interaction.date_time_interaction.strftime('%Y-%m-%d') }}">
-          <div class="field-error text-danger" id="error-interaction-date"></div>
-        </div>
-      </div>
-
-      {% set preselected_client_id = interaction.client.client_id if interaction.client is defined else (interaction.client_id if interaction.client_id is defined else '') %}
-      {% set preselected_client_name = interaction.client.nom_entreprise if interaction.client is defined else '' %}
-      {% include 'components/search_client.html' %}
-
-      <div class="input-box">
-        <label for="title">Titre</label>
-        <input name="title" required placeholder="Objet de l'interaction" type="text" id="title" value="{{ interaction.titre }}">
-        <div class="field-error text-danger" id="error-title"></div>
-      </div>
-
-      <div class="input-box">
-        <label for="content">Contenu</label>
-        <textarea name="content" required placeholder="Détails de l'interaction..." id="content">{{ interaction.contenu or interaction.content or '' }}</textarea>
-        <div class="field-error text-danger" id="error-content"></div>
-      </div>
-
-      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
-        <button type="submit" class="primary-button" aria-label="Enregistrer" title="Enregistrer" id="submit-edit-interaction">
-          <!-- save icon -->
-          <i class="fa-solid fa-floppy-disk"></i>
-        </button>
-
-        <a href="/interactions/{{ interaction.interaction_id }}" class="primary-button icon-button" aria-label="Annuler">
-          <!-- close / cancel icon -->
-          <i class="fa-solid fa-xmark"></i>
+        <a href="/interactions/{{ interaction.interaction_id }}" class="primary-button icon-button"
+           aria-label="Annuler">
+            <!-- arrow-left / cancel icon -->
+            <i class="fa-solid fa-arrow-left"></i>
         </a>
-      </div>
-    </form>
-  </section>
+
+        <form data-id="{{ interaction.interaction_id }}" style="display:inline;" id="delete-interaction">
+            <button type="submit" class="danger-button icon-button" aria-label="Supprimer"
+                    id="delete-interaction-button" title="Supprimer" data-id="{{ interaction.interaction_id }}">
+                <!-- trash icon -->
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </form>
+    </div>
+
+    <section class="container" style="margin-top:12px;">
+        <form class="form" id="edit-interaction-form">
+            <div class="column">
+
+                <div class="input-box">
+                    <label for="interaction-type">Support</label>
+                    <div class="select-box">
+                        <select name="type" id="interaction-type">
+                            <option hidden>Type</option>
+                            {% for t in Interaction.interactions_types %}
+                                <option value="{{ t }}"
+                                        {% if interaction.type_interaction_id == t %}selected{% endif %}>{{ Interaction.types_names.get(t, 'Inconnu') }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field-error text-danger" id="error-type"></div>
+                </div>
+
+                <div class="input-box">
+                    <label for="interaction-date">Date de l'interaction</label>
+                    <input name="interaction-date" required placeholder="Date interaction" type="date"
+                           id="interaction-date" value="{{ interaction.date_time_interaction.strftime('%Y-%m-%d') }}">
+                    <div class="field-error text-danger" id="error-interaction-date"></div>
+                </div>
+            </div>
+
+            {% set preselected_client_id = interaction.client.client_id if interaction.client is defined else (interaction.client_id if interaction.client_id is defined else '') %}
+            {% set preselected_client_name = interaction.client.nom_entreprise if interaction.client is defined else '' %}
+            {% include 'components/search_client.html' %}
+
+            <div class="input-box">
+                <label for="title">Titre</label>
+                <input name="title" required placeholder="Objet de l'interaction" type="text" id="title"
+                       value="{{ interaction.titre }}">
+                <div class="field-error text-danger" id="error-title"></div>
+            </div>
+
+            <div class="input-box">
+                <label for="content">Contenu</label>
+                <textarea name="content" required placeholder="Détails de l'interaction..."
+                          id="content">{{ interaction.contenu or interaction.content or '' }}</textarea>
+                <div class="field-error text-danger" id="error-content"></div>
+            </div>
+
+            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+                <button type="submit" class="primary-button" aria-label="Enregistrer" title="Enregistrer"
+                        id="submit-edit-interaction">
+                    <!-- save icon -->
+                    <i class="fa-solid fa-floppy-disk"></i>
+                </button>
+
+                <a href="/interactions/{{ interaction.interaction_id }}" class="primary-button icon-button"
+                   aria-label="Annuler">
+                    <!-- close / cancel icon -->
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+            </div>
+        </form>
+    </section>
 
 
     <script src="/static/scripts/interactions.js"></script>

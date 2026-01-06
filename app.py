@@ -309,7 +309,8 @@ def client_detail(client_id):
             "projet_id": p["projet_id"],
             "nom_projet": p["nom_projet"],
             "statut": p["statut"],
-            "progress": progress
+            "progress": progress,
+            "budget": p["budget"]
         })
 
     c.execute("""
@@ -1243,7 +1244,7 @@ def export_projets_termine():
         io.BytesIO(output.getvalue().encode("utf-8")),
         mimetype="text/csv; charset=utf-8",
         as_attachment=True,
-        download_name="projets_terminé_csv.csv"
+        download_name="projets_terminé.csv"
     )
 
 
