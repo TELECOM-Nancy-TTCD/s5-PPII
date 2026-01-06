@@ -152,6 +152,7 @@ def login():
 
 
 @app.route("/")
+@login_required
 def accueil():
     """Fonction pour la route / \n
     C'est la fonction de la page d'accueil"""
@@ -980,7 +981,7 @@ def create_user():
         user_added_successfully = True
 
     # Obtention des noms de rôles possibles
-    roles_possibles = c.execute("SELECT role_id, nom FROM Roles").fetchall()
+    roles_possibles = c.execute("SELECT role_id, nom FROM Roles ORDER BY hierarchie").fetchall()
 
     return render_template("create_user.html",
                            context={"success": user_added_successfully, "roles_possibles": roles_possibles})
@@ -1060,7 +1061,7 @@ def edit_utilisateur(utilisateur_id):
         # return jsonify({'message': 'Interaction updated successfully'}), 200
 
     # Obtention des interlocuteurs possibles
-    roles_possibles = db.execute("SELECT role_id, nom FROM Roles").fetchall()
+    roles_possibles = db.execute("SELECT role_id, nom FROM Roles ORDER BY hierarchie").fetchall()
 
     return render_template("edit_utilisateur.html", context={"roles_possibles": roles_possibles},
                            utilisateur=utilisateur, Utilisateur=Utilisateur)
@@ -1090,14 +1091,10 @@ def rgpd():
     """Fonction pour la route /rgpd \n
     Affiche la page de rgpd et vérifie les rôle pour l'accès"""
 
-    c = get_db().cursor()
-    c.execute("SELECT peut_exporter_csv FROM Roles WHERE role_id = ?", (current_user.role_id,))
-    droit = c.fetchone()
-
-    if not (droit and droit[0]):
+    if not has_permission(current_user, "peut_exporter_csv"):
         abort(403)
 
-    return render_template("./Pages_speciales/rgpd.html", droit=droit)
+    return render_template("./Pages_speciales/rgpd.html")
 
 
 @app.route("/rgpd/download", methods=["POST"])
