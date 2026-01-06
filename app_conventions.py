@@ -77,7 +77,9 @@ def index():
     # Crée un dictionnaire : clé = id de la convention, valeur = liste des projets
     proj_associes_dict = {c["id"]: get_projets_by_convention(c["id"]) for c in conventions}
 
-    return render_template( 'liste_conventions.html',context=conventions, pj_as=proj_associes_dict, recherche_conventions=recherche_conventions)
+    peut_gerer_csv = has_permission(current_user, 'peut_exporter_csv')
+
+    return render_template( 'liste_conventions.html',context=conventions, pj_as=proj_associes_dict, recherche_conventions=recherche_conventions,peut_gerer_csv=peut_gerer_csv)
 
 
 @conventions_bp.route('/<int:id>')

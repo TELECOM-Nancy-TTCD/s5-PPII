@@ -15,6 +15,7 @@
     <button type="submit">Rechercher</button>
 </form>
 
+    {% if peut_gerer_csv %}
 <form action="{{ url_for('import_clients') }}" method="post" enctype="multipart/form-data">
     <input class="file-input" type="file" name="fichier" required>
     <button type="submit", class="bouton-importer">Importer</button>
@@ -23,6 +24,7 @@
 <form action="{{ url_for('export_clients') }}" >
     <button type="submit" class="bouton-exporter">Exporter</button>
 </form>
+    {% endif %}
 
 
 

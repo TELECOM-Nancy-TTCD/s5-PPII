@@ -238,6 +238,9 @@ def create_projet_sans_convention_connue():
 def clients():
     """Fonction pour la route /clients \n
     Permet d'afficher la page avec la liste des clients"""
+    if not has_permission(current_user, "peut_lire_clients"):
+        abort(403)
+
     # Permet de récuperer le champs de recherche de la page
     recherche_clients = request.args.get("q", "").lower()
 
@@ -267,8 +270,10 @@ def clients():
             affichage_interlocuteur = "Aucun interlocuteur"
         liste_interloc_principaux.append(affichage_interlocuteur)
 
+    peut_gerer_csv = has_permission(current_user, 'peut_exporter_csv') and has_permission(current_user, "peut_gerer_clients")
+
     return render_template("clients.html", clients_db=clients_db, recherche_clients=recherche_clients,
-                           affichage_int=liste_interloc_principaux)
+                           affichage_int=liste_interloc_principaux, peut_gerer_csv=peut_gerer_csv)
 
 
 @app.route("/clients/<int:client_id>")
@@ -276,6 +281,8 @@ def clients():
 def client_detail(client_id):
     """Fonction pour la route /clients/id_client \n
     Affiche la page dédié à un client, ses projets, ses interaction et l'avancement des projets"""
+    if not has_permission(current_user, "peut_lire_clients"):
+        abort(403)
 
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
@@ -368,14 +375,18 @@ def create_client():
 @app.route('/clients/<int:client_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_client(client_id):
+    """
+    Fonction pour la route /clients/id_client/edit \n
+    Permet d'éditer un client existant
+    """
+    if not has_permission(current_user,
+                          'peut_gerer_clients'):
+        return abort(403)
+
     db = get_db()
     client = db.get_client_by_id(client_id)
     if client is None:
         return abort(404)
-
-    if not has_permission(current_user,
-                          'peut_gerer_clients'):
-        return abort(403)
 
     # Gestion du formulaire soumis
     if request.method == 'POST':
@@ -449,6 +460,9 @@ def import_clients():
     Permet la gestion du bouton d'import de client sur la page des clients \n
     Cette focntion gère les erreur de csv, et import dans la db les données du csv si elle sont correctes"""
 
+    if not has_permission(current_user, "peut_gerer_clients") and not has_permission(current_user, "peut_importer_csv"):
+        abort(403)
+
     fichier = request.files.get("fichier")
 
     if not fichier:
@@ -512,6 +526,8 @@ def export_clients():
     Permet d'utiliser le bouton d'export de la page des clients \n
     La fonction crée un csv, va récuperer les données de la DB et télécharge le fichier"""
 
+    if not has_permission(current_user, "peut_lire_clients") and not has_permission(current_user, "peut_importer_csv"):
+        abort(403)
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
@@ -579,6 +595,8 @@ def export_clients():
 def projet_detail(projet_id):
     """Fonction pour la route /projet/id_projet \n
     Affiche la page dédiée à un projet"""
+    if not has_permission(current_user, "peut_lire_projets"):
+        abort(403)
 
     db = get_db()
     projet = db.get_project_id(projet_id)
@@ -643,6 +661,8 @@ def projet_detail(projet_id):
 @login_required
 def selectionner_groupe(projet_id):
     """Fonction qui sert à la selections de l'algorithme de matching"""
+    if not has_permission(current_user, "peut_gerer_projets") or not has_permission(current_user, "peut_lancer_matching"):
+        abort(403)
     db = get_db()
 
     groupe_ids_str = request.form.get("groupe_ids", "")
@@ -671,6 +691,9 @@ def selectionner_groupe(projet_id):
 def ajouter_membres(projet_id):
     """Fonction vers la route projet/id_projet/ajouter_membres \n
     Sert à ajouter des membres manuellement à un projet"""
+    if not has_permission(current_user, "peut_gerer_projets") or not has_permission(current_user, "peut_lancer_matching"):
+        abort(403)
+
     db = get_db()
 
     projet = db.get_project_id(projet_id)
@@ -716,7 +739,7 @@ def projet_ajouter_competences(projet_id):
     Fonction pour ajouter des compétences à un projet
     '''
 
-    if not has_permission(current_user, 'peut_gerer_competences'):
+    if not has_permission(current_user, 'peut_gerer_competences') and not has_permission(current_user, 'peut_gerer_projets'):
         abort(403)
 
     if get_db().get_project_id(projet_id) is None:
@@ -754,7 +777,8 @@ def projet_ajouter_competences(projet_id):
 def terminer_projet(projet_id):
     """Fonction pour la route projet/id_projet/terminer \n
     Permet de gerer le bouton de fin de projet et de modifier la DB en conséquence"""
-
+    if not has_permission(current_user, "peut_gerer_projets"):
+        abort(403)
     projet = get_db().get_project_id(projet_id)
 
     if projet == None:
@@ -796,6 +820,8 @@ def logout():
 def modifier_jalon(jalon_id):
     """Fonction pour la route /jalon/jalon_id/modifier \n
     Sert pour la pop up de modification des jalons"""
+    if not has_permission(current_user, "peut_gerer_jalons"):
+        abort(403)
     db = get_db()
 
     row = db.execute(
@@ -831,6 +857,8 @@ def modifier_jalon(jalon_id):
 @login_required
 def creer_jalon():
     """Fonction pour la création d'un jalon"""
+    if not has_permission(current_user, "peut_gerer_jalons"):
+        abort(403)
     db = get_db()
 
     projet_id = request.form.get("projet_id")
@@ -857,6 +885,7 @@ def creer_jalon():
 def utilisateurs():
     """Fonction pour la route /utilisateurs \n
     Affiche la page qui lsite tout les utilisateurs"""
+
 
     recherche_utilisateurs = request.args.get("q", "").lower()
 
@@ -905,8 +934,10 @@ def utilisateurs_detail(uid):
         "SELECT c.nom, ic.niveau FROM competences c JOIN intervenant_competences ic ON c.competence_id = ic.competence_id WHERE ic.intervenant_id = ?",
         (uid,)).fetchall()
 
-    return render_template("Pages_speciales/utilisateur-template.html", utilisateur=utilisateur,
-                           competences_requises=comp_requises)
+    peut_gerer_docs = has_permission(current_user, 'peut_gerer_documents')
+
+    return render_template("Pages_speciales/utilisateur_template.html", utilisateur=utilisateur,
+                           competences_requises=comp_requises, peut_gerer_docs=peut_gerer_docs)
 
 
 @app.route("/utilisateurs/<int:uid>/ajouter_comp", methods=["GET", "POST"])
@@ -1104,6 +1135,9 @@ def download_rgpd():
     Permet d'utiliser le bouton de téléchargement du csv pour le rgpd \n
     Renvoie un fichier csv avec tout les clients et tout les utilisateurs"""
 
+    if not has_permission(current_user, "peut_exporter_csv"):
+        abort(403)
+
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -1185,6 +1219,8 @@ def export_projets_termine():
     Permet d'utiliser le bouton d'export de la page des conventions \n
     La fonction crée un csv, va récuperer les données de la DB et télécharge le fichier"""
 
+    if not has_permission(current_user, "peut_exporter_csv"):
+        abort(403)
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
@@ -1251,6 +1287,8 @@ def import_projets_termine():
     Permet la gestion du bouton d'import de client sur la page des clients \n
     Cette focntion gère les erreur de csv, et import dans la db les données du csv si elle sont correctes"""
 
+    if not has_permission(current_user, "peut_exporter_csv"):
+        abort(403)
     fichier = request.files.get("fichier")
 
     if not fichier:
