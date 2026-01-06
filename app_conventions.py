@@ -1,10 +1,9 @@
-from flask import Blueprint, render_template, request, abort
-from flask_login import login_required
+from flask import Blueprint, render_template, request, abort, flash
+from flask_login import login_required, current_user
 
 from dotenv import load_dotenv
 
-from tools import get_db
-
+from tools import get_db, has_permission
 
 conventions_bp = Blueprint('conventions',__name__,url_prefix='/conventions')
 
@@ -89,3 +88,71 @@ def convention(id : int) :
     return render_template('convention_template.html',context={"convention":conv, 
     "client":get_client( conv["client_id"] ) , "projets": get_projets_by_convention(id), "utilisateur" : get_utilisateur(client["interlocuteur_principal"]) } 
     )
+
+
+# Oui cette fonction est ici pour raison de facilité, je souhaiterais que quelqu'un la bouge dans les conventions si possible
+@conventions_bp.route("/create", methods=["GET", "POST"])
+@login_required
+def create_convention():
+    if not has_permission(current_user, 'peut_gerer_projets'):
+        abort(403)
+
+    added_successfully = False
+    c = get_db().cursor()
+
+    if request.method == 'POST':
+        e = request.form
+        l = [None]
+        for i in e.keys():
+            l.append(e[i])
+
+        l = tuple(l)
+
+        # Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
+        c.execute("INSERT INTO Conventions VALUES (?, ?, ?, ?, ?, ?, ?)", l)
+        get_db().commit()
+
+        added_successfully = True
+
+    # Obtention des clients possibles
+    clients = get_db().get_all_clients()
+
+    return render_template("create_convention.html", context={"success": added_successfully, "clients": clients})
+
+
+# Création d'un projet pour une convention
+@conventions_bp.route("/<int:convention_id>/create_projet", methods=["GET", "POST"])
+@login_required
+def create_projet_convention(convention_id):
+    if not has_permission(current_user, 'peut_gerer_projets'):
+        abort(403)
+
+    conv = get_db().get_convention_by_id(convention_id)
+    # Tentative d'entrée de projet sur une convention qui n'existe pas
+    if conv == None:
+        abort(404)
+
+    added_successfully = False
+    c = get_db().cursor()
+
+    if request.method == 'POST':
+        e = request.form
+        l = [None, convention_id]
+        for i in e.keys():
+            l.append(e[i])
+
+        l = tuple(l)
+
+        # Vérification de la contrainte de date
+        if l[6] > l[7]:
+            flash("Date de fin invalide", 'danger')
+        else:
+
+            # Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
+            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
+            get_db().commit()
+
+            added_successfully = True
+
+    return render_template("create_projet.html", context={"success": added_successfully, "default_convention": conv})
+

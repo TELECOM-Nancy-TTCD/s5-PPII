@@ -1,6 +1,6 @@
 from typing import cast, Literal
 
-from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, session
+from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, session, jsonify
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 
 from app_conventions import conventions_bp
@@ -195,79 +195,6 @@ def accueil():
 
     conn.close()
     return render_template("accueil.html", projets=projets)
-
-
-# Oui cette fonction est ici pour raison de facilité, je souhaiterais que quelqu'un la bouge dans les conventions si possible
-@app.route("/convention/create", methods=["GET", "POST"])
-@login_required
-def create_convention():
-
-    if not has_permission(current_user, 'peut_gerer_projets'):
-        abort(403)
-
-    added_successfully= False
-    c = get_db().cursor()
-
-
-    if request.method == 'POST' :
-        e = request.form
-        l=[None]
-        for i in e.keys() :
-            l.append(e[i])
-        
-        l=tuple(l)
-
-        #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-        c.execute("INSERT INTO Conventions VALUES (?, ?, ?, ?, ?, ?, ?)", l)
-        get_db().commit()
-
-        added_successfully = True
-
-    #Obtention des clients possibles
-    clients = get_db().get_all_clients()
-    
-    return render_template("create_convention.html", context={"success":added_successfully, "clients": clients})
-
-# Création d'un projet pour une convention
-@app.route("/convention/<int:convention_id>/create_projet", methods=["GET", "POST"])
-@login_required
-def create_projet_convention(convention_id):
-
-    if not has_permission(current_user, 'peut_gerer_projets'):
-        abort(403)
-
-    conv = get_db().get_convention_by_id(convention_id)
-    #Tentative d'entrée de projet sur une convention qui n'existe pas
-    if conv == None:
-        abort(404)
-
-
-    added_successfully= False
-    c = get_db().cursor()
-
-
-    if request.method == 'POST' :
-        e = request.form
-        l=[None, convention_id]
-        for i in e.keys() :
-            l.append(e[i])
-        
-        l=tuple(l)
-
-        # Vérification de la contrainte de date
-        if l[5] > l[6] :
-            flash("Date de fin invalide", 'danger')
-        else:
-
-            #Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
-            get_db().commit()
-
-            added_successfully = True
-
-     
-    return render_template("create_projet.html", context={"success":added_successfully, "default_convention": conv })
-
 
 # Création de projet depuis la page de liste de conventions (il faut alors spécifier la convention)
 @app.route("/create_projet", methods=["GET", "POST"])
