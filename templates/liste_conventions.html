@@ -21,7 +21,14 @@
     <a href="{{ url_for('create_projet_sans_convention_connue') }}" class="bouton-ajouter-client">Ajouter un projet à une convention</a>
 </div>
 
+<form action="{{ url_for('import_projets_termine') }}" method="post" enctype="multipart/form-data">
+    <input class="file-input" type="file" name="fichier" required>
+    <button type="submit", class="bouton-importer">Importer</button>
+</form>
 
+<form action="{{ url_for('export_projets_termine') }}" >
+    <button type="submit" class="bouton-exporter">Exporter</button>
+</form>
 
 <div class="clients-container">
 

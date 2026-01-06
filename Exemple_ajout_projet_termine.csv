@@ -1,0 +1,4 @@
+convention_id;nom_projet;description;budget;charge_travail;date_debut;date_fin;doc_dossier
+2;Projet Alpha;Migration du système legacy;15000.5;120;2024-01-01;2024-03-31;alpha.pdf
+2;Projet Beta;Déploiement infrastructure cloud;32000;200;2023-10-01;2024-02-29;beta.pdf
+5;Projet Gamma;Audit sécurité SI;8000;60;2023-06-01;2023-06-30;gamma.pdf

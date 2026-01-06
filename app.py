@@ -156,7 +156,45 @@ def accueil():
     """Fonction pour la route / \n
     C'est la fonction de la page d'accueil"""
 
-    return render_template("accueil.html")
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    
+    c.execute("""
+        SELECT p.* 
+        FROM Projets p 
+        JOIN Conventions c ON p.convention_id = c.convention_id
+        WHERE p.statut != 'Terminé'
+    """)
+    projets_raw = c.fetchall()
+
+    projets = []
+    for p in projets_raw:
+        c.execute("SELECT * FROM Jalons WHERE projet_id = ? AND est_complete = 0", (p["projet_id"],))
+        jalons_raw = c.fetchall()
+
+        total_jalons = c.execute("SELECT COUNT(*) FROM Jalons WHERE projet_id = ?", (p["projet_id"],)).fetchone()[0]
+        jalons_termines = total_jalons - len(jalons_raw)
+        progress = int((jalons_termines / total_jalons) * 100) if total_jalons > 0 else 0
+
+        jalons = []
+        for j in jalons_raw:
+            jalons.append({
+                "jalon_id": j["jalon_id"],
+                "description": j["description"],
+                "date_fin": j["date_fin"]
+            })
+
+        projets.append({
+            "projet_id": p["projet_id"],
+            "nom_projet": p["nom_projet"],
+            "statut": p["statut"],
+            "progress": progress,
+            "jalons": jalons
+        })
+
+    conn.close()
+    return render_template("accueil.html", projets=projets)
 
 
 # Oui cette fonction est ici pour raison de facilité, je souhaiterais que quelqu'un la bouge dans les conventions si possible
@@ -293,10 +331,12 @@ def clients():
 
     liste_interloc_principaux = []
     db = get_db()
-    for c in clients_db :
-        # Bon affichage de l'interlocuteur principal
-        interlocuteur =db.get_user_by_id(c[6])
-        affichage_interlocuteur = interlocuteur.nom + " " + interlocuteur.prenom
+    for c in clients_db:
+        interlocuteur = db.get_user_by_id(c[6])
+        if interlocuteur:
+            affichage_interlocuteur = f"{interlocuteur.nom} {interlocuteur.prenom}"
+        else:
+            affichage_interlocuteur = "Aucun interlocuteur"
         liste_interloc_principaux.append(affichage_interlocuteur)
 
     return render_template("clients.html", clients_db=clients_db, recherche_clients=recherche_clients, affichage_int = liste_interloc_principaux)
@@ -504,16 +544,7 @@ def import_clients():
                 return val.strip() if val and val.strip() != "" else None
 
             c.execute("""
-                INSERT INTO Clients (
-                    nom_entreprise,
-                    contact_nom,
-                    contact_email,
-                    contact_telephone,
-                    type_client,
-                    interlocuteur_principal_id,
-                    localisation_lat,
-                    localisation_lng,
-                    address
+                INSERT INTO Clients (nom_entreprise, contact_nom, contact_email, contact_telephone, type_client, interlocuteur_principal_id, localisation_lat, localisation_lng, address
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 clean(row["nom_entreprise"]),
@@ -548,17 +579,7 @@ def export_clients():
     c = conn.cursor()
 
     c.execute("""
-        SELECT
-            client_id,
-            nom_entreprise,
-            contact_nom,
-            contact_email,
-            contact_telephone,
-            type_client,
-            interlocuteur_principal_id,
-            localisation_lat,
-            localisation_lng,
-            address
+        SELECT client_id, nom_entreprise, contact_nom, contact_email, contact_telephone, type_client, interlocuteur_principal_id, localisation_lat, localisation_lng, address
         FROM Clients
     """)
     clients = c.fetchall()
@@ -1220,6 +1241,138 @@ def creer_competence():
     conn.close()
 
     return redirect(request.referrer or url_for('index'))
+
+@app.route("/export_projets_termine")
+@login_required
+def export_projets_termine():
+    """Fonction pour la route /export_projets_termine \n
+    Permet d'utiliser le bouton d'export de la page des conventions \n
+    La fonction crée un csv, va récuperer les données de la DB et télécharge le fichier"""
+
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT projet_id, convention_id, nom_projet, description, budget, charge_travail, date_debut, date_fin, doc_dossier
+        FROM Projets
+        WHERE statut = 'Terminé'
+    """)
+    projets_termine = c.fetchall()
+    conn.close()
+
+    # On indique que l'on utilisera le délimiteur ";"
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";")
+
+    writer.writerow([
+        "projet_id",
+        "convention_id",
+        "nom_projet",
+        "description",
+        "budget",
+        "charge_travail",
+        "date_debut",
+        "date_fin",
+        "doc_dossier"
+    ])
+
+    for cl in projets_termine:
+        writer.writerow([
+            cl["projet_id"],
+            cl["convention_id"],
+            cl["nom_projet"],
+            cl["description"],
+            cl["budget"],
+            cl["charge_travail"],
+            cl["date_debut"],
+            cl["date_fin"],
+            cl["doc_dossier"]
+        ])
+
+    output.seek(0)
+
+    # Télécharge le fichier
+    return send_file(
+        io.BytesIO(output.getvalue().encode("utf-8")),
+        mimetype="text/csv; charset=utf-8",
+        as_attachment=True,
+        download_name="projets_terminé_csv.csv"
+    )
+
+@app.route("/import_projets_termine", methods=["POST"])
+def import_projets_termine():
+    """Fonction pour la route /import_clients \n
+    Permet la gestion du bouton d'import de client sur la page des clients \n
+    Cette focntion gère les erreur de csv, et import dans la db les données du csv si elle sont correctes"""
+
+    fichier = request.files.get("fichier")
+
+    if not fichier:
+        return "Aucun fichier sélectionné", 400
+
+    try:
+        # Lecture et décodage UTF-8
+        content = fichier.stream.read().decode("utf-8-sig")  # supprime BOM
+        lines = content.splitlines()
+        if not lines:
+            return "CSV vide", 400
+
+        reader = csv.DictReader(lines, delimiter=";")
+
+        if not reader.fieldnames:
+            return "CSV invalide : pas d'en-têtes", 400
+
+        # Nettoyage des noms de colonnes
+        reader.fieldnames = [f.strip() for f in reader.fieldnames]
+
+        colonnes_attendues = [
+            "convention_id",
+            "nom_projet",
+            "description",
+            "budget",
+            "charge_travail",
+            "date_debut",
+            "date_fin",
+            "doc_dossier"
+        ]
+
+        if reader.fieldnames != colonnes_attendues:
+            return f"Format CSV invalide (colonnes incorrectes). Colonnes reçues: {reader.fieldnames}", 400
+
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+
+        for row in reader:
+            def clean(val):
+                return val.strip() if val and val.strip() != "" else None
+
+            date_debut = clean(row["date_debut"])
+            date_fin = clean(row["date_fin"])
+
+            c.execute("""
+                INSERT INTO Projets (convention_id, nom_projet, description, budget, charge_travail, date_debut, date_fin, statut, doc_dossier
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'Terminé', ?)
+            """, (
+                int(clean(row["convention_id"])) if clean(row["convention_id"]) else None,
+                clean(row["nom_projet"]),
+                clean(row["description"]),
+                float(clean(row["budget"])) if clean(row["budget"]) else None,
+                int(clean(row["charge_travail"])) if clean(row["charge_travail"]) else None,
+                date_debut,
+                date_fin,
+                clean(row["doc_dossier"])
+            ))
+
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("conventions.index"))
+
+    except Exception as e:
+        return f"Erreur import CSV : {e}", 500
+
+
 
 #Ici les pages d'erreur.
 @app.errorhandler(404)

@@ -2306,3 +2306,7 @@ main .roles-container .role-item.selected {
     border-radius: 8px;
     list-style-type: none;
 }
+
+.jalon-item-accueil {
+    list-style-type: none;
+}
