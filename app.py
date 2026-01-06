@@ -1,11 +1,8 @@
-from typing import cast, Literal
-
 from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, session, \
     jsonify
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 
-from app_conventions import conventions_bp
-from hashlib import scrypt
+from typing import cast, Literal
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
@@ -20,10 +17,11 @@ from database import Client
 from database import Utilisateur
 
 # Importation des blueprints
+from app_conventions import conventions_bp
 from interactions import interactions_bp
 from clients import clients_bp
-from utilisateurs import bp_utilisateurs
-import matching
+from utilisateurs import utilisateurs_bp
+from errors import errors_bp
 
 
 def get_clients():
