@@ -5,16 +5,16 @@ from flask_login import LoginManager, login_user, login_required, current_user, 
 from typing import cast, Literal
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-
+import matching
 import os, csv, io
 
 load_dotenv()
 DATABASE = os.getenv('DATABASE')
 
-import os, base64, sqlite3
-from tools import get_db, has_permission
-from database import Client
-from database import Utilisateur
+import sqlite3
+from tools import get_db, has_permission, hash_password, verify_password
+from database import Client, Utilisateur, Projet
+
 
 # Importation des blueprints
 from app_conventions import conventions_bp
@@ -76,32 +76,8 @@ app.secret_key = os.getenv('SECRET_KEY', b'6031f03d38eede6a7a9c5827a0bd25e418a0d
 app.register_blueprint(conventions_bp)
 app.register_blueprint(interactions_bp)
 app.register_blueprint(clients_bp)
-app.register_blueprint(bp_utilisateurs)
-
-
-def hash_password(mdp: str):
-    """Fonction qui hash et sale le mot de passe,
-    Les 16 premiers octets sont le salt, le reste le mdp."""
-    salt = os.urandom(16)  # Génération d'un salt
-
-    mdp_hache = scrypt(mdp.encode(), salt=salt, n=2 ** 14, r=8, p=1)  # Hachage du mdp avec le salt
-
-    # Encodage en B64, et remise en forme texte pour stockage.
-    return base64.b64encode(salt + mdp_hache).decode()
-
-
-def verify_password(mdp_entre: str, stored_hash):
-    """Fonction qui vérifie le mot de passe avec le hashé. \n
-    Il est impossible de revenir au mdp depuis le hash,donc on hache l'entrée avec le même salt et on vérifie l'égalité \n
-    Le résultat est un booléen"""
-
-    octets_decodes = base64.b64decode(stored_hash)  # Bytes obtenus par décodage en B64
-    salt = octets_decodes[:16]
-
-    mdp_hache_stocke = octets_decodes[16:]
-    mdp_hache_entre = scrypt(mdp_entre.encode(), salt=salt, n=2 ** 14, r=8, p=1)  # Hachage du mdp avec le salt
-
-    return mdp_hache_entre == mdp_hache_stocke
+app.register_blueprint(utilisateurs_bp)
+app.register_blueprint(errors_bp)
 
 
 @login_manager.user_loader
@@ -203,9 +179,8 @@ def create_projet_sans_convention_connue():
     if not has_permission(current_user, 'peut_gerer_projets'):
         abort(403)
 
+    db = get_db()
     added_successfully = False
-    c = get_db().cursor()
-
     if request.method == 'POST':
         e = request.form
         l = [None]
@@ -215,20 +190,16 @@ def create_projet_sans_convention_connue():
         l = tuple(l)
 
         # Vérification de la contrainte de date
-        print(l, l[5], l[6])
         if l[6] > l[7]:
             flash("Date de fin invalide", 'danger')
         else:
-
-            # Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-            c.execute("INSERT INTO Projets VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", l)
-            get_db().commit()
-
+            projet = Projet.from_db_row(db, l) # Crée l'objet Projet et le sauvegarde dans la DB
+            projet.save()
             added_successfully = True
 
-    conventions = get_db().get_all_conventions()
+    conventions = db.get_all_conventions()
 
-    return render_template("create_projet.html", context={"success": added_successfully, "list_conv": conventions})
+    return render_template("conventions/create_projet.html", context={"success": added_successfully, "list_conv": conventions})
 
 
 @app.route("/clients", methods=['GET'])
@@ -242,36 +213,34 @@ def clients():
     # Permet de récuperer le champs de recherche de la page
     recherche_clients = request.args.get("q", "").lower()
 
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Clients")
-    clients_db = cursor.fetchall()
-    conn.close()
-
-    # Pour match tout les attribut qui pourraient coller dans la barre de recherche
-    if recherche_clients:
-        clients_db = [
-            u for u in clients_db
-            if recherche_clients in u["nom_entreprise"].lower()
-               or recherche_clients in u["contact_email"].lower()
-               or recherche_clients in u["type_client"].lower()
-        ]
-
-    liste_interloc_principaux = []
     db = get_db()
-    for c in clients_db:
-        interlocuteur = db.get_user_by_id(c[6])
-        if interlocuteur:
-            affichage_interlocuteur = f"{interlocuteur.nom} {interlocuteur.prenom}"
-        else:
-            affichage_interlocuteur = "Aucun interlocuteur"
-        liste_interloc_principaux.append(affichage_interlocuteur)
+    def search_clients(client):
+        """
+        Pour match tous les attribut qui pourraient coller dans la barre de recherche
+        """
+        return (recherche_clients in client.nom_entreprise.lower()
+                or recherche_clients in client.contact_email.lower()
+                or recherche_clients in client.type_client.lower())
+    if recherche_clients:
+        clients_db = db.get_all_clients(key=search_clients)
+    else:
+        clients_db = db.get_all_clients()
+
+
+
+    # liste_interloc_principaux = []
+    # db = get_db()
+    # for c in clients_db:
+    #     interlocuteur = db.get_user_by_id(c[6])
+    #     if interlocuteur:
+    #         affichage_interlocuteur = f"{interlocuteur.nom} {interlocuteur.prenom}"
+    #     else:
+    #         affichage_interlocuteur = "Aucun interlocuteur"
+    #     liste_interloc_principaux.append(affichage_interlocuteur)
 
     peut_gerer_csv = has_permission(current_user, 'peut_exporter_csv') and has_permission(current_user, "peut_gerer_clients")
 
-    return render_template("clients.html", clients_db=clients_db, recherche_clients=recherche_clients,
-                           affichage_int=liste_interloc_principaux, peut_gerer_csv=peut_gerer_csv)
+    return render_template("clients/clients.html", clients_db=clients_db, recherche_clients=recherche_clients,peut_gerer_csv=peut_gerer_csv)
 
 
 @app.route("/clients/<int:client_id>")
@@ -330,7 +299,7 @@ def client_detail(client_id):
     interactions = c.fetchall()
     conn.close()
 
-    return render_template("Pages_speciales/clients_template.html", client=client, projets=projets,
+    return render_template("clients/clients_template.html", client=client, projets=projets,
                            interactions=interactions, inter=affichage_interlocuteur)
 
 
@@ -366,7 +335,7 @@ def create_client():
     # Obtention des interlocuteurs possibles
     interlocuteurs_dispo = get_db().get_all_users(sort_by='nom')
 
-    return render_template("create_client.html",
+    return render_template("clients/create_client.html",
                            context={"success": client_added_successfully, "interlocuteurs": interlocuteurs_dispo})
 
 
@@ -425,7 +394,7 @@ def edit_client(client_id):
     # Obtention des interlocuteurs possibles
     interlocuteurs_dispo = get_db().get_all_users(sort_by='nom')
 
-    return render_template("edit_client.html", context={"interlocuteurs": interlocuteurs_dispo}, client=client,
+    return render_template("clients/edit_client.html", context={"interlocuteurs": interlocuteurs_dispo}, client=client,
                            Client=Client)
 
 
@@ -648,7 +617,7 @@ def projet_detail(projet_id):
         })
 
     return render_template(
-        "Pages_speciales/projets_template.html",
+        "conventions/projets_template.html",
         projet=projet,
         competences_requises=comp_requises,
         groupes=groupes
@@ -727,7 +696,7 @@ def ajouter_membres(projet_id):
         "SELECT utilisateur_id, prenom, nom FROM Utilisateurs ORDER BY utilisateur_id"
     ).fetchall()
 
-    return render_template("ajouter_membres.html", projet=projet, utilisateurs=utilisateurs)
+    return render_template("conventions/ajouter_membres.html", projet=projet, utilisateurs=utilisateurs)
 
 
 @app.route("/projet/<int:projet_id>/ajouter_comp", methods=["GET", "POST"])
@@ -906,7 +875,7 @@ def utilisateurs():
                or (u["role_nom"] and recherche_utilisateurs in u["role_nom"].lower())
         ]
 
-    return render_template("utilisateurs.html", utilisateurs_db=utilisateurs_db,
+    return render_template("utilisateurs/utilisateurs.html", utilisateurs_db=utilisateurs_db,
                            recherche_utilisateurs=recherche_utilisateurs)
 
 
@@ -934,7 +903,7 @@ def utilisateurs_detail(uid):
 
     peut_gerer_docs = has_permission(current_user, 'peut_gerer_documents')
 
-    return render_template("Pages_speciales/utilisateur_template.html", utilisateur=utilisateur,
+    return render_template("utilisateurs/utilisateur_template.html", utilisateur=utilisateur,
                            competences_requises=comp_requises, peut_gerer_docs=peut_gerer_docs)
 
 
@@ -1012,7 +981,7 @@ def create_user():
     # Obtention des noms de rôles possibles
     roles_possibles = c.execute("SELECT role_id, nom FROM Roles ORDER BY hierarchie").fetchall()
 
-    return render_template("create_user.html",
+    return render_template("utilisateurs/create_utilisateur.html",
                            context={"success": user_added_successfully, "roles_possibles": roles_possibles})
 
 
@@ -1092,7 +1061,7 @@ def edit_utilisateur(utilisateur_id):
     # Obtention des interlocuteurs possibles
     roles_possibles = db.execute("SELECT role_id, nom FROM Roles ORDER BY hierarchie").fetchall()
 
-    return render_template("edit_utilisateur.html", context={"roles_possibles": roles_possibles},
+    return render_template("utilisateurs/edit_utilisateur.html", context={"roles_possibles": roles_possibles},
                            utilisateur=utilisateur, Utilisateur=Utilisateur)
 
 
@@ -1354,24 +1323,6 @@ def import_projets_termine():
     except Exception as e:
         return f"Erreur import CSV : {e}", 500
 
-
-# Ici les pages d'erreur.
-@app.errorhandler(404)
-def page_not_found(error):
-    """Fonction pour l'erreur 404"""
-    return render_template("errors/404.html"), 404
-
-
-@app.errorhandler(500)
-def serveur_error(error):
-    """Fonction pour l'erreur 500"""
-    return render_template("errors/500.html"), 500
-
-
-@app.errorhandler(403)
-def serveur_error(error):
-    """Fonction pour l'erreur 403"""
-    return render_template("errors/403.html"), 403
 
 
 @app.teardown_appcontext

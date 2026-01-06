@@ -79,7 +79,7 @@ def index():
 
     peut_gerer_csv = has_permission(current_user, 'peut_exporter_csv')
 
-    return render_template( 'liste_conventions.html',context=conventions, pj_as=proj_associes_dict, recherche_conventions=recherche_conventions,peut_gerer_csv=peut_gerer_csv)
+    return render_template('conventions/liste_conventions.html', context=conventions, pj_as=proj_associes_dict, recherche_conventions=recherche_conventions, peut_gerer_csv=peut_gerer_csv)
 
 
 @conventions_bp.route('/<int:id>')
@@ -87,9 +87,9 @@ def index():
 def convention(id : int) :
     conv =  get_convention(id)
     client = get_client( conv["client_id"] )
-    return render_template('convention_template.html',context={"convention":conv, 
-    "client":get_client( conv["client_id"] ) , "projets": get_projets_by_convention(id), "utilisateur" : get_utilisateur(client["interlocuteur_principal"]) } 
-    )
+    return render_template('conventions/convention_template.html', context={"convention":conv,
+    "client":get_client( conv["client_id"] ) , "projets": get_projets_by_convention(id), "utilisateur" : get_utilisateur(client["interlocuteur_principal"])}
+                           )
 
 
 # Oui cette fonction est ici pour raison de facilité, je souhaiterais que quelqu'un la bouge dans les conventions si possible
@@ -119,7 +119,7 @@ def create_convention():
     # Obtention des clients possibles
     clients = get_db().get_all_clients()
 
-    return render_template("create_convention.html", context={"success": added_successfully, "clients": clients})
+    return render_template("conventions/create_convention.html", context={"success": added_successfully, "clients": clients})
 
 
 # Création d'un projet pour une convention
@@ -156,5 +156,5 @@ def create_projet_convention(convention_id):
 
             added_successfully = True
 
-    return render_template("create_projet.html", context={"success": added_successfully, "default_convention": conv})
+    return render_template("conventions/create_projet.html", context={"success": added_successfully, "default_convention": conv})
 

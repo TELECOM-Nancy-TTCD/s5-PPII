@@ -3,7 +3,7 @@ import json
 from flask_login import current_user, login_required as flask_login_required
 
 from tools import has_permission, get_db
-from utilisateurs import bp_utilisateurs
+from utilisateurs import utilisateurs_bp
 from database import Role
 from typing import Dict, Any
 
@@ -106,7 +106,7 @@ def normalize_hierarchies(db) -> bool:
     except Exception:
         return False
 
-@bp_utilisateurs.route('/utilisateurs/roles', methods=['GET'])
+@utilisateurs_bp.route('/utilisateurs/roles', methods=['GET'])
 @flask_login_required
 def roles():
     """Affiche la liste des rôles."""
@@ -123,7 +123,7 @@ def roles():
 
     return render_template('utilisateurs/roles.html', roles=roles, permission_meta=PERMISSION_META, role=None)
 
-@bp_utilisateurs.route('/utilisateurs/roles/<int:id>', methods=['GET'])
+@utilisateurs_bp.route('/utilisateurs/roles/<int:id>', methods=['GET'])
 @flask_login_required
 def role_detail(id: int):
     """Affiche le détail d'un rôle (réutilise le template principal en passant la variable `role`)."""
@@ -145,7 +145,7 @@ def role_detail(id: int):
 
 # --- API JSON pour la gestion des rôles ---
 
-@bp_utilisateurs.route('/api/utilisateurs/roles/<int:role_id>', methods=['GET'])
+@utilisateurs_bp.route('/api/utilisateurs/roles/<int:role_id>', methods=['GET'])
 @flask_login_required
 def get_role_json(role_id: int):
     if not has_permission(current_user, 'peut_gerer_roles'):
@@ -157,7 +157,7 @@ def get_role_json(role_id: int):
     return jsonify({'role': role.to_dict()}), 200
 
 
-@bp_utilisateurs.route('/api/utilisateurs/roles', methods=['POST', 'PUT'])
+@utilisateurs_bp.route('/api/utilisateurs/roles', methods=['POST', 'PUT'])
 @flask_login_required
 def create_role_api():
     """Crée un nouveau rôle via JSON POST/PUT {nom, hierarchie, ...permissions} et renvoie le rôle créé."""
@@ -230,7 +230,7 @@ def create_role_api():
     return jsonify({'role': role.to_dict(), 'roles': roles_list}), 201
 
 
-@bp_utilisateurs.route('/api/utilisateurs/roles/<int:role_id>', methods=['POST'])
+@utilisateurs_bp.route('/api/utilisateurs/roles/<int:role_id>', methods=['POST'])
 @flask_login_required
 def update_role(role_id: int):
     """Met à jour les champs modifiables d'un rôle via JSON."""
@@ -311,7 +311,7 @@ def update_role(role_id: int):
     return jsonify({'role': role.to_dict()}), 200
 
 
-@bp_utilisateurs.route('/api/utilisateurs/roles/<int:role_id>/delete', methods=['DELETE'])
+@utilisateurs_bp.route('/api/utilisateurs/roles/<int:role_id>/delete', methods=['DELETE'])
 @flask_login_required
 def delete_role(role_id: int):
     if not has_permission(current_user, 'peut_gerer_roles'):
@@ -349,7 +349,7 @@ def delete_role(role_id: int):
     return jsonify({'message': 'Rôle supprimé'}), 200
 
 
-@bp_utilisateurs.route('/api/utilisateurs/roles/reorder', methods=['POST'])
+@utilisateurs_bp.route('/api/utilisateurs/roles/reorder', methods=['POST'])
 @flask_login_required
 def reorder_roles():
     if not has_permission(current_user, 'peut_gerer_roles'):
