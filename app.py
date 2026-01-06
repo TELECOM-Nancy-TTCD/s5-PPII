@@ -251,53 +251,39 @@ def client_detail(client_id):
     if not has_permission(current_user, "peut_lire_clients"):
         abort(403)
 
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-
-    c.execute("SELECT * FROM Clients WHERE client_id = ?", (client_id,))
-    client = c.fetchone()
+    db = get_db()
+    client = db.get_client_by_id(client_id)
     if client is None:
         abort(404)
 
     # Bon affichage de l'interlocuteur principal
-    interlocuteur = get_db().get_user_by_id(client[6])
-    affichage_interlocuteur = interlocuteur.nom + " " + interlocuteur.prenom
+    if client.interlocuteur_principal_id is None:
+        affichage_interlocuteur = "Aucun interlocuteur"
+    else:
+        interlocuteur = client.interlocuteur_principal
+        affichage_interlocuteur = interlocuteur.nom + " " + interlocuteur.prenom
 
-    c.execute("""SELECT p.*
-                 FROM Projets p
-                          JOIN Conventions c ON p.convention_id = c.convention_id
-                 WHERE c.client_id = ?""", (client_id,))
-
-    projets_raw = c.fetchall()
+    projets_raw = []
+    for conv in client.conventions:
+        projets_raw.extend(conv.projets)
 
     # Calcul du pourcentage de jalon terminés
     projets = []
     for p in projets_raw:
-        c.execute("SELECT est_complete FROM Jalons WHERE projet_id = ?", (p["projet_id"],))
-        jalons = c.fetchall()
+        jalons = p.jalons
         total_jalons = len(jalons)
-        jalons_termines = sum(1 for j in jalons if j["est_complete"])
+        jalons_termines = sum(1 for j in jalons if j.est_complete)
         progress = int((jalons_termines / total_jalons) * 100) if total_jalons > 0 else 0
 
         projets.append({
-            "projet_id": p["projet_id"],
-            "nom_projet": p["nom_projet"],
-            "statut": p["statut"],
+            "projet_id": p.projet_id,
+            "nom_projet": p.nom_projet,
+            "statut": p.statut,
             "progress": progress,
-            "budget": p["budget"]
+            "budget": p.budget
         })
 
-    c.execute("""
-              SELECT i.*, u.nom || ' ' || u.prenom AS utilisateur_nom
-              FROM Interactions i
-                       JOIN Utilisateurs u ON i.utilisateur_id = u.utilisateur_id
-              WHERE i.client_id = ?
-              ORDER BY i.date_time_interaction DESC
-              """, (client_id,))
-
-    interactions = c.fetchall()
-    conn.close()
+    interactions = client.interactions
 
     return render_template("clients/clients_template.html", client=client, projets=projets,
                            interactions=interactions, inter=affichage_interlocuteur)

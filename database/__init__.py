@@ -1649,7 +1649,7 @@ class Client(DBObject, _RowInitMixin):
         raise ValueError(f"User with id {self.interlocuteur_principal_id} not found")
 
     @property
-    def conventions(self) -> list[Any] | None:
+    def conventions(self) -> list['Convention'] | None:
         cached_conventions_ids = self.db.redis_client.get(
             redis_key(Client.DATABASE_NAME.lower(), self.client_id, "conventions"))
         not_cached_conventions = False
@@ -1677,7 +1677,7 @@ class Client(DBObject, _RowInitMixin):
         return None
 
     @property
-    def interactions(self) -> list[Any] | None:
+    def interactions(self) -> list['Interaction'] | None:
         cached_interactions_ids = self.db.redis_client.get(
             redis_key(Client.DATABASE_NAME.lower(), self.client_id, "interactions"))
         not_cached_interactions = False
@@ -1763,7 +1763,7 @@ class Convention(DBObject, _RowInitMixin):
         raise ValueError(f"Client with id {self.client_id} not found")
 
     @property
-    def projets(self) -> list[Any] | None:
+    def projets(self) -> list['Projet'] | None:
         """Liste des projets associés à cette convention (utilise cache si possible)."""
         cached_projets_ids = self.db.redis_client.get(
             redis_key(Convention.DATABASE_NAME.lower(), self.convention_id, "projets"))
@@ -1855,7 +1855,7 @@ class Projet(DBObject, _RowInitMixin):
         raise ValueError(f"Convention with id {self.convention_id} not found")
 
     @property
-    def jalons(self) -> list[Any] | None:
+    def jalons(self) -> list['Jalon'] | None:
         """Liste des jalons du projet par ordre de date de fin descendante (montre les jalons en cours d'abord) (utilise cache si possible)."""
         cached_jalons_ids = self.db.redis_client.get(redis_key(Projet.DATABASE_NAME.lower(), self.projet_id, "jalons"))
         not_cached_jalons = False

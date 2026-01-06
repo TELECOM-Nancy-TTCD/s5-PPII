@@ -89,7 +89,7 @@
 
         <div class="interaction-header">
             <span>{{ interaction.date_time_interaction }}</span>
-            <span>Utilisateur : {{ interaction.utilisateur_nom }}</span>
+            <span>Utilisateur : {{ interaction.utilisateur.nom }}</span>
         </div>
 
         <div id="interaction-{{ loop.index }}" class="interaction-text {% if is_long %}collapsed{% endif %}">
