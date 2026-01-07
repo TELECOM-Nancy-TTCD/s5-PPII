@@ -9,45 +9,86 @@
     <h1> Ajout d'un nouveau projet </h1>
     {% endif %}
   {% if context.success %}
-  <h2 style="color: green;"> Projet ajouté avec succès! </h2>
+  <h2 class="success-message"> Projet ajouté avec succès! </h2>
   {% endif %}
   <br>
-    <form class="form-create-client" method="post" style="display : flex; flex-direction: column; gap: 5px;">
+    <form class="form-create-client form" method="post" style="display : flex; flex-direction: column; gap: 12px;" novalidate>
       {% if not context.default_convention %}
-      <select name="conv_id" required>
-        <option value=""> -- Convention -- </option>
-        {% for i in context.list_conv%}
-        <option value="{{i.convention_id}}"> {{i.nom_convention}} </option>
-        {% endfor %}
-      </select>
+      <div class="input-box">
+        <label class="form-label" for="conv_id">Convention</label>
+        <select id="conv_id" name="conv_id" required>
+          <option value=""> -- Convention -- </option>
+          {% for i in context.list_conv%}
+          <option value="{{i.convention_id}}"> {{i.nom_convention}} </option>
+          {% endfor %}
+        </select>
+        <div class="field-error" id="error-conv_id"></div>
+      </div>
 
       {% endif %}
-      <input name="nom_proj" type="text" placeholder="Nom du projet" required>
-      <input name="desc_proj" type="text" placeholder="Description du projet" >
-      <input name="budget" type="number" step="0.01" min="0" placeholder="Budget du projet">
-      <label> Charge de travail estimée du projet <br>(en heures-homme) (nécessaire pour l'algo de matching)
-      <input name="nb_heures" type="number">
-      </label>
-      <label> Date de début du projet (si applicable)
-      <input name="date_deb" type="date" id="date_deb">
-      </label>
-      <label> Date de fin du projet (si applicable)<br>
-      <input name="date_fin" type="date" id="date_fin">
-      </label>
-      <select name="statut" required>
-          <option value=""> -- Statut du projet -- </option>
+
+      <div class="input-box">
+        <label class="form-label" for="nom_proj">Nom du projet</label>
+        <input id="nom_proj" name="nom_proj" type="text" placeholder="Nom du projet" required maxlength="250">
+        <div class="field-error" id="error-nom_proj"></div>
+      </div>
+
+      <div class="input-box">
+        <label class="form-label" for="desc_proj">Description du projet</label>
+        <input id="desc_proj" name="desc_proj" type="text" placeholder="Description du projet" maxlength="1000">
+        <div class="field-error" id="error-desc_proj"></div>
+      </div>
+
+      <div class="column">
+        <div class="input-box">
+          <label class="form-label" for="budget">Budget (€)</label>
+          <input id="budget" name="budget" type="number" step="0.01" min="0" placeholder="Budget du projet">
+          <div class="field-error" id="error-budget"></div>
+        </div>
+
+        <div class="input-box">
+          <label class="form-label" for="nb_heures">Charge de travail estimée (heures-homme)</label>
+          <input id="nb_heures" name="nb_heures" type="number" min="0" placeholder="Nombre d'heures">
+          <div class="field-error" id="error-nb_heures"></div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="input-box">
+          <label class="form-label" for="date_deb">Date de début du projet (si applicable)</label>
+          <input id="date_deb" name="date_deb" type="date">
+          <div class="field-error" id="error-date_deb"></div>
+        </div>
+
+        <div class="input-box">
+          <label class="form-label" for="date_fin">Date de fin du projet (si applicable)</label>
+          <input id="date_fin" name="date_fin" type="date">
+          <div class="field-error" id="error-date_fin"></div>
+        </div>
+      </div>
+
+      <div class="input-box">
+        <label class="form-label" for="statut">Statut du projet</label>
+        <select id="statut" name="statut" required>
+            <option value=""> -- Statut du projet -- </option>
             <option value="En attente"> En attente </option>
             <option value="En cours"> En cours </option>
             <option value="Terminé"> Terminé </option>
-            <option value="Annulé"> Annulé </option>  
+            <option value="Annulé"> Annulé </option>
         </select>
-      <input name="doc_dossier" type="text" placeholder="Lien vers le dossier de documents du projet">
+        <div class="field-error" id="error-statut"></div>
+      </div>
 
-      <input type="submit" class="bouton-ajouter-client" value="Ajouter le projet">  
+      <div class="input-box">
+        <label class="form-label" for="doc_dossier">Lien vers le dossier de documents du projet</label>
+        <input id="doc_dossier" name="doc_dossier" type="url" placeholder="https://..." maxlength="400">
+        <div class="field-error" id="error-doc_dossier"></div>
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:6px;">
+        <input type="submit" class="primary-button" value="Ajouter le projet">
+      </div>
     </form>
-
-    
-  </div>
 
 <script>
     const deb = document.getElementById("date_deb");

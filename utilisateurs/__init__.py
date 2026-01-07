@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, abort, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, abort, redirect, url_for, flash
 from flask_login import login_required, current_user
 from typing import List
 from datetime import datetime, timedelta
@@ -8,39 +8,29 @@ from database import Utilisateur
 
 utilisateurs_bp = Blueprint('utilisateurs', __name__)
 
-@utilisateurs_bp.route('/utilisateurs', methods=['GET'], endpoint='utilisateurs')
+@utilisateurs_bp.route('/utilisateurs', methods=['GET'], endpoint='users')
 @login_required
 def utilisateurs():
-    """Liste des utilisateurs (même URL et endpoint que précédemment)."""
+    """Liste des users (même URL et endpoint que précédemment)."""
     recherche_utilisateurs = request.args.get("q", "").lower()
 
-    conn = get_db().db  # récupérer la connexion sqlite depuis l'objet Database
-    conn.row_factory = None
-    # On exécute une requête simple en SQL pour minimiser les dépendances
-    cur = conn.cursor()
-    cur.execute("""SELECT u.*, r.nom AS role_nom
-                      FROM Utilisateurs u
-                               LEFT JOIN Roles r ON u.role_id = r.role_id""")
-    utilisateurs_db = cur.fetchall()
-    cur.close()
+    if not has_permission(current_user, 'peut_lire_utilisateurs'):
+        abort(403)
 
+    db = get_db()
     if recherche_utilisateurs:
-        def matches(u):
-            try:
-                nom = (u[4] or '') if len(u) > 4 else ''
-                prenom = (u[5] or '') if len(u) > 5 else ''
-                email = (u[1] or '') if len(u) > 1 else ''
-                role_nom = (u[-1] or '') if len(u) > 0 else ''
-                return (recherche_utilisateurs in nom.lower() or
-                        recherche_utilisateurs in prenom.lower() or
-                        recherche_utilisateurs in email.lower() or
-                        (role_nom and recherche_utilisateurs in str(role_nom).lower()))
-            except Exception:
-                return False
+        def matches(u: Utilisateur):
+            return (
+                recherche_utilisateurs in u.nom.lower() or
+                recherche_utilisateurs in u.prenom.lower() or
+                recherche_utilisateurs in u.email.lower() or
+                recherche_utilisateurs in u.role.nom.lower()
+            )
+        users: List[Utilisateur] = db.get_all_users(key=matches)
+    else:
+        users: List[Utilisateur] = db.get_all_users()
 
-        utilisateurs_db = [u for u in utilisateurs_db if matches(u)]
-
-    return render_template("utilisateurs/utilisateurs.html", utilisateurs_db=utilisateurs_db,
+    return render_template("utilisateurs/utilisateurs.html", utilisateurs_db=users,
                            recherche_utilisateurs=recherche_utilisateurs)
 
 
@@ -51,6 +41,9 @@ def utilisateurs_detail(uid: int):
     utilisateur = db.get_user_by_id(uid)
     if utilisateur is None:
         abort(404)
+
+    if not has_permission(current_user, 'peut_lire_utilisateurs') or current_user.utilisateur_id != utilisateur.utilisateur_id:
+        abort(403)
 
     comp_requises = db.cursor().execute(
         "SELECT c.nom, ic.niveau FROM competences c JOIN intervenant_competences ic ON c.competence_id = ic.competence_id WHERE ic.intervenant_id = ?",
@@ -93,46 +86,10 @@ def utilisateur_ajouter_competences(uid: int):
 
     return render_template("ajouter_competences.html", competences=toutes_competences, success=success)
 
-
-@utilisateurs_bp.route('/utilisateurs/create', methods=['GET', 'POST'], endpoint='create_user')
-@login_required
-def create_user():
-    if not has_permission(current_user, 'peut_gerer_utilisateurs'):
-        abort(403)
-
-    user_added_successfully = False
-    db = get_db()
-
-    if request.method == 'POST':
-        email = request.form.get("e-mail")
-        hmdp = hash_password(request.form.get("mdp"))
-        date_expiration_mdp = (datetime.now() + timedelta(days=365)).date()
-        nom = request.form.get("nom")
-        prenom = request.form.get("prenom")
-        avatar = None
-        role_id = request.form.get("role")
-        est_intervenant = "est_intervenant" in request.form
-        heures_dispo_semaine = request.form.get("h_disp")
-        doc_carte_vitale = request.form.get("doc_car")
-        doc_cni = request.form.get("doc_cni")
-        doc_adhesion = request.form.get("doc_adh")
-        doc_rib = request.form.get("doc_rib")
-
-        user = Utilisateur.from_db_row(db, (None, email, hmdp, date_expiration_mdp, nom, prenom, avatar, role_id, est_intervenant,
-                   heures_dispo_semaine, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
-        user.save()
-        user_added_successfully = True
-
-    roles_possibles = get_db().get_all_roles(sort_by="hierarchie")
-
-    return render_template("utilisateurs/create_utilisateur.html",
-                           context={"success": user_added_successfully, "roles_possibles": roles_possibles})
-
-
-@utilisateurs_bp.route('/utilisateurs/<int:user_id>/supprimer', methods=['POST'], endpoint='supprimer_utilisateur')
+@utilisateurs_bp.route('/utilisateurs/<int:user_id>/supprimer', methods=['POST'])
 @login_required
 def supprimer_utilisateur(user_id: int):
-    if not has_permission(current_user, 'administrateur'):
+    if not has_permission(current_user, 'peut_gerer_utilisateurs'):
         abort(403)
 
     user = get_db().get_user_by_id(user_id)
@@ -148,7 +105,7 @@ def supprimer_utilisateur(user_id: int):
     return redirect(url_for("utilisateurs"))
 
 
-@utilisateurs_bp.route('/utilisateurs/<int:utilisateur_id>/edit', methods=['GET', 'POST'], endpoint='edit_utilisateur')
+@utilisateurs_bp.route('/utilisateurs/<int:utilisateur_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_utilisateur(utilisateur_id: int):
     db = get_db()
@@ -162,7 +119,7 @@ def edit_utilisateur(utilisateur_id: int):
     if request.method == 'POST':
         errors = False
         if errors:
-            return jsonify({'errors': errors}), 400
+            return {'errors': errors}, 400
 
         email = request.form.get("e-mail")
         nom = request.form.get("nom")
@@ -231,7 +188,7 @@ def ajouter_competences():
     return render_template("ajouter_competences.html", competences=toutes_competences, success=success)
 
 
-@utilisateurs_bp.route('/utilisateurs/creer', methods=['GET', 'POST'], endpoint='creer_utilisateur')
+@utilisateurs_bp.route('/utilisateurs/creer', methods=['GET', 'POST'], endpoint='create_user')
 @login_required
 def creer_utilisateur():
     if not has_permission(current_user, 'peut_gerer_utilisateurs'):
@@ -264,77 +221,6 @@ def creer_utilisateur():
 
     return render_template("utilisateurs/create_utilisateur.html",
                            context={"success": user_added_successfully, "roles_possibles": roles_possibles})
-
-
-@utilisateurs_bp.route('/utilisateurs/<int:user_id>/supprimer_utilisateur', methods=['POST'], endpoint='supprimer_utilisateur_explicite')
-@login_required
-def supprimer_utilisateur_explicite(user_id: int):
-    if not has_permission(current_user, 'administrateur'):
-        abort(403)
-
-    user = get_db().get_user_by_id(user_id)
-    if not user:
-        abort(404)
-
-    try:
-        user.delete()
-        flash("Utilisateur supprimé avec succès.", "success")
-    except Exception as e:
-        flash(f"Erreur lors de la suppression: {str(e)}", "danger")
-
-    return redirect(url_for("utilisateurs"))
-
-
-@utilisateurs_bp.route('/utilisateurs/<int:utilisateur_id>/edit_utilisateur', methods=['GET', 'POST'], endpoint='edit_utilisateur_explicite')
-@login_required
-def edit_utilisateur_explicite(utilisateur_id: int):
-    db = get_db()
-    utilisateur = db.get_user_by_id(utilisateur_id)
-    if utilisateur is None:
-        return abort(404)
-
-    if not has_permission(current_user,'peut_gerer_utilisateurs') and utilisateur.utilisateur_id != current_user.utilisateur_id:
-        return abort(403)
-
-    if request.method == 'POST':
-        errors = False
-        if errors:
-            return jsonify({'errors': errors}), 400
-
-        email = request.form.get("e-mail")
-        nom = request.form.get("nom")
-        prenom = request.form.get("prenom")
-        role_id = request.form.get("role")
-        est_intervenant = request.form.get("est_intervenant") == "True"
-        heures_dispo_semaine = request.form.get("h_disp")
-        doc_carte_vitale = request.form.get("doc_car")
-        doc_cni = request.form.get("doc_cni")
-        doc_adhesion = request.form.get("doc_adh")
-        doc_rib = request.form.get("doc_rib")
-
-        utilisateur.email = email
-        utilisateur.nom = nom
-        utilisateur.prenom = prenom
-
-        utilisateur.role_id = role_id
-
-        utilisateur.est_intervenant = est_intervenant
-        if heures_dispo_semaine and heures_dispo_semaine.isdigit():
-            utilisateur.heures_dispo_semaine = heures_dispo_semaine
-        utilisateur.doc_carte_vitale = doc_carte_vitale
-        utilisateur.doc_cni = doc_cni
-        utilisateur.doc_adhesion = doc_adhesion
-        utilisateur.doc_rib = doc_rib
-
-        utilisateur.save()
-
-        return redirect(url_for("utilisateurs_detail", uid=utilisateur.utilisateur_id))
-
-    roles_possibles = get_db().get_all_roles(sort_by="hierarchie")
-
-    return render_template("utilisateurs/edit_utilisateur.html", context={"roles_possibles": roles_possibles},
-                           utilisateur=utilisateur, Utilisateur=Utilisateur)
-
 
 try:
     import utilisateurs.roles

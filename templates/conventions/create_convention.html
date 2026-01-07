@@ -9,27 +9,50 @@
   {% endif %}
   <br>
     <form class="form-create-client" method="post" style="display : flex; flex-direction: column; gap: 5px;">
-      <input name="nom_conv" type="text" placeholder="Nom de la convention" required>
-      <input name="desc_conv" type="text" placeholder="Description de la convention" >
-      <label> Date de début de la convention (si applicable)
-      <input name="date_deb" type="date" id="date_deb">
-      </label>
-      <label> Date de fin de la convention (si applicable)
-      <input name="date_fin" type="date" id="date_fin">
-      </label>
-      <input name="doc_conv" type="text" placeholder="Lien vers le contrat associé">
-      <select name="client_id" required>
+      <div class="input-box">
+        <label class="form-label" for="nom_conv">Nom de la convention</label>
+        <input id="nom_conv" name="nom_conv" type="text" placeholder="Nom de la convention" required maxlength="200">
+        <div class="field-error" id="error-nom_conv"></div>
+      </div>
+
+      <div class="input-box">
+        <label class="form-label" for="desc_conv">Description</label>
+        <input id="desc_conv" name="desc_conv" type="text" placeholder="Description de la convention" maxlength="800">
+        <div class="field-error" id="error-desc_conv"></div>
+      </div>
+
+      <div class="input-box">
+        <label class="form-label" for="date_deb"> Date de début de la convention (si applicable)</label>
+        <input name="date_deb" type="date" id="date_deb">
+        <div class="field-error" id="error-date_deb"></div>
+      </div>
+
+      <div class="input-box">
+        <label class="form-label" for="date_fin"> Date de fin de la convention (si applicable)</label>
+        <input name="date_fin" type="date" id="date_fin">
+        <div class="field-error" id="error-date_fin"></div>
+      </div>
+
+      <div class="input-box">
+      <label class="form-label" for="doc_conv">Lien vers le contrat associé</label>
+      <input id="doc_conv" name="doc_conv" type="url" placeholder="Lien vers le contrat" maxlength="400">
+      <div class="field-error" id="error-doc_conv"></div>
+      </div>
+      <div class="input-box">
+      <label class="form-label" for="client_id">Client</label>
+      <select id="client_id" name="client_id" required>
           <option value=""> -- Avec quel client la convention est-elle passée? -- </option>
           {% for i in context.clients %}
-          <option value={{i.client_id}}> {{i.nom_entreprise}} </option>
+          <option value="{{i.client_id}}"> {{i.nom_entreprise}} </option>
           {% endfor %}
       </select>
+      <div class="field-error" id="error-client_id"></div>
+      </div>
 
-      <input type="submit" class="bouton-ajouter-client" value="Ajouter la convention">  
+      <input type="submit" class="primary-button" value="Ajouter la convention">
     </form>
 
-    
-  </div>
+
 
 <script>
     const deb = document.getElementById("date_deb");

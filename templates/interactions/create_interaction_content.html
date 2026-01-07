@@ -18,9 +18,9 @@
         <div class="column">
 
             <div class="input-box">
-              <label for="interaction-type">Support</label>
+              <label class="form-label" for="interaction-type">Support</label>
             <div class="select-box">
-              <select name="type" id="interaction-type">
+              <select name="type" id="interaction-type" required>
                 <option hidden>Type</option>
                   {% for t in Interaction.interactions_types %}
                 <option value="{{ t }}">{{ Interaction.types_names.get(t, 'Inconnu') }}</option>
@@ -31,7 +31,7 @@
             <div class="field-error text-danger" id="error-type"></div>
             </div>
             <div class="input-box">
-              <label for="interaction-date">Date de l'interaction</label>
+              <label class="form-label" for="interaction-date">Date de l'interaction</label>
               <input name="interaction-date" required placeholder="Date interaction" type="date" id="interaction-date">
               <!-- Conteneur d'erreur pour la date -->
               <div class="field-error text-danger" id="error-interaction-date"></div>
@@ -41,17 +41,19 @@
         {% include 'components/search_client.html' %}
 
         <div class="input-box">
-            <label for="title">Titre</label>
+            <label class="form-label" for="title">Titre</label>
             <input name="title" required placeholder="Objet de l'interaction" type="text" id="title">
             <!-- Conteneur d'erreur pour le titre -->
             <div class="field-error text-danger" id="error-title"></div>
         </div>
         <div class="input-box">
-            <label for="content">Contenu</label>
+            <label class="form-label" for="content">Contenu</label>
             <textarea name="content" required placeholder="Détails de l'interaction..." id="content"></textarea>
             <!-- Conteneur d'erreur pour le contenu -->
             <div class="field-error text-danger" id="error-content"></div>
         </div>
-        <button type="submit" id="submit-create-interaction">Enregistrer</button>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+            <button type="submit" class="primary-button" id="submit-create-interaction">Enregistrer</button>
+        </div>
     </form>
   </section>

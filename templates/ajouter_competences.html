@@ -8,52 +8,86 @@
     <p> Pour chaque compétence souhaitée, renseigner un nom et un niveau (entre 0 et 10) </p>
 
     {% if success %}
-        <h2 style="color: green;"> Compétences ajoutées avec succès! </h2>
+        <h2 class="success-message"> Compétences ajoutées avec succès! </h2>
     {% endif %}
-    <form method="post" class="form-create-client">
+    <form method="post" class="form-create-client form">
         <div id="skills-container">
-            <div class="skill-row">
-                <select name="skills[]" required>
-                    <option value="">-- Choisissez une compétence --</option>
-                    {% for comp in competences %}
-                        <option value="{{ comp[0] }}"> {{ comp[1] }} </option>
-                    {% endfor %}
-                </select>
+            <div class="skill-row column">
+                <div class="input-box">
+                    <label class="form-label" for="skill-select-0">Compétence</label>
+                    <select id="skill-select-0" name="skills[]" required>
+                        <option value="">-- Choisissez une compétence --</option>
+                        {% for comp in competences %}
+                            <option value="{{ comp[0] }}"> {{ comp[1] }} </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                <input type="number" name="levels[]" min="0" max="10" required>
+                <div class="input-box">
+                    <label class="form-label" for="skill-level-0">Niveau (0-10)</label>
+                    <input id="skill-level-0" type="number" name="levels[]" min="0" max="10" required>
+                </div>
 
-                <button type="button" class="remove-skill"> <!-- trash icon --> <i class="fa-solid fa-trash"></i>
+                <button type="button" class="remove-skill icon-button" title="Supprimer"> <!-- trash icon --> <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
         </div>
 
-        <button type="button" id="add-skill" class="bouton-ajouter-client"> Compétence supplémentaire</button>
-        <button type="submit" class="bouton-ajouter-client">Enregistrer</button>
+        <div style="display:flex; gap:8px; justify-content:flex-start;">
+            <button type="button" id="add-skill" class="primary-button"> Compétence supplémentaire</button>
+            <button type="submit" class="primary-button">Enregistrer</button>
+        </div>
 
 
     </form>
 
     <hr>
     <label for="new-skill">Créer une nouvelle compétence :</label>
-    <form method="POST" action="{{ url_for('creer_competence') }}">
-        <select name="competence_parent">
-            <option value="" hidden> --Sélectionnez une compétence parent -- </option>
-            {% for i in competences %}
-            <option value={{i[0]}}> {{i[1]}} </option>
-            {% endfor %}
-        </select>
-        <input type="text" name="nom_competence" id="new-skill" placeholder="Nom de la compétence" required>
-        <button type="submit" class="bouton-ajouter-client">Ajouter la compétence</button>
+    <form method="POST" action="{{ url_for('creer_competence') }}" class="form-create-client">
+        <div class="input-box">
+            <label class="form-label" for="competence_parent">Compétence parent (facultatif)</label>
+            <select id="competence_parent" name="competence_parent">
+                <option value="" hidden> --Sélectionnez une compétence parent -- </option>
+                {% for i in competences %}
+                <option value="{{i[0]}}"> {{i[1]}} </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="input-box">
+            <label class="form-label" for="new-skill">Nom de la compétence</label>
+            <input type="text" name="nom_competence" id="new-skill" placeholder="Nom de la compétence" required>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-start; margin-top:8px;">
+            <button type="submit" class="primary-button">Ajouter la compétence</button>
+        </div>
     </form>
 
     <script>
         const container = document.getElementById('skills-container');
+        let skillIndex = 1; // start at 1 because initial row uses 0
 
         document.getElementById('add-skill').addEventListener('click', () => {
             const row = container.querySelector('.skill-row').cloneNode(true);
 
-            row.querySelector('select').value = '';
-            row.querySelector('input').value = '';
+            // update ids inside the cloned row to keep labels associated
+            const select = row.querySelector('select');
+            const input = row.querySelector('input');
+
+            if (select) {
+                select.value = '';
+                select.id = `skill-select-${skillIndex}`;
+                const label = row.querySelector('label[for^="skill-select"]');
+                if (label) label.setAttribute('for', select.id);
+            }
+
+            if (input) {
+                input.value = '';
+                input.id = `skill-level-${skillIndex}`;
+                const label2 = row.querySelector('label[for^="skill-level"]');
+                if (label2) label2.setAttribute('for', input.id);
+            }
+
+            skillIndex++;
 
             container.appendChild(row);
         });

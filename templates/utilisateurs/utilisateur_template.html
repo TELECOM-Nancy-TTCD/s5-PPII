@@ -6,14 +6,14 @@
 
     {% if has_permission(current_user, "peut_gerer_utilisateurs") or utilisateur.utilisateur_id == current_user.utilisateur_id %}
         <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
-            <a href="/utilisateurs/{{ utilisateur.utilisateur_id }}/edit" class="primary-button icon-button"
+            <a href="{{ url_for('utilisateurs.edit_utilisateur', utilisateur_id=utilisateur.utilisateur_id) }}" class="primary-button icon-button"
                aria-label="Modifier">
                 <!-- pencil / edit icon -->
                 <i class="fa-solid fa-pen"></i>
             </a>
 
             {% if has_permission(current_user, "peut_gerer_utilisateurs") %}
-            <form action="{{ url_for('supprimer_utilisateur', user_id=utilisateur['utilisateur_id']) }}" method="post"
+            <form action="{{ url_for('utilisateurs.supprimer_utilisateur', user_id=utilisateur.utilisateur_id) }}" method="post"
                   onsubmit="return confirm('Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible !');">
                 <button type="submit" class="danger-button icon-button" aria-label="Supprimer"
                         id="delete-interaction-button" title="Supprimer" data-id="{{ utilisateur.utilisateur_id }}">
@@ -36,7 +36,7 @@
     <h2>Compétences</h2>
 
     <div style="justify-content: center;">
-        <table style="border: 1px solid linen;  " , class="table-utilisateur-competences">
+        <table style="border: 1px solid linen;" class="table-utilisateur-competences">
             <tr>
                 <th> Compétence</th>
                 <th> Niveau</th>
@@ -50,8 +50,8 @@
         </table>
     </div>
 
-    <a href="{{ url_for( 'utilisateur_ajouter_competences', uid=utilisateur['utilisateur_id'] ) }}"
-       class="bouton-ajouter-client">Ajouter des compétences</a>
+    <a href="{{ url_for('utilisateurs.utilisateur_ajouter_competences', uid=utilisateur.utilisateur_id) }}"
+       class="primary-button">Ajouter des compétences</a>
 
     {% if peut_gerer_docs %}
         <p>-----</p>

@@ -50,6 +50,12 @@ app.register_blueprint(conventions_bp)
 app.register_blueprint(interactions_bp)
 app.register_blueprint(clients_bp)
 app.register_blueprint(utilisateurs_bp)
+try:
+    from utilisateurs import utilisateurs_bd
+    if utilisateurs_bd:
+        app.register_blueprint(utilisateurs_bd)
+except Exception:
+    pass
 app.register_blueprint(errors_bp)
 
 @app.context_processor
@@ -1069,6 +1075,55 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+
+# Compatibility wrappers: keep old endpoint names but delegate to the blueprint implementations
+@app.route('/utilisateurs', methods=['GET'], endpoint='utilisateurs')
+@login_required
+def _utilisateurs_wrapper():
+    try:
+        return redirect(url_for('utilisateurs.users'))
+    except Exception:
+        abort(404)
+
+@app.route('/utilisateurs/<int:uid>', endpoint='utilisateurs_detail')
+@login_required
+def _utilisateurs_detail_wrapper(uid):
+    try:
+        return redirect(url_for('utilisateurs.utilisateurs_detail', uid=uid))
+    except Exception:
+        abort(404)
+
+@app.route('/utilisateurs/<int:uid>/ajouter_comp', methods=['GET', 'POST'], endpoint='utilisateur_ajouter_competences')
+@login_required
+def _utilisateur_ajouter_competences_wrapper(uid):
+    try:
+        return redirect(url_for('utilisateurs.utilisateur_ajouter_competences', uid=uid))
+    except Exception:
+        abort(404)
+
+@app.route('/utilisateurs/create', methods=['GET', 'POST'], endpoint='create_user')
+@login_required
+def _create_user_wrapper():
+    try:
+        return redirect(url_for('utilisateurs.create_user'))
+    except Exception:
+        abort(404)
+
+@app.post('/utilisateurs/<int:user_id>/supprimer', endpoint='supprimer_utilisateur')
+@login_required
+def _supprimer_utilisateur_wrapper(user_id):
+    try:
+        return redirect(url_for('utilisateurs.supprimer_utilisateur', user_id=user_id))
+    except Exception:
+        abort(404)
+
+@app.route('/utilisateurs/<int:utilisateur_id>/edit', methods=['GET', 'POST'], endpoint='edit_utilisateur')
+@login_required
+def _edit_utilisateur_wrapper(utilisateur_id):
+    try:
+        return redirect(url_for('utilisateurs.edit_utilisateur', utilisateur_id=utilisateur_id))
+    except Exception:
+        abort(404)
 
 if __name__ == "__main__":
     app.run(debug=True)
