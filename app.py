@@ -13,8 +13,7 @@ DATABASE = os.getenv('DATABASE')
 
 import sqlite3
 from tools import get_db, has_permission, hash_password, verify_password
-from database import Client, Utilisateur, Projet
-
+from database import Client, Utilisateur, Projet, Jalon
 
 # Importation des blueprints
 from app_conventions import conventions_bp
@@ -298,7 +297,7 @@ def create_client():
         abort(403)
 
     client_added_successfully = False
-    c = get_db().cursor()
+    db = get_db()
 
     if request.method == 'POST':
         nom_e = request.form["nom_entreprise"]
@@ -311,10 +310,8 @@ def create_client():
         lng = request.form["loc_lng"]
         addr = request.form["address"]
 
-        # Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-        c.execute("INSERT INTO Clients VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                  (None, nom_e, nom_c, email, phone, type, interlocuteur, lat, lng, addr))
-        get_db().commit()
+        client = Client.from_db_row(db, (None, nom_e, nom_c, email, phone, type, interlocuteur, lat, lng, addr))
+        client.save()
 
         client_added_successfully = True
 
@@ -373,9 +370,6 @@ def edit_client(client_id):
         client.save()
 
         return redirect(url_for("client_detail", client_id=client.client_id))
-
-        # return jsonify({'message': 'Interaction updated successfully'}), 200
-    print("oui")
 
     # Obtention des interlocuteurs possibles
     interlocuteurs_dispo = get_db().get_all_users(sort_by='nom')
@@ -706,7 +700,7 @@ def projet_ajouter_competences(projet_id):
     if request.method == "POST":
         comp_requises = list(map(int, request.form.getlist("skills[]")))
         niveaux = list(map(int, request.form.getlist("levels[]")))
-        s = c.execute("Select competence_id from projet_competences where projet_id=?", (projet_id,)).fetchall()
+        s = c.execute("SELECT competence_id FROM projet_competences WHERE projet_id=?", (projet_id,)).fetchall()
         for i in range(len(s)):
             s[i] = s[i][0]
         print(s)
@@ -822,12 +816,9 @@ def creer_jalon():
     date_fin = request.form.get("date_fin_creation") or None
     est_complete = 1 if request.form.get("est_complete_creation") else 0
 
-    db.execute("""
-               INSERT INTO Jalons (description, date_fin, est_complete, projet_id)
-               VALUES (?, ?, ?, ?)
-               """, (description, date_fin, est_complete, projet_id))
+    jalon = Jalon.from_db_row(db, (None, description, date_fin, est_complete, projet_id))
+    jalon.save()
 
-    db.commit()
     db.invalidate_project(projet_id)
 
     return redirect(url_for("projet_detail", projet_id=projet_id))
@@ -837,7 +828,7 @@ def creer_jalon():
 @login_required
 def utilisateurs():
     """Fonction pour la route /utilisateurs \n
-    Affiche la page qui lsite tout les utilisateurs"""
+    Affiche la page qui liste tous les utilisateurs"""
 
 
     recherche_utilisateurs = request.args.get("q", "").lower()
@@ -871,13 +862,9 @@ def utilisateurs_detail(uid):
     """Fonction pour la route /utilisateurs/id_utilisateur \n
     Affiche la page dédié à un utilisateur"""
 
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
+    db = get_db()
 
-    c.execute("SELECT * FROM Utilisateurs WHERE utilisateur_id = ?", (uid,))
-    utilisateur = c.fetchone()
-    conn.close()
+    utilisateur = db.get_user_by_id(uid)
 
     if utilisateur is None:
         abort(404)
@@ -912,7 +899,7 @@ def utilisateur_ajouter_competences(uid):
     if request.method == "POST":
         comp_requises = list(map(int, request.form.getlist("skills[]")))
         niveaux = list(map(int, request.form.getlist("levels[]")))
-        s = c.execute("Select competence_id from intervenant_competences where intervenant_id=?", (uid,)).fetchall()
+        s = c.execute("SELECT competence_id FROM intervenant_competences WHERE intervenant_id=?", (uid,)).fetchall()
         for i in range(len(s)):
             s[i] = s[i][0]
         print(s)
@@ -939,7 +926,7 @@ def create_user():
         abort(403)
 
     user_added_successfully = False
-    c = get_db().cursor()
+    db = get_db()
 
     if request.method == 'POST':
         email = request.form["e-mail"]
@@ -956,16 +943,15 @@ def create_user():
         doc_adhesion = request.form["doc_adh"]
         doc_rib = request.form["doc_rib"]
 
-        # Insertion de None = NULL dans la colonne primary key l'autoincrément est automatique
-        c.execute("INSERT INTO Utilisateurs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                  (None, email, hmdp, date_expiration_mdp, nom, prenom, avatar, role_id, est_intervenant,
+        user = Utilisateur.from_db_row(db, (None, email, hmdp, date_expiration_mdp, nom, prenom, avatar, role_id, est_intervenant,
                    heures_dispo_semaine, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
-        get_db().commit()
+        user.save()
+
 
         user_added_successfully = True
 
     # Obtention des noms de rôles possibles
-    roles_possibles = c.execute("SELECT role_id, nom FROM Roles ORDER BY hierarchie").fetchall()
+    roles_possibles = db.get_all_roles(sort_by="hierarchie")
 
     return render_template("utilisateurs/create_utilisateur.html",
                            context={"success": user_added_successfully, "roles_possibles": roles_possibles})
@@ -1045,7 +1031,7 @@ def edit_utilisateur(utilisateur_id):
         # return jsonify({'message': 'Interaction updated successfully'}), 200
 
     # Obtention des interlocuteurs possibles
-    roles_possibles = db.execute("SELECT role_id, nom FROM Roles ORDER BY hierarchie").fetchall()
+    roles_possibles = db.get_all_roles(sort_by="hierarchie")
 
     return render_template("utilisateurs/edit_utilisateur.html", context={"roles_possibles": roles_possibles},
                            utilisateur=utilisateur, Utilisateur=Utilisateur)
