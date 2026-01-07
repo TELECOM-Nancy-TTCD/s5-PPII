@@ -3,82 +3,88 @@
 {% block title %}Création d'un nouveau client{% endblock %}
 
 {% block content %}
-  <h1> Ajout d'un nouveau Client/Prospect/Ancien Client de TNS</h1>
-  {% if context.success %}
-  <h2 class="success-message"> Client ajouté avec succès! </h2>
-  {% endif %}
-  <br>
+    <h1> Ajout d'un nouveau Client/Prospect/Ancien Client de TNS</h1>
+    {% if context.success %}
+        <h2 class="success-message"> Client ajouté avec succès! </h2>
+    {% endif %}
+    <br>
     <form class="form-create-client" method="post">
-      <div class="input-box">
-        <label class="form-label" for="nom_entreprise">Nom de l'entreprise</label>
-        <input id="nom_entreprise" name="nom_entreprise" type="text" placeholder="Nom de l'entreprise cliente" required maxlength="200">
-        <div class="field-error" id="error-nom_entreprise"></div>
-      </div>
-
-      <div class="input-box">
-        <label class="form-label" for="contact_nom">Nom du contact</label>
-        <input id="contact_nom" name="contact_nom" type="text" placeholder="Nom du contact" required maxlength="120">
-        <div class="field-error" id="error-contact_nom"></div>
-      </div>
-
-      <div class="input-box">
-        <label class="form-label" for="contact_email">E-mail du contact</label>
-        <input id="contact_email" name="contact_email" type="email" placeholder="Mail du contact" pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$" maxlength="200">
-        <div class="help-text">Format attendu : adresse@exemple.tld</div>
-        <div class="field-error" id="error-contact_email"></div>
-      </div>
-
-      <div class="input-box">
-        <label class="form-label" for="contact_telephone">Téléphone du contact</label>
-        <input id="contact_telephone" name="contact_telephone" type="tel" placeholder="Téléphone du contact" pattern="^[0-9+()\-\s]{6,25}$" maxlength="25">
-        <div class="help-text">Chiffres, espaces, +, - et parenthèses autorisés.</div>
-        <div class="field-error" id="error-contact_telephone"></div>
-      </div>
-
-      <div class="input-box">
-          <label class="form-label" for="type_client">Type de client</label>
-          <select id="type_client" name="type_client" required>
-              <option value=""> --Sélectionnez un type-- </option>
-              <option value="Prospect"> Prospect </option>
-              <option value="Actif"> Actif </option>
-              <option value="Ancien"> Ancien </option>
-          </select>
-          <div class="field-error" id="error-type_client"></div>
-      </div>
-
-      <div class="input-box">
-          <label class="form-label" for="interlocuteur">Interlocuteur principal</label>
-          <select id="interlocuteur" name="interlocuteur" required>
-              <option value=""> -- Qui est l'interlocuteur principal? -- </option>
-              {% for i in context.interlocuteurs %}
-              <option value="{{i.utilisateur_id}}"> {{i.nom}} {{i.prenom}} </option>
-              {% endfor %}
-          </select>
-          <div class="field-error" id="error-interlocuteur"></div>
-      </div>
-
-      <div class="column">
         <div class="input-box">
-          <label class="form-label" for="loc_lat">Latitude</label>
-          <input id="loc_lat" name="loc_lat" type="number" placeholder="Latitude de l'entreprise" step="0.000000001" pattern="^-?\d{1,3}(\.\d+)?$">
-          <div class="field-error" id="error-loc_lat"></div>
+            <label class="form-label" for="nom_entreprise">Nom de l'entreprise</label>
+            <input id="nom_entreprise" name="nom_entreprise" type="text" placeholder="Nom de l'entreprise cliente"
+                   required maxlength="200">
+            <div class="field-error" id="error-nom_entreprise"></div>
         </div>
 
         <div class="input-box">
-          <label class="form-label" for="loc_lng">Longitude</label>
-          <input id="loc_lng" name="loc_lng" type="number" placeholder="Longitude de l'entreprise" step="0.000000001" pattern="^-?\d{1,3}(\.\d+)?$">
-          <div class="field-error" id="error-loc_lng"></div>
+            <label class="form-label" for="contact_nom">Nom du contact</label>
+            <input id="contact_nom" name="contact_nom" type="text" placeholder="Nom du contact" required
+                   maxlength="120">
+            <div class="field-error" id="error-contact_nom"></div>
         </div>
-      </div>
 
-      <div class="input-box">
-        <label class="form-label" for="address">Adresse</label>
-        <input id="address" name="address" type="text" placeholder="Adresse de l'entreprise" maxlength="300">
-        <div class="field-error" id="error-address"></div>
-      </div>
+        <div class="input-box">
+            <label class="form-label" for="contact_email">E-mail du contact</label>
+            <input id="contact_email" name="contact_email" type="email" placeholder="Mail du contact"
+                   pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$" maxlength="200">
+            <div class="help-text">Format attendu : adresse@exemple.tld</div>
+            <div class="field-error" id="error-contact_email"></div>
+        </div>
 
-      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
-        <input type="submit" class="primary-button" value="Ajouter le client">
-      </div>
+        <div class="input-box">
+            <label class="form-label" for="contact_telephone">Téléphone du contact</label>
+            <input id="contact_telephone" name="contact_telephone" type="tel" placeholder="Téléphone du contact"
+                   pattern="^[0-9+()\-\s]{6,25}$" maxlength="25">
+            <div class="help-text">Chiffres, espaces, +, - et parenthèses autorisés.</div>
+            <div class="field-error" id="error-contact_telephone"></div>
+        </div>
+
+        <div class="input-box">
+            <label class="form-label" for="type_client">Type de client</label>
+            <select id="type_client" name="type_client" required>
+                <option value=""> --Sélectionnez un type--</option>
+                <option value="Prospect"> Prospect</option>
+                <option value="Actif"> Actif</option>
+                <option value="Ancien"> Ancien</option>
+            </select>
+            <div class="field-error" id="error-type_client"></div>
+        </div>
+
+        <div class="input-box">
+            <label class="form-label" for="interlocuteur">Interlocuteur principal</label>
+            <select id="interlocuteur" name="interlocuteur" required>
+                <option value=""> -- Qui est l'interlocuteur principal? --</option>
+                {% for i in context.interlocuteurs %}
+                    <option value="{{ i.utilisateur_id }}"> {{ i.nom }} {{ i.prenom }} </option>
+                {% endfor %}
+            </select>
+            <div class="field-error" id="error-interlocuteur"></div>
+        </div>
+
+        <div class="column">
+            <div class="input-box">
+                <label class="form-label" for="loc_lat">Latitude</label>
+                <input id="loc_lat" name="loc_lat" type="number" placeholder="Latitude de l'entreprise"
+                       step="0.000000001" pattern="^-?\d{1,3}(\.\d+)?$">
+                <div class="field-error" id="error-loc_lat"></div>
+            </div>
+
+            <div class="input-box">
+                <label class="form-label" for="loc_lng">Longitude</label>
+                <input id="loc_lng" name="loc_lng" type="number" placeholder="Longitude de l'entreprise"
+                       step="0.000000001" pattern="^-?\d{1,3}(\.\d+)?$">
+                <div class="field-error" id="error-loc_lng"></div>
+            </div>
+        </div>
+
+        <div class="input-box">
+            <label class="form-label" for="address">Adresse</label>
+            <input id="address" name="address" type="text" placeholder="Adresse de l'entreprise" maxlength="300">
+            <div class="field-error" id="error-address"></div>
+        </div>
+
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+            <input type="submit" class="primary-button" value="Ajouter le client">
+        </div>
     </form>
-{%endblock%}
+{% endblock %}

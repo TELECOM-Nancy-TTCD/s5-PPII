@@ -4,137 +4,142 @@
 
 {% block content %}
 
-<h1 style="flex:1">Détails du client</h1>
+    <h1 style="flex:1">Détails du client</h1>
 
-<div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;"> 
+    <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
 
-    {% if has_permission(current_user, "peut_gerer_clients") %}
-    <a href="{{ url_for('edit_client', client_id=client.client_id) }}" class="primary-button icon-button" aria-label="Modifier">
-      <!-- pencil / edit icon -->
-      <i class="fa-solid fa-pen"></i>
-    </a>
+        {% if has_permission(current_user, "peut_gerer_clients") %}
+            <a href="{{ url_for('edit_client', client_id=client.client_id) }}" class="primary-button icon-button"
+               aria-label="Modifier">
+                <!-- pencil / edit icon -->
+                <i class="fa-solid fa-pen"></i>
+            </a>
 
-    <form action="{{ url_for('supprimer_client', client_id=client.client_id  ) }}" method="post" 
-      onsubmit="return confirm('Voulez-vous vraiment supprimer ce client ? Cette action est irréversible !');">
-    <button type="submit" class="danger-button icon-button" aria-label="Supprimer" id="delete-interaction-button" title="Supprimer" data-id="{{ client.client_id }}">
-        <!-- trash icon -->
-        <i class="fa-solid fa-trash"></i>
-      </button>
-    </form>
-    {% endif %}
-
-  </div>
-
-<h1><a href="{{ url_for('client_detail', client_id=client.client_id) }}">{{ client['nom_entreprise'] }}</a></h1>
-
-<p><strong>Contact :</strong> {{ client['contact_nom'] }}</p>
-<p><strong>Email :</strong> <a href="mailto:{{ client['contact_email'] }}">{{ client['contact_email'] }}</a></p>
-<p><strong>Téléphone :</strong> <a href="tel:{{ client['contact_telephone'] }}">{{ client['contact_telephone'] }}</a></p>
-<p><strong>Type :</strong> {{ client['type_client'] }}</p>
-<p><strong>Interlocuteur principal :</strong>
-                {% if has_permission(current_user, 'peut_lire_utilisateurs') %}
-                    <a href="{{ url_for('utilisateurs.utilisateurs_detail', uid=client.interlocuteur_principal_id) }}">{{ inter }} <i class="fa-solid fa-up-right-from-square"></i></a>
-                {% else %}
-                    {{ inter }})
-                {% endif %}
-            </p>
-<p><strong>Adresse :</strong> {{ client['address'] }}</p>
-
-<p>-----</p>
-
-<h2>Projets liés</h2>
-{% if projets %}
-    <div class="clients-projets-liste">
-        <div class="clients-projets-entete">
-            <span>Nom du projet</span>
-            <span>Statut</span>
-            <span>Budget</span>
-        </div>
-        <ul>
-            {% for projet in projets %}
-            <li>
-                <span>{{ projet.nom_projet }}</span>
-                <span>{{ projet.statut }}</span>
-                <span>{{ projet.budget }} €</span>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-
-{% else %}
-    <p>Aucun projet associé.</p>
-{% endif %}
-
-
-<p>-----</p>
-
-<h2>Avancement des projets du client</h2>
-{% for projet in projets %}
-<div class="projet-card">
-    <p>{{ projet.nom_projet }}</p>
-    <div class="progress-bar-container">
-        <div class="progress-bar" style="width: {{ projet.progress }}%;">
-            {{ projet.progress }}%
-        </div>
-    </div>
-</div>
-{% endfor %}
-
-
-<p>-----</p>
-
-
-<h2>Dernières interactions</h2>
-
-{% if interactions %}
-<div class="interactions-container">
-
-    {% for interaction in interactions %}
-    {% set is_long = interaction.contenu|length > 200 %}
-
-    <div class="interaction-card">
-
-        <div class="interaction-header">
-            <span>{{ interaction.date_time_interaction }}</span>
-            <span>Utilisateur : {{ interaction.utilisateur.nom }}</span>
-        </div>
-
-        <div id="interaction-{{ loop.index }}" class="interaction-text {% if is_long %}collapsed{% endif %}">
-            {{ interaction.contenu }}
-        </div>
-
-        {% if is_long %}
-        <button id="btn-{{ loop.index }}" class="interaction-toggle"
-                onclick="Interaction({{ loop.index }})">
-            Voir plus
-        </button>
+            <form action="{{ url_for('supprimer_client', client_id=client.client_id  ) }}" method="post"
+                  onsubmit="return confirm('Voulez-vous vraiment supprimer ce client ? Cette action est irréversible !');">
+                <button type="submit" class="danger-button icon-button" aria-label="Supprimer"
+                        id="delete-interaction-button" title="Supprimer" data-id="{{ client.client_id }}">
+                    <!-- trash icon -->
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </form>
         {% endif %}
 
     </div>
+
+    <h1><a href="{{ url_for('client_detail', client_id=client.client_id) }}">{{ client['nom_entreprise'] }}</a></h1>
+
+    <p><strong>Contact :</strong> {{ client['contact_nom'] }}</p>
+    <p><strong>Email :</strong> <a href="mailto:{{ client['contact_email'] }}">{{ client['contact_email'] }}</a></p>
+    <p><strong>Téléphone :</strong> <a
+            href="tel:{{ client['contact_telephone'] }}">{{ client['contact_telephone'] }}</a></p>
+    <p><strong>Type :</strong> {{ client['type_client'] }}</p>
+    <p><strong>Interlocuteur principal :</strong>
+        {% if has_permission(current_user, 'peut_lire_utilisateurs') %}
+            <a href="{{ url_for('utilisateurs.utilisateurs_detail', uid=client.interlocuteur_principal_id) }}">{{ inter }}
+                <i class="fa-solid fa-up-right-from-square"></i></a>
+        {% else %}
+            {{ inter }})
+        {% endif %}
+    </p>
+    <p><strong>Adresse :</strong> {{ client['address'] }}</p>
+
+    <p>-----</p>
+
+    <h2>Projets liés</h2>
+    {% if projets %}
+        <div class="clients-projets-liste">
+            <div class="clients-projets-entete">
+                <span>Nom du projet</span>
+                <span>Statut</span>
+                <span>Budget</span>
+            </div>
+            <ul>
+                {% for projet in projets %}
+                    <li>
+                        <span>{{ projet.nom_projet }}</span>
+                        <span>{{ projet.statut }}</span>
+                        <span>{{ projet.budget }} €</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    {% else %}
+        <p>Aucun projet associé.</p>
+    {% endif %}
+
+
+    <p>-----</p>
+
+    <h2>Avancement des projets du client</h2>
+    {% for projet in projets %}
+        <div class="projet-card">
+            <p>{{ projet.nom_projet }}</p>
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: {{ projet.progress }}%;">
+                    {{ projet.progress }}%
+                </div>
+            </div>
+        </div>
     {% endfor %}
 
-</div>
 
-{% else %}
-<p>Aucune interaction.</p>
-{% endif %}
+    <p>-----</p>
 
-<script>
-function Interaction(id) {
-    const textBlock = document.getElementById("interaction-" + id);
-    const btn = document.getElementById("btn-" + id);
 
-    if (textBlock.classList.contains("collapsed")) {
-        const fullHeight = textBlock.scrollHeight + "px";
-        textBlock.style.maxHeight = fullHeight;
-        textBlock.classList.remove("collapsed");
-        btn.textContent = "Voir moins";
-    } else {
-        textBlock.style.maxHeight = "80px";
-        textBlock.classList.add("collapsed");
-        btn.textContent = "Voir plus";
-    }
-}
-</script>
+    <h2>Dernières interactions</h2>
+
+    {% if interactions %}
+        <div class="interactions-container">
+
+            {% for interaction in interactions %}
+                {% set is_long = interaction.contenu|length > 200 %}
+
+                <div class="interaction-card">
+
+                    <div class="interaction-header">
+                        <span>{{ interaction.date_time_interaction }}</span>
+                        <span>Utilisateur : {{ interaction.utilisateur.nom }}</span>
+                    </div>
+
+                    <div id="interaction-{{ loop.index }}"
+                         class="interaction-text {% if is_long %}collapsed{% endif %}">
+                        {{ interaction.contenu }}
+                    </div>
+
+                    {% if is_long %}
+                        <button id="btn-{{ loop.index }}" class="interaction-toggle"
+                                onclick="Interaction({{ loop.index }})">
+                            Voir plus
+                        </button>
+                    {% endif %}
+
+                </div>
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+        <p>Aucune interaction.</p>
+    {% endif %}
+
+    <script>
+        function Interaction(id) {
+            const textBlock = document.getElementById("interaction-" + id);
+            const btn = document.getElementById("btn-" + id);
+
+            if (textBlock.classList.contains("collapsed")) {
+                const fullHeight = textBlock.scrollHeight + "px";
+                textBlock.style.maxHeight = fullHeight;
+                textBlock.classList.remove("collapsed");
+                btn.textContent = "Voir moins";
+            } else {
+                textBlock.style.maxHeight = "80px";
+                textBlock.classList.add("collapsed");
+                btn.textContent = "Voir plus";
+            }
+        }
+    </script>
 
 {% endblock %}
