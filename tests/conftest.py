@@ -75,8 +75,7 @@ def create_minimal_schema(db: Database):
             peut_gerer_jalons          BOOLEAN DEFAULT false,
             peut_assigner_intervenants BOOLEAN DEFAULT false,
 
-            peut_lire_intervenants     BOOLEAN DEFAULT false,
-            peut_modifier_intervenants BOOLEAN DEFAULT false,
+            peut_lire_utilisateurs     BOOLEAN DEFAULT false,
             peut_acceder_documents     BOOLEAN DEFAULT false,
             peut_gerer_competences     BOOLEAN DEFAULT false,
 

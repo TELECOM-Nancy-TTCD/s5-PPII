@@ -24,17 +24,17 @@ def main():
         INSERT INTO Roles (role_id, nom, hierarchie, administrateur, peut_gerer_utilisateurs, peut_gerer_roles, 
                            peut_lire_clients, peut_gerer_clients, peut_creer_interactions, peut_gerer_interactions, 
                            peut_lire_projets, peut_gerer_projets, peut_gerer_jalons, peut_assigner_intervenants, 
-                           peut_lire_intervenants, peut_modifier_intervenants, peut_acceder_documents, 
+                           peut_lire_utilisateurs, peut_acceder_documents, 
                            peut_gerer_competences, peut_lancer_matching, peut_exporter_csv)
-        VALUES (NULL, 'Admin', 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        VALUES (NULL, 'Admin', 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
     """)
     cur.execute("""
         INSERT INTO Roles (role_id, nom, hierarchie, administrateur, peut_gerer_utilisateurs, peut_gerer_roles, 
                            peut_lire_clients, peut_gerer_clients, peut_creer_interactions, peut_gerer_interactions, 
                            peut_lire_projets, peut_gerer_projets, peut_gerer_jalons, peut_assigner_intervenants, 
-                           peut_lire_intervenants, peut_modifier_intervenants, peut_acceder_documents, 
+                           peut_lire_utilisateurs, peut_acceder_documents, 
                            peut_gerer_competences, peut_lancer_matching, peut_exporter_csv)
-        VALUES (NULL, 'Membre', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        VALUES (NULL, 'Membre', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
     """)
     print("   ✔ Rôles ajoutés.\n")
 

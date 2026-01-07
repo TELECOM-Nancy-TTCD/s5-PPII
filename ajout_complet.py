@@ -21,12 +21,12 @@ def main():
     # =========================================================
     print("➤ Ajout des rôles...")
     roles = [
-    ("Admin", 0, 1,1,1, 1,1, 1,1, 1,1,1, 1, 1,1, 1, 1,1,1),
-    ("Manager", 1, 0,1,0, 1,1, 1,1, 1,1,1, 1, 1,1, 1, 1,1,1),
-    ("Chef de projet", 2, 0,0,0, 1,1, 1,1, 1,1,1, 1, 1,1, 1, 0,0,0),
-    ("Intervenant senior", 3, 0,0,0, 1,0, 0,0, 1,0,0, 0, 1,0, 1, 0,0,0),
-    ("Intervenant junior", 4, 0,0,0, 1,0, 0,0, 1,0,0, 0, 1,0, 0, 0,0,0),
-    ("Membre", 5, 0,0,0, 0,0, 0,0, 0,0,0, 0, 0,0, 0, 0,0,0),
+    ("Admin", 0, 1,1,1, 1,1, 1,1, 1,1,1, 1, 1,1, 1, 1,1),
+    ("Manager", 1, 0,1,0, 1,1, 1,1, 1,1,1, 1, 0,1, 1, 1,1),
+    ("Chef de projet", 2, 0,0,0, 1,1, 1,1, 1,1,1, 1, 0,1, 1, 0,0),
+    ("Intervenant senior", 3, 0,0,0, 1,0, 0,0, 1,0,0, 0, 1,0, 1, 0,0),
+    ("Intervenant junior", 4, 0,0,0, 1,0, 0,0, 1,0,0, 0, 1,0, 0, 0,0),
+    ("Membre", 5, 0,0,0, 0,0, 0,0, 0,0,0, 0, 0,0, 0, 0,0),
 ]
 
     for r in roles:
@@ -38,10 +38,9 @@ def main():
             peut_creer_interactions, peut_gerer_interactions,
             peut_lire_projets, peut_gerer_projets, peut_gerer_jalons,
             peut_assigner_intervenants,
-            peut_lire_intervenants, peut_modifier_intervenants,
-            peut_acceder_documents,
+            peut_lire_utilisateurs, peut_acceder_documents,
             peut_gerer_competences, peut_lancer_matching, peut_exporter_csv)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, r)
 
     print("   ✔ Rôles ajoutés.\n")

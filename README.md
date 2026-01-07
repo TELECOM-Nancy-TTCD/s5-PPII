@@ -42,12 +42,11 @@ Structure de la table Roles :
 (9, 'peut_gerer_projets', 'BOOLEAN', 0, 'false', 0)
 (10, 'peut_gerer_jalons', 'BOOLEAN', 0, 'false', 0)
 (11, 'peut_assigner_intervenants', 'BOOLEAN', 0, 'false', 0)
-(12, 'peut_lire_intervenants', 'BOOLEAN', 0, 'false', 0)
-(13, 'peut_modifier_intervenants', 'BOOLEAN', 0, 'false', 0)
-(14, 'peut_acceder_documents', 'BOOLEAN', 0, 'false', 0)
-(15, 'peut_gerer_competences', 'BOOLEAN', 0, 'false', 0)
-(16, 'peut_lancer_matching', 'BOOLEAN', 0, 'false', 0)
-(17, 'peut_exporter_csv', 'BOOLEAN', 0, 'false', 0)
+(12, 'peut_lire_utilisateurs', 'BOOLEAN', 0, 'false', 0)
+(13, 'peut_acceder_documents', 'BOOLEAN', 0, 'false', 0)
+(14, 'peut_gerer_competences', 'BOOLEAN', 0, 'false', 0)
+(15, 'peut_lancer_matching', 'BOOLEAN', 0, 'false', 0)
+(16, 'peut_exporter_csv', 'BOOLEAN', 0, 'false', 0)
 
 Structure de la table Utilisateurs :
 (0, 'utilisateur_id', 'INT', 0, None, 1)
