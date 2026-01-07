@@ -43,15 +43,15 @@ def validate_interaction_form(form):
     type_val = form.get('type') or form.get('type_interaction')
     allowed_types = getattr(Interaction, 'interactions_types', None) or []
     if not type_val or type_val.strip() == '':
-        errors['type'] = 'Le type d\'interaction est requis.'
+        errors['type_interaction'] = 'Le type d\'interaction est requis.'
     elif allowed_types and type_val not in allowed_types:
-        errors['type'] = 'Type d\'interaction invalide.'
+        errors['type_interaction'] = 'Type d\'interaction invalide.'
 
     date_val = form.get('interaction-date') or form.get('date_interaction') or form.get('date')
     parsed = None
     parsed_is_datetime = False
     if not date_val or str(date_val).strip() == '':
-        errors['interaction-date'] = 'La date est requise.'
+        errors['date_interaction'] = 'La date est requise.'
     else:
         # Try parsing as date (YYYY-MM-DD) or datetime-local (YYYY-MM-DDTHH:MM)
         for fmt in ('%Y-%m-%d', '%Y-%m-%dT%H:%M'):
@@ -62,25 +62,25 @@ def validate_interaction_form(form):
             except Exception:
                 parsed = None
         if parsed is None:
-            errors['interaction-date'] = 'Format de date invalide. Utiliser YYYY-MM-DD ou YYYY-MM-DDTHH:MM.'
+            errors['date_interaction'] = 'Format de date invalide. Utiliser YYYY-MM-DD ou YYYY-MM-DDTHH:MM.'
         else:
             # Check not in the future
             now = datetime.now()
             if parsed_is_datetime:
                 if parsed > now:
-                    errors['interaction-date'] = 'La date/heure ne peut pas être supérieure à la date actuelle.'
+                    errors['date_interaction'] = 'La date/heure ne peut pas être supérieure à la date actuelle.'
             else:
                 # date-only: compare dates (ignore time)
                 if parsed.date() > now.date():
-                    errors['interaction-date'] = 'La date ne peut pas être supérieure à la date du jour.'
+                    errors['date_interaction'] = 'La date ne peut pas être supérieure à la date du jour.'
 
     title = form.get('title') or form.get('titre')
     if not title or str(title).strip() == '':
         errors['title'] = 'Le titre est requis.'
 
-    content = form.get('content') or form.get('contenu') or form.get('notes')
+    content = form.get('contenu') or form.get('contenu') or form.get('notes')
     if not content or str(content).strip() == '':
-        errors['content'] = 'Le contenu est requis.'
+        errors['contenu'] = 'Le contenu est requis.'
 
     return errors
 
@@ -228,9 +228,9 @@ def create_interaction():
         interaction_data = {
             'client_id': request.form['client-id'],
             'utilisateur_id': current_user.utilisateur_id,
-            'type_interaction_id': request.form['type'],
-            'date_time_interaction': request.form['interaction-date'],
-            'contenu': request.form['content'],
+            'type_interaction_id': request.form['type_interaction'],
+            'date_time_interaction': request.form['date_interaction'],
+            'contenu': request.form['contenu'],
             'titre': request.form['title']
         }
         Interaction.from_dict(db, interaction_data).save()

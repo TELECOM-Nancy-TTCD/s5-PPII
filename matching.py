@@ -1,10 +1,21 @@
-
-
-import sqlite3
+from typing import Any
 
 from math import exp,sqrt
 
 from database import *
+from tools import get_db
+
+class _DBProxy:
+    """Petit proxy qui délègue dynamiquement vers l'instance réelle renvoyée par `get_db()`.
+    Permet de garder la syntaxe historique `db.execute(...)` sans dépendre d'une variable
+    globale initialisée ailleurs.
+    """
+    def __getattr__(self, item):
+        real = get_db()
+        return getattr(real, item)
+
+_db_instance = _DBProxy()
+db: Any = _db_instance
 
 #### Configuration base de donnée ###
 
@@ -23,6 +34,9 @@ def get_projet(projet_id):
     query = """SELECT * FROM Projets WHERE projet_id=? """
     res = db.execute(query,(projet_id,))
     p = res.fetchone()
+    if not p:
+        # Retourner un dictionnaire sûr avec valeurs par défaut
+        return {"id": projet_id, "nom": None, "charge": 0, "debut": None, "fin": None}
     projet = {"id" : p[0], "nom" : p[2],"charge":p[5], "debut" : p[6], "fin" : p[7]}
     return projet 
 
@@ -281,18 +295,76 @@ def get_projet_courant(utilisateur_id,projet_id):
     SELECT count(p.projet_id)
     FROM Travaille_sur AS t
     JOIN Projets AS p On p.projet_id = t.projet_id
-    WHERE utilisateur_id = ? AND statut = "En cours" AND p.projet_id != ?     """
+    WHERE utilisateur_id = ? AND statut = 'En cours' AND p.projet_id != ?     """
     res = db.execute(query, (utilisateur_id,projet_id) )
     return res.fetchone()[0]
 
 def temps_projet(date_debut,date_fin) :
     """ 
     input : deux dates sous la forme YYYY-MM-DD (début et fin)
-    output : temps en jour séparant les deux dates 
+    output : temps en jour séparant les deux dates
+
+    Cette version est plus robuste : elle accepte plusieurs formats 'YYYY-MM-DD' ou
+    'YYYY-MM-DD HH:MM:SS', gère None/chaînes vides, et renvoie au minimum 1 jour
+    pour éviter les divisions par zéro en aval.
     """
-    date_debut = date_debut.split("-")
-    date_fin = date_fin.split("-")
-    return int(date_fin[2])-int(date_debut[2]) + 30*( int(date_fin[1])- int(date_debut[1]) ) + 365*( int(date_fin[0])-int(date_debut[0]) )
+    from datetime import datetime, date
+
+    # Défaut minimal pour éviter division par zéro
+    MIN_DAYS = 1
+
+    # Vérifier les entrées non définies
+    if not date_debut or not date_fin:
+        return MIN_DAYS
+
+    # Fonction utilitaire de parsing avec plusieurs formats possibles
+    def _parse(d):
+        if isinstance(d, date) and not isinstance(d, datetime):
+            return d
+        if isinstance(d, datetime):
+            return d.date()
+        if not isinstance(d, str):
+            # Si ce n'est pas une chaîne, on ne peut pas parser proprement
+            return None
+        s = d.strip()
+        if not s:
+            return None
+        # Try common formats
+        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d", "%d-%m-%Y"):
+            try:
+                parsed = datetime.strptime(s, fmt)
+                return parsed.date()
+            except Exception:
+                continue
+        # Dernier recours : tenter de séparer par '-' comme avant et construire une date
+        try:
+            parts = s.split('-')
+            if len(parts) >= 3:
+                y = int(parts[0])
+                m = int(parts[1])
+                # parts[2] peut contenir heure -> garder la partie date
+                d_part = parts[2].split(' ')[0]
+                day = int(d_part)
+                return date(y, m, day)
+        except Exception:
+            return None
+
+    d_start = _parse(date_debut)
+    d_end = _parse(date_fin)
+
+    if d_start is None or d_end is None:
+        return MIN_DAYS
+
+    try:
+        delta = (d_end - d_start).days
+    except Exception:
+        return MIN_DAYS
+
+    # Si la date de fin est antérieure ou identique, on considère 1 jour minimal
+    if delta <= 0:
+        return MIN_DAYS
+    return int(delta)
+
 
 def charge_par_semaine(projet_id):
     """ 
@@ -300,8 +372,12 @@ def charge_par_semaine(projet_id):
     output : temps à allouer chaque semaine au projet pour le terminer dans exactement à la date de fin  
     """
     projet = get_projet(projet_id)
-    nb_jour = temps_projet(projet["debut"],projet["fin"])
-    return projet["charge"] / (nb_jour/7)
+    nb_jour = temps_projet(projet.get("debut"), projet.get("fin"))
+    nb_jour = max(1, nb_jour)
+    try:
+        return projet["charge"] / (nb_jour/7)
+    except Exception:
+        return 0
 
 
 def charge_individuelle_par_semaine(projet_id):
@@ -310,6 +386,8 @@ def charge_individuelle_par_semaine(projet_id):
     output : temps par semaine que doit allouer un intervenant travaillant sur le projet pour que celui-ci soit terminé dans les temps
     """
     nb_intervenant = get_nb_intervenant(projet_id)
+    if not nb_intervenant or nb_intervenant <= 0:
+        return charge_par_semaine(projet_id)
     return charge_par_semaine(projet_id)/nb_intervenant
 
 def charge_courante_utilisateur(utilisateur_id):
@@ -390,7 +468,7 @@ def filtrage_minimal(id_projet,ids_utilisateur):
         if not utilisateur["est_intervenant"]:
             return False, [] 
     charge_semaine_projet = charge_par_semaine(id_projet)
-    if  sum([ temps_libre(id) for id in ids_utilisateur ] ) < charge_par_semaine(id_projet) :
+    if  sum([ temps_libre(id) for id in ids_utilisateur ] ) < charge_semaine_projet :
             return False, []
     competences_projet = get_competences_projet(id_projet)
     for id in ids_utilisateur:
@@ -492,7 +570,7 @@ def homogeneite_projet(projet_id,projet_ids):
     input : id d'un projet, ids de projets 
     output : float entre 0 et 1 représentant l'homogénéité entre le projet et l'ensemble des projets 
     specification : chaque compétence en commun entre le projet et un projet de l'ensemble est prise en compte, plus alpha est proche de 0, plus il faut
-    de compétence en commun pour augmenter l'homonénéité 
+    de compétence en commun pour augmenter l'homonenéité
     """
     competences_projet = get_competences_projet(projet_id)
     res = 0

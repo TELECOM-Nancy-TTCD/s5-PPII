@@ -51,7 +51,7 @@
         <select id="role" name="role" required>
             <option value="" hidden=> --Sélectionnez un rôle-- </option>
             {% for i in context.roles_possibles %}
-            <option value={{i[0]}} {% if utilisateur.role_id == i[0] %}selected{% endif %} > {{i[1]}} </option>
+            <option value={{i.role_id}} {% if utilisateur.role_id == i[0] %}selected{% endif %} > {{i.nom}} </option>
             {% endfor %}
         </select>
         <div class="field-error" id="error-role"></div>

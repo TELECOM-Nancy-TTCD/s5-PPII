@@ -1477,9 +1477,6 @@ class Utilisateur(UserMixin, DBObject, _RowInitMixin):
 
         Assure que les attributs ont les types attendus par le reste du code.
         """
-        # Méthode pour patcher les données si nécessaire (ex: mise à jour de schéma)
-        if not isinstance(self.utilisateur_id, int):
-            self.utilisateur_id = int(self.utilisateur_id)
         if not isinstance(self.mot_de_passe_expire, datetime.date):
             if isinstance(self.mot_de_passe_expire, str):
                 self.mot_de_passe_expire = datetime.datetime.strptime(self.mot_de_passe_expire, '%Y-%m-%d').date()
@@ -1813,7 +1810,6 @@ class Projet(DBObject, _RowInitMixin):
 
     doc_dossier: chemin vers du dossier Google Drive des documents du projet (Contrat, missions, jalons, etc)
     """
-
     FIELD_NAMES = [
         'projet_id', 'convention_id', 'nom_projet', 'description', 'budget', 'charge_travail', 'date_debut', 'date_fin', 'statut',
         'doc_dossier'
@@ -1852,6 +1848,28 @@ class Projet(DBObject, _RowInitMixin):
             convention = Convention.from_db_row(self.db, row)
             return convention
         raise ValueError(f"Convention with id {self.convention_id} not found")
+
+    def save(self):
+        """Sauvegarde le projet puis invalide la clé de cache de la liste de projets de la convention associée.
+
+        On délègue d'abord au comportement générique `save()` pour l'INSERT/REPLACE,
+        la mise à jour des index secondaires et la mise en cache individuelle.
+        Ensuite, on supprime explicitement la clé `conventions:<convention_id>:projets`
+        pour forcer la reconstruction de la liste à la prochaine lecture.
+        """
+        # Appeler la logique de sauvegarde générique (INSERT/REPLACE + commit + cache individuel)
+        super().save()
+        # Invalider la liste des projets de la convention associée
+        try:
+            key = redis_key(Convention.DATABASE_NAME.lower(), self.convention_id, "projets")
+            if getattr(self.db, 'redis_client', None) is not None:
+                try:
+                    self.db.redis_client.delete(key)
+                except Exception:
+                    # Ne pas propager une erreur de cache
+                    pass
+        except Exception:
+            pass
 
     @property
     def jalons(self) -> list['Jalon'] | None:

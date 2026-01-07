@@ -121,7 +121,7 @@ def edit_utilisateur(utilisateur_id: int):
         if errors:
             return {'errors': errors}, 400
 
-        email = request.form.get("e-mail")
+        email = request.form.get("email")
         nom = request.form.get("nom")
         prenom = request.form.get("prenom")
         role_id = request.form.get("role")
@@ -150,7 +150,13 @@ def edit_utilisateur(utilisateur_id: int):
 
         return redirect(url_for("utilisateurs_detail", uid=utilisateur.utilisateur_id))
 
-    roles_possibles = get_db().get_all_roles(sort_by="hierarchie")
+
+    def match_role(r):
+        """
+        Exclut les rôles qui sont strictement supérieurs à celui de l'utilisateur courant.
+        """
+        return r.hierarchie >= current_user.role.hierarchie
+    roles_possibles = get_db().get_all_roles(sort_by="hierarchie", key=match_role)
 
     return render_template("utilisateurs/edit_utilisateur.html", context={"roles_possibles": roles_possibles},
                            utilisateur=utilisateur, Utilisateur=Utilisateur)
@@ -198,7 +204,7 @@ def creer_utilisateur():
     db = get_db()
 
     if request.method == 'POST':
-        email = request.form.get("e-mail")
+        email = request.form.get("email")
         hmdp = hash_password(request.form.get("mdp"))
         date_expiration_mdp = (datetime.now() + timedelta(days=365)).date()
         nom = request.form.get("nom")
@@ -217,7 +223,14 @@ def creer_utilisateur():
         user.save()
         user_added_successfully = True
 
-    roles_possibles = get_db().get_all_roles(sort_by="hierarchie")
+    def match_role(r):
+        """
+        Exclut les rôles qui sont strictement supérieurs à celui de l'utilisateur courant.
+        0: Grande hiérarchie = rôle le plus puissant
+        Puis hiérarchie croissante = rôles de plus en plus limités
+        """
+        return r.hierarchie >= current_user.role.hierarchie
+    roles_possibles = get_db().get_all_roles(sort_by="hierarchie", key=match_role)
 
     return render_template("utilisateurs/create_utilisateur.html",
                            context={"success": user_added_successfully, "roles_possibles": roles_possibles})

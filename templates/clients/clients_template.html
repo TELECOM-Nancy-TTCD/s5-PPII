@@ -56,7 +56,7 @@
             </div>
             <ul>
                 {% for projet in projets %}
-                    <li>
+                    <li onclick="window.location.href='{{ url_for('projet_detail', projet_id=projet.projet_id) }}'">
                         <span>{{ projet.nom_projet }}</span>
                         <span>{{ projet.statut }}</span>
                         <span>{{ projet.budget }} €</span>
