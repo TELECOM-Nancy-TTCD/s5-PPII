@@ -9,6 +9,7 @@ from database import Interaction
 interactions_bp = Blueprint('interactions', __name__, template_folder="templates/interactions", static_folder="static",
                             url_prefix="/interactions")
 
+
 def interaction_filter(q: str, i: Interaction):
     """
     Filter function for interactions.
@@ -87,10 +88,6 @@ def validate_interaction_form(form):
 @interactions_bp.route('/')
 @login_required
 def interactions_home():
-    if not has_permission(current_user, 'peut_gerer_interactions') and not has_permission(current_user,
-                                                                                          'peut_creer_interactions'):
-        return abort(403)
-
     # Récupération des paramètres de pagination
     page = request.args.get("p", 0, type=int)
     limit = request.args.get("l", 10, type=int)
@@ -131,12 +128,14 @@ def interactions_home():
             total_count = db.count_interactions(text=query)
         except Exception:
             # Fallback: si count_interactions échoue pour une raison quelconque, essayer la méthode précédente
-            all_filtered = db.get_all_interactions(limit=0, sort_by=sort_by, sort_dir=sort_dir, key=lambda i: interaction_filter(query, i))
+            all_filtered = db.get_all_interactions(limit=0, sort_by=sort_by, sort_dir=sort_dir,
+                                                   key=lambda i: interaction_filter(query, i))
             total_count = len(all_filtered) if all_filtered is not None else 0
         last_page = max(0, (total_count - 1) // limit) if total_count > 0 else 0
     # Pour détecter s'il y a une page suivante, demander limit+1 éléments
     fetch_limit = limit + 1 if limit and limit > 0 else 0
-    raw_interactions = db.get_all_interactions(limit=fetch_limit, offset=offset, sort_by=sort_by, sort_dir=sort_dir, text=query, key=lambda i: interaction_filter(query, i))
+    raw_interactions = db.get_all_interactions(limit=fetch_limit, offset=offset, sort_by=sort_by, sort_dir=sort_dir,
+                                               text=query, key=lambda i: interaction_filter(query, i))
     has_next = False
     if limit and limit > 0 and raw_interactions is not None:
         if len(raw_interactions) > limit:
@@ -157,10 +156,6 @@ def interactions_home():
 @interactions_bp.route('/<int:interaction_id>')
 @login_required
 def interaction_detail(interaction_id):
-    if not has_permission(current_user, 'peut_gerer_interactions') and not has_permission(current_user,
-                                                                                          'peut_creer_interactions'):
-        return abort(403)
-
     db = get_db()
     interaction = db.get_interaction_by_id(interaction_id)
     if interaction is None:

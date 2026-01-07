@@ -24,11 +24,11 @@
 
   </div>
 
-<h1>{{ client['nom_entreprise'] }}</h1>
+<h1><a href="/clients/{{ client.client_id }}">{{ client['nom_entreprise'] }}</a></h1>
 
 <p><strong>Contact :</strong> {{ client['contact_nom'] }}</p>
-<p><strong>Email :</strong> {{ client['contact_email'] }}</p>
-<p><strong>Téléphone :</strong> {{ client['contact_telephone'] }}</p>
+<p><strong>Email :</strong> <a href="mailto:{{ client['contact_email'] }}">{{ client['contact_email'] }}</a></p>
+<p><strong>Téléphone :</strong> <a href="tel:{{ client['contact_telephone'] }}">{{ client['contact_telephone'] }}</a></p>
 <p><strong>Type :</strong> {{ client['type_client'] }}</p>
 <p><strong>Interlocuteur principal :</strong> {{ inter }}</p>
 <p><strong>Adresse :</strong> {{ client['address'] }}</p>
@@ -131,4 +131,3 @@ function Interaction(id) {
 </script>
 
 {% endblock %}
-

@@ -46,10 +46,10 @@
     <div class="client-card" onclick="window.location.href='/clients/{{ client['client_id'] }}'">
         <div class="client-row">
             <span class="col">{{ client.client_id }}</span>
-            <span class="col">{{ client.nom_entreprise }}</span>
+            <span class="col"><a href="/clients/{{ client.client_id }}" onclick="event.stopPropagation();">{{ client.nom_entreprise }}</a></span>
             <span class="col">{{ client.contact_nom }}</span>
-            <span class="col">{{ client.contact_email }}</span>
-            <span class="col">{{ client.contact_telephone }}</span>
+            <span class="col"><a href="mailto:{{ client.contact_email }}" onclick="event.stopPropagation();">{{ client.contact_email }}</a></span>
+            <span class="col"><a href="tel:{{ client.contact_telephone }}" onclick="event.stopPropagation();">{{ client.contact_telephone }}</a></span>
             <span class="col">{{ client.type_client }}</span>
             <span class="col">
                 {%  if client.interlocuteur_principal_id %}

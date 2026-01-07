@@ -20,7 +20,7 @@
     {% for utilisateur in utilisateurs_db %}
     <div class="card-utilisateurs" onclick="window.location.href='{{ url_for('utilisateurs.utilisateurs_detail', uid=utilisateur.utilisateur_id) }}'">
         <h3>{{ utilisateur.prenom }} {{ utilisateur.nom }}</h3>
-        <p>Rôle : {{ utilisateur['role_nom'] or 'Inconnu' }}</p>
+        <p>Rôle : {{ utilisateur.role.nom or 'Inconnu' }}</p>
         {% if utilisateur.est_intervenant %}
         <p>Intervenant</p>
         {% endif %}

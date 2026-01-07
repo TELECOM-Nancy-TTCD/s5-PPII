@@ -35,16 +35,25 @@
                 {% endif %}
             </ul>
         </li>
+        {% if current_user.is_authenticated and current_user.role and (has_permission(current_user, 'peut_lire_utilisateurs') or has_permission(current_user, 'peut_gerer_roles')) %}
         <li class="menu-dropdown">
-            <a href="{{ url_for('utilisateurs.users') }}">Utilisateurs</a>
+            {# Si l'utilisateur peut lire les utilisateurs, pointer vers la liste, sinon vers la page des rôles #}
+            {% if has_permission(current_user, 'peut_lire_utilisateurs') %}
+                <a href="{{ url_for('utilisateurs.users') }}">Utilisateurs</a>
+            {% else %}
+                <a href="{{ url_for('utilisateurs.roles') }}">Utilisateurs</a>
+            {% endif %}
             <ul class="dropdown-content">
-                <li><a href="{{ url_for('utilisateurs') }}"><i class="fa-solid fa-list"></i> Liste
-                    des utilisateurs</a></li>
-                {% if current_user.is_authenticated and current_user.role and has_permission(current_user, 'peut_gerer_roles') %}
+                {% if has_permission(current_user, 'peut_lire_utilisateurs') %}
+                    <li><a href="{{ url_for('utilisateurs.users') }}"><i class="fa-solid fa-list"></i> Liste
+                        des utilisateurs</a></li>
+                {% endif %}
+                {% if has_permission(current_user, 'peut_gerer_roles') %}
                     <li><a href="{{ url_for('utilisateurs.roles') }}"><i class="fa-solid fa-at"></i> Rôles</a></li>
                 {% endif %}
             </ul>
         </li>
+        {% endif %}
         {% if current_user.is_authenticated and current_user.role and has_permission(current_user, 'peut_lire_projets') %}
             <li><a href="{{ url_for('conventions.index') }}">Conventions</a></li>
         {% endif %}

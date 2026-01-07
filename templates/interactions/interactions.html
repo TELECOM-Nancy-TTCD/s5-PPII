@@ -16,12 +16,14 @@
             <button type="submit" class="secondary-button">Rechercher</button>
         </form>
 
+        {% if has_permission(current_user, "peut_creer_interactions") %}
         <button class="primary-button" id="create-interaction">
           <span>
             <i class="fa-solid fa-plus"></i>
             Créer
           </span>
         </button>
+        {% endif %}
     </div>
 
 
@@ -114,15 +116,14 @@
                      onclick="window.location.href='/interactions/{{ interaction.interaction_id }}'">
                     <div class="client-row">
                         <span class="col">{{ interaction.interaction_id }}</span>
-                        <span class="col">{{ interaction.client.nom_entreprise }}</span>
-                        <span class="col">{{ interaction.utilisateur.nom }} {{ interaction.utilisateur.prenom }}</span>
+                        <span class="col"><a href="/clients/{{ interaction.client.client_id }}" onclick="event.stopPropagation();">{{ interaction.client.nom_entreprise }}</a></span>
+                        <span class="col"><a href="/utilisateurs/{{ interaction.utilisateur.utilisateur_id }}" onclick="event.stopPropagation();">{{ interaction.utilisateur.nom }} {{ interaction.utilisateur.prenom }}</a></span>
                         <span class="col">{{ interaction.titre }}</span>
                         <span class="col">{{ interaction.type_interaction }}</span>
                         <span class="col">{{ interaction.date_time_interaction.strftime('%d/%m/%Y') }}</span>
                         <span class="col">
     <a href="/interactions/{{ interaction.interaction_id }}/edit" class="primary-button icon-button"
        aria-label="Modifier">
-      <!-- pencil / edit icon -->
       <i class="fa-solid fa-pen"></i>
     </a></span>
                     </div>
@@ -160,7 +161,6 @@
                     {% endif %}
                 {% endif %}
 
-                {# First and Prev #}
                 <li>
                     {% if page == 0 %}
                         <button class="first-page disabled" disabled aria-disabled="true"><i class="fa-solid fa-angles-left"></i></button>
@@ -176,7 +176,6 @@
                     {% endif %}
                 </li>
 
-                {# Ellipsis / first page shortcut if start > 0 #}
                 {% if start > 0 %}
                     <li>
                         <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p=0">1</a>
@@ -199,7 +198,6 @@
                     {% endif %}
                 {% endfor %}
 
-                {# Ellipsis / last page shortcut if end < last_page #}
                 {% if end < last_page %}
                     {% if end < last_page - 1 %}
                         <li><span class="ellipsis">&hellip;</span></li>
@@ -209,7 +207,6 @@
                     </li>
                 {% endif %}
 
-                {# Next and Last #}
                 {% set next_p = (page + 1) if (last_page is none) or (page < last_page) else last_page %}
                 <li>
                     {% if not has_next %}
@@ -227,7 +224,6 @@
                 </li>
 
             {% else %}
-                {# Fallback minimal controls si pas d'info sur total #}
                 <li>
                     {% if not has_prev %}
                         <button id="pag-prev" class="disabled" disabled aria-disabled="true"><i class="fa-solid fa-angle-left"></i></button>

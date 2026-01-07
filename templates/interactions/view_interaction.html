@@ -28,12 +28,8 @@
             <p><strong>Type d'interaction :</strong> {{ interaction.type_interaction }}</p>
             <p><strong>Date :</strong> {{ interaction.date_time_interaction.strftime('%d/%m/%Y') }}</p>
             {#        TODO: uniformiser les routes flask clients/id, users - utilisateur#}
-            <p><strong>Client :</strong> <a
-                    href="/client/{{ interaction.client_id }}">{{ interaction.client.nom_entreprise }}
-                (ID: {{ interaction.client.client_id }}) <i class="fa-solid fa-up-right-from-square"></i></a></p>
-            <p><strong>Interlocuteur :</strong> <a
-                    href="/utilisateur/{{ interaction.utilisateur_id }}">{{ interaction.utilisateur.prenom }} {{ interaction.utilisateur.nom }}
-                (ID: {{ interaction.utilisateur.utilisateur_id }}) <i class="fa-solid fa-up-right-from-square"></i></a>
+            <p><strong>Client :</strong> <a href="/clients/{{ interaction.client_id }}">{{ interaction.client.nom_entreprise }} (ID: {{ interaction.client.client_id }}) <i class="fa-solid fa-up-right-from-square"></i></a></p>
+            <p><strong>Interlocuteur :</strong> <a href="/utilisateurs/{{ interaction.utilisateur_id }}">{{ interaction.utilisateur.prenom }} {{ interaction.utilisateur.nom }} (ID: {{ interaction.utilisateur.utilisateur_id }}) <i class="fa-solid fa-up-right-from-square"></i></a>
             </p>
             <h3>Contenu de l'interaction :</h3>
             <p class="content">{{ interaction.contenu or interaction.content or 'Aucun contenu disponible.' }}</p>
@@ -42,4 +38,3 @@
     <script src="/static/scripts/interactions.js"></script>
 
 {% endblock %}
-

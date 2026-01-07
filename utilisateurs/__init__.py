@@ -42,7 +42,7 @@ def utilisateurs_detail(uid: int):
     if utilisateur is None:
         abort(404)
 
-    if not has_permission(current_user, 'peut_lire_utilisateurs') or current_user.utilisateur_id != utilisateur.utilisateur_id:
+    if not has_permission(current_user, 'peut_lire_utilisateurs') and current_user.utilisateur_id != utilisateur.utilisateur_id:
         abort(403)
 
     comp_requises = db.cursor().execute(

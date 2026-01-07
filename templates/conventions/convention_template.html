@@ -11,12 +11,12 @@
 
          <h2>Informations sur le client</h2>
 
-        <p> <strong>Nom :</strong> {{context.client.nom_entreprise}} </p>
+        <p> <strong>Nom :</strong> <a href="/clients/{{ context.client.client_id }}">{{context.client.nom_entreprise}}</a> </p>
         <p> <strong>Contact :</strong> {{context.client.contact_nom}}</p>
-        <p> <strong>Email :</strong> {{context.client.contact_email}}</p>
-        <p> <strong>Telephone :</strong> {{context.client.contact_telephone}} </p>
+        <p> <strong>Email :</strong> <a href="mailto:{{context.client.contact_email}}">{{context.client.contact_email}}</a></p>
+        <p> <strong>Telephone :</strong> <a href="tel:{{context.client.contact_telephone}}">{{context.client.contact_telephone}}</a> </p>
         <p> <strong>Type :</strong> {{context.client.type_client}}</p>
-        <p> <strong>Interlocuteur principal :</strong> {{context.utilisateur.nom}} </p>
+        <p> <strong>Interlocuteur principal :</strong> <a href="/utilisateurs/{{ context.utilisateur.utilisateur_id }}">{{context.utilisateur.nom}}</a> </p>
         <p> <strong>Adresse :</strong> {{context.client.addresse}}</p>
 
 

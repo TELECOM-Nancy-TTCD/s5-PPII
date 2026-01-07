@@ -27,7 +27,7 @@
 
     <h1>{{ utilisateur['prenom'] }} {{ utilisateur['nom'] }}</h1>
 
-    <p>Email : {{ utilisateur['email'] }}</p>
+    <p>Email : <a href="mailto:{{ utilisateur['email'] }}">{{ utilisateur['email'] }}</a></p>
 
     <p>Intervenant : {{ 'Oui' if utilisateur['est_intervenant'] else 'Non' }}</p>
 
