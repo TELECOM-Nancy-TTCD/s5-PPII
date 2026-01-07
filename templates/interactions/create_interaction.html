@@ -7,7 +7,7 @@
   <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
     <h1 style="flex:1">{{ 'Modifier l\'interaction' if interaction else 'Ajouter une interaction' }}</h1>
 
-    <a href="/interactions" class="primary-button icon-button" aria-label="Retour">
+    <a href="{{ url_for('interactions.interactions_home') }}" class="primary-button icon-button" aria-label="Retour">
       <!-- arrow-left / back icon -->
       <i class="fa-solid fa-arrow-left"></i>
     </a>
@@ -64,7 +64,7 @@
           <i class="fa-solid fa-floppy-disk"></i>
         </button>
 
-        <a href="/interactions" class="primary-button icon-button" aria-label="Annuler">
+        <a href="{{ url_for('interactions.interactions_home') }}" class="primary-button icon-button" aria-label="Annuler">
           <!-- close / cancel icon -->
           <i class="fa-solid fa-xmark"></i>
         </a>

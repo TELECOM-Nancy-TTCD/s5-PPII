@@ -8,7 +8,7 @@
 
 <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;"> 
 
-    <a href="/clients/{{ client.client_id }}/edit" class="primary-button icon-button" aria-label="Modifier">
+    <a href="{{ url_for('edit_client', client_id=client.client_id) }}" class="primary-button icon-button" aria-label="Modifier">
       <!-- pencil / edit icon -->
       <i class="fa-solid fa-pen"></i>
     </a>
@@ -24,7 +24,7 @@
 
   </div>
 
-<h1><a href="/clients/{{ client.client_id }}">{{ client['nom_entreprise'] }}</a></h1>
+<h1><a href="{{ url_for('client_detail', client_id=client.client_id) }}">{{ client['nom_entreprise'] }}</a></h1>
 
 <p><strong>Contact :</strong> {{ client['contact_nom'] }}</p>
 <p><strong>Email :</strong> <a href="mailto:{{ client['contact_email'] }}">{{ client['contact_email'] }}</a></p>

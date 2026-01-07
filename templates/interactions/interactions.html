@@ -5,32 +5,31 @@
 {% block content %}
 
 
-    <h1>Liste des Interactions</h1>
-    <p style="font-size: large;">Ici se trouve toutes les interactions répertoriées.</p>
+<h1>Liste des Interactions</h1>
+<p style="font-size: large;">Ici se trouve toutes les interactions répertoriées.</p>
 
-    <div class="actions">
-        <form class="search-form" method="get" action="/interactions" aria-label="Rechercher des interactions">
-            <label for="search-q" class="hidden">Recherche</label>
-            <input id="search-q" type="text" name="q" placeholder="Rechercher..."
-                   value="{{ request.args.get('q','') }}">
-            <button type="submit" class="secondary-button">Rechercher</button>
-        </form>
+<div class="actions">
+    <form class="search-form" method="get" action="{{ url_for('interactions.interactions_home') }}" aria-label="Rechercher des interactions">
+        <label for="search-q" class="hidden">Recherche</label>
+        <input id="search-q" type="text" name="q" placeholder="Rechercher..."
+               value="{{ request.args.get('q','') }}">
+        <button type="submit" class="secondary-button">Rechercher</button>
+    </form>
 
-        {% if has_permission(current_user, "peut_creer_interactions") %}
-        <button class="primary-button" id="create-interaction">
+    {% if has_permission(current_user, "peut_creer_interactions") %}
+    <button class="primary-button" id="create-interaction">
           <span>
             <i class="fa-solid fa-plus"></i>
             Créer
           </span>
-        </button>
-        {% endif %}
-    </div>
+    </button>
+    {% endif %}
+</div>
 
 
-
-    {% set base_params = 'q=' ~ (request.args.get('q','')|urlencode) ~ '&l=' ~ (limit|string) %}
-    <div class="clients-container">
-        <div class="client-row" id="en-tete-clients">
+{% set base_params = 'q=' ~ (request.args.get('q','')|urlencode) ~ '&l=' ~ (limit|string) %}
+<div class="clients-container">
+    <div class="client-row" id="en-tete-clients">
             <span class="col">
                 ID
                 <a class="order-button {{ 'selected' if request.args.get('ord-t') == 'id' else '' }}"
@@ -46,7 +45,7 @@
                     {% endif %}
                 </a>
             </span>
-            <span class="col">Nom entreprise
+        <span class="col">Nom entreprise
                 <a class="order-button {{ 'selected' if request.args.get('ord-t') == 'client' else '' }}"
                    href="?{{ base_params }}&ord-t=client&ord={{ 'asc' if request.args.get('ord') == 'desc' else 'desc' }}">
                     {% if request.args.get('ord-t') == 'client' %}
@@ -60,7 +59,7 @@
                     {% endif %}
                 </a>
             </span>
-            <span class="col">Interlocuteur
+        <span class="col">Interlocuteur
                 <a class="order-button {{ 'selected' if request.args.get('ord-t') == 'interlocuteur' else '' }}"
                    href="?{{ base_params }}&ord-t=interlocuteur&ord={{ 'asc' if request.args.get('ord') == 'desc' else 'desc' }}">
                     {% if request.args.get('ord-t') == 'interlocuteur' %}
@@ -74,7 +73,7 @@
                     {% endif %}
                 </a>
             </span>
-            <span class="col">
+        <span class="col">
                 Titre
                 <a class="order-button {{ 'selected' if request.args.get('ord-t') == 'titre' else '' }}"
                    href="?{{ base_params }}&ord-t=titre&ord={{ 'asc' if request.args.get('ord') == 'desc' else 'desc' }}">
@@ -89,10 +88,10 @@
                     {% endif %}
                 </a>
             </span>
-            <span class="col">
+        <span class="col">
                 Moyen de contact
             </span>
-            <span class="col">
+        <span class="col">
                 Date
                 <a class="order-button {{ 'selected' if request.args.get('ord-t') == 'date' else '' }}"
                    href="?{{ base_params }}&ord-t=date&ord={{ 'asc' if request.args.get('ord') == 'desc' else 'desc' }}">
@@ -107,164 +106,194 @@
                     {% endif %}
                 </a>
             </span>
-            <span class="col">Actions</span>
-        </div>
-
-        {% if interactions != [] %}
-            {% for interaction in interactions %}
-                <div class="client-card"
-                     onclick="window.location.href='/interactions/{{ interaction.interaction_id }}'">
-                    <div class="client-row">
-                        <span class="col">{{ interaction.interaction_id }}</span>
-                        <span class="col"><a href="/clients/{{ interaction.client.client_id }}" onclick="event.stopPropagation();">{{ interaction.client.nom_entreprise }}</a></span>
-                        <span class="col"><a href="/utilisateurs/{{ interaction.utilisateur.utilisateur_id }}" onclick="event.stopPropagation();">{{ interaction.utilisateur.nom }} {{ interaction.utilisateur.prenom }}</a></span>
-                        <span class="col">{{ interaction.titre }}</span>
-                        <span class="col">{{ interaction.type_interaction }}</span>
-                        <span class="col">{{ interaction.date_time_interaction.strftime('%d/%m/%Y') }}</span>
-                        <span class="col">
-    <a href="/interactions/{{ interaction.interaction_id }}/edit" class="primary-button icon-button"
-       aria-label="Modifier">
-      <i class="fa-solid fa-pen"></i>
-    </a></span>
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>Aucune interaction trouvée.</p>
-        {% endif %}
+        <span class="col">Actions</span>
     </div>
 
-    <div style="margin-top: 1rem; display:flex; align-items:center; gap:8px;">
-        <ul class="pagination" id="pagination" data-current="{{ page }}"
-            data-last="{{ (last_page if last_page is not none else '') }}" data-q="{{ request.args.get('q','') }}"
-            data-ord-t="{{ request.args.get('ord-t','') }}" data-ord="{{ request.args.get('ord','asc') }}"
-            data-l="{{ limit }}" style="align-items:center; flex:1; display:flex; justify-content:center;">
+    {% if interactions != [] %}
+        {% for interaction in interactions %}
+            <div class="client-card"
+                 onclick="window.location.href='{{ url_for('interactions.interaction_detail', interaction_id=interaction.interaction_id) }}'">
+                <div class="client-row">
+                    <span class="col">{{ interaction.interaction_id }}</span>
+                    <span class="col">{% if has_permission(current_user, 'peut_lire_clients') %}
+                        <a href="{{ url_for('client_detail', client_id=interaction.client.client_id) }}"
+                           onclick="event.stopPropagation();">{{ interaction.client.nom_entreprise }}</a>{% else %}
+                        {{ interaction.client.nom_entreprise }}{% endif %}</span>
+                    <span class="col">{% if has_permission(current_user, 'peut_lire_utilisateurs') %}
+                        <a href="{{ url_for('utilisateurs.utilisateurs_detail', uid=interaction.utilisateur.utilisateur_id) }}"
+                           onclick="event.stopPropagation();">{{ interaction.utilisateur.nom }} {{ interaction.utilisateur.prenom }}</a>
+                        {% else %}{{ interaction.utilisateur.nom }}
+                        {{ interaction.utilisateur.prenom }}{% endif %}</span>
+                    <span class="col">{{ interaction.titre }}</span>
+                    <span class="col">{{ interaction.type_interaction }}</span>
+                    <span class="col">{{ interaction.date_time_interaction.strftime('%d/%m/%Y') }}</span>
+                    <span class="col">
+                        {% if has_permission(current_user, 'peut_gerer_interactions') or interaction.utilisateur_id == current_user.utilisateur_id %}
+                            <a href="{{ url_for('interactions.edit_interaction', interaction_id=interaction.interaction_id) }}"
+                               class="primary-button icon-button"
+                               aria-label="Modifier">
+                          <i class="fa-solid fa-pen"></i>
+                        </a>
+                        {% else %}
+                            <p></p>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>Aucune interaction trouvée.</p>
+    {% endif %}
+</div>
 
-            {# Calcul de la fenêtre de pagination côté template #}
-            {% set total_pages = (last_page + 1) if last_page is not none else none %}
-            {% if total_pages is not none and total_pages|int > 0 %}
-                {% set window = 5 %}
-                {% if total_pages <= window %}
-                    {% set start = 0 %}
-                    {% set end = total_pages - 1 %}
-                {% else %}
-                    {% set half = (window // 2) %}
-                    {% set start = page - half %}
-                    {% set end = page + half %}
-                    {% if start < 0 %}
-                        {% set start = 0 %}
-                        {% set end = window - 1 %}
-                    {% endif %}
-                    {% if end > last_page %}
-                        {% set end = last_page %}
-                        {% set start = last_page - window + 1 %}
-                    {% endif %}
-                {% endif %}
+<div style="margin-top: 1rem; display:flex; align-items:center; gap:8px;">
+    <ul class="pagination" id="pagination" data-current="{{ page }}"
+        data-last="{{ (last_page if last_page is not none else '') }}" data-q="{{ request.args.get('q','') }}"
+        data-ord-t="{{ request.args.get('ord-t','') }}" data-ord="{{ request.args.get('ord','asc') }}"
+        data-l="{{ limit }}" style="align-items:center; flex:1; display:flex; justify-content:center;">
 
-                <li>
-                    {% if page == 0 %}
-                        <button class="first-page disabled" disabled aria-disabled="true"><i class="fa-solid fa-angles-left"></i></button>
-                    {% else %}
-                        <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p=0" class="first-page"><i class="fa-solid fa-angles-left"></i></a>
-                    {% endif %}
-                </li>
-                <li>
-                    {% if not has_prev %}
-                        <button id="pag-prev" class="prev disabled" disabled aria-disabled="true"><i class="fa-solid fa-angle-left"></i></button>
-                    {% else %}
-                        <a id="pag-prev" href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ (page-1) if page>0 else 0 }}" class="prev"><i class="fa-solid fa-angle-left"></i></a>
-                    {% endif %}
-                </li>
-
-                {% if start > 0 %}
-                    <li>
-                        <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p=0">1</a>
-                    </li>
-                    {% if start > 1 %}
-                        <li><span class="ellipsis">&hellip;</span></li>
-                    {% endif %}
-                {% endif %}
-
-                {# Page numbers window #}
-                {% for i in range(start, end + 1) %}
-                    {% if i == page %}
-                        <li>
-                            <a id="page-center" href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ i }}" class="active">{{ i + 1 }}</a>
-                        </li>
-                    {% else %}
-                        <li>
-                            <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ i }}">{{ i + 1 }}</a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-
-                {% if end < last_page %}
-                    {% if end < last_page - 1 %}
-                        <li><span class="ellipsis">&hellip;</span></li>
-                    {% endif %}
-                    <li>
-                        <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ last_page }}">{{ last_page + 1 }}</a>
-                    </li>
-                {% endif %}
-
-                {% set next_p = (page + 1) if (last_page is none) or (page < last_page) else last_page %}
-                <li>
-                    {% if not has_next %}
-                        <button id="pag-next" class="next disabled" disabled aria-disabled="true"><i class="fa-solid fa-angle-right"></i></button>
-                    {% else %}
-                        <a id="pag-next" href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ next_p }}" class="next"><i class="fa-solid fa-angle-right"></i></a>
-                    {% endif %}
-                </li>
-                <li>
-                    {% if page == last_page %}
-                        <button class="last-page disabled" disabled aria-disabled="true"><i class="fa-solid fa-angles-right"></i></button>
-                    {% else %}
-                        <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ last_page }}" class="last-page"><i class="fa-solid fa-angles-right"></i></a>
-                    {% endif %}
-                </li>
-
+        {# Calcul de la fenêtre de pagination côté template #}
+        {% set total_pages = (last_page + 1) if last_page is not none else none %}
+        {% if total_pages is not none and total_pages|int > 0 %}
+            {% set window = 5 %}
+            {% if total_pages <= window %}
+                {% set start = 0 %}
+                {% set end = total_pages - 1 %}
             {% else %}
+                {% set half = (window // 2) %}
+                {% set start = page - half %}
+                {% set end = page + half %}
+                {% if start < 0 %}
+                    {% set start = 0 %}
+                    {% set end = window - 1 %}
+                {% endif %}
+                {% if end > last_page %}
+                    {% set end = last_page %}
+                    {% set start = last_page - window + 1 %}
+                {% endif %}
+            {% endif %}
+
+            <li>
+                {% if page == 0 %}
+                    <button class="first-page disabled" disabled aria-disabled="true"><i
+                            class="fa-solid fa-angles-left"></i></button>
+                {% else %}
+                    <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p=0"
+                       class="first-page"><i class="fa-solid fa-angles-left"></i></a>
+                {% endif %}
+            </li>
+            <li>
+                {% if not has_prev %}
+                    <button id="pag-prev" class="prev disabled" disabled aria-disabled="true"><i
+                            class="fa-solid fa-angle-left"></i></button>
+                {% else %}
+                    <a id="pag-prev"
+                       href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ (page-1) if page>0 else 0 }}"
+                       class="prev"><i class="fa-solid fa-angle-left"></i></a>
+                {% endif %}
+            </li>
+
+            {% if start > 0 %}
                 <li>
-                    {% if not has_prev %}
-                        <button id="pag-prev" class="disabled" disabled aria-disabled="true"><i class="fa-solid fa-angle-left"></i></button>
-                    {% else %}
-                        <a id="pag-prev" href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ (page-1) if page>0 else 0 }}"><i class="fa-solid fa-angle-left"></i></a>
-                    {% endif %}
+                    <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p=0">1</a>
                 </li>
+                {% if start > 1 %}
+                    <li><span class="ellipsis">&hellip;</span></li>
+                {% endif %}
+            {% endif %}
+
+            {# Page numbers window #}
+            {% for i in range(start, end + 1) %}
+                {% if i == page %}
+                    <li>
+                        <a id="page-center"
+                           href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ i }}"
+                           class="active">{{ i + 1 }}</a>
+                    </li>
+                {% else %}
+                    <li>
+                        <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ i }}">{{ i + 1 }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if end < last_page %}
+                {% if end < last_page - 1 %}
+                    <li><span class="ellipsis">&hellip;</span></li>
+                {% endif %}
                 <li>
-                    {% if not has_next %}
-                        <button id="pag-next" class="disabled" disabled aria-disabled="true"><i class="fa-solid fa-angle-right"></i></button>
-                    {% else %}
-                        <a id="pag-next" href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ page + 1 }}"><i class="fa-solid fa-angle-right"></i></a>
-                    {% endif %}
+                    <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ last_page }}">{{ last_page + 1 }}</a>
                 </li>
             {% endif %}
-        </ul>
 
-        <form id="page-size-form" method="get" action="/interactions"
-              style="margin-left: auto; display:flex; gap:8px; align-items:center;">
-            <input type="hidden" name="q" value="{{ request.args.get('q','') }}">
-            <input type="hidden" name="ord-t" value="{{ request.args.get('ord-t','') }}">
-            <input type="hidden" name="ord" value="{{ request.args.get('ord','asc') }}">
-            <label for="select-l">Nombre affiché</label>
-            <div class="select-box">
-                <select id="select-l" name="l" onchange="this.form.submit()">
-                    {% for opt in [5,10,20,50] %}
-                        <option value="{{ opt }}" {% if limit == opt %}selected{% endif %}>{{ opt }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <input type="hidden" name="p" value="0">
-        </form>
-    </div>
+            {% set next_p = (page + 1) if (last_page is none) or (page < last_page) else last_page %}
+            <li>
+                {% if not has_next %}
+                    <button id="pag-next" class="next disabled" disabled aria-disabled="true"><i
+                            class="fa-solid fa-angle-right"></i></button>
+                {% else %}
+                    <a id="pag-next"
+                       href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ next_p }}"
+                       class="next"><i class="fa-solid fa-angle-right"></i></a>
+                {% endif %}
+            </li>
+            <li>
+                {% if page == last_page %}
+                    <button class="last-page disabled" disabled aria-disabled="true"><i
+                            class="fa-solid fa-angles-right"></i></button>
+                {% else %}
+                    <a href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ last_page }}"
+                       class="last-page"><i class="fa-solid fa-angles-right"></i></a>
+                {% endif %}
+            </li>
+
+        {% else %}
+            <li>
+                {% if not has_prev %}
+                    <button id="pag-prev" class="disabled" disabled aria-disabled="true"><i
+                            class="fa-solid fa-angle-left"></i></button>
+                {% else %}
+                    <a id="pag-prev"
+                       href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ (page-1) if page>0 else 0 }}"><i
+                            class="fa-solid fa-angle-left"></i></a>
+                {% endif %}
+            </li>
+            <li>
+                {% if not has_next %}
+                    <button id="pag-next" class="disabled" disabled aria-disabled="true"><i
+                            class="fa-solid fa-angle-right"></i></button>
+                {% else %}
+                    <a id="pag-next"
+                       href="?{{ base_params }}&ord-t={{ request.args.get('ord-t','')|urlencode }}&ord={{ request.args.get('ord','asc')|urlencode }}&p={{ page + 1 }}"><i
+                            class="fa-solid fa-angle-right"></i></a>
+                {% endif %}
+            </li>
+        {% endif %}
+    </ul>
+
+    <form id="page-size-form" method="get" action="{{ url_for('interactions.interactions_home') }}"
+          style="margin-left: auto; display:flex; gap:8px; align-items:center;">
+        <input type="hidden" name="q" value="{{ request.args.get('q','') }}">
+        <input type="hidden" name="ord-t" value="{{ request.args.get('ord-t','') }}">
+        <input type="hidden" name="ord" value="{{ request.args.get('ord','asc') }}">
+        <label for="select-l">Nombre affiché</label>
+        <div class="select-box">
+            <select id="select-l" name="l" onchange="this.form.submit()">
+                {% for opt in [5,10,20,50] %}
+                    <option value="{{ opt }}" {% if limit == opt %}selected{% endif %}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <input type="hidden" name="p" value="0">
+    </form>
+</div>
 
 
+<dialog id="create-interaction-dialog">
+    {% include 'interactions/create_interaction_content.html' %}
+</dialog>
 
-    <dialog id="create-interaction-dialog">
-        {% include 'interactions/create_interaction_content.html' %}
-    </dialog>
-
-    <script src="/static/scripts/interactions.js"></script>
+<script src="{{ url_for('static', filename='scripts/interactions.js') }}"></script>
 
 {% endblock %}
 

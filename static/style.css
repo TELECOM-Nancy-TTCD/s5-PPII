@@ -2425,3 +2425,32 @@ input:invalid, textarea:invalid, select:invalid {
     .form-field, .input-box { flex: 1 1 100%; }
 }
 
+.primary-button, .secondary-button, .danger-button,
+.documents-bouton-users, .bouton-ajouter-client, .bouton-terminer-projet,
+.bouton-exporter, .bouton-importer, .bouton-ajouter-utilisateur, .jalon_boutton,
+.lien_doc_projet {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important; /* center text horizontally */
+    text-align: center !important;
+    gap: 8px; /* keep a small space between icon and text */
+    white-space: nowrap; /* avoid wrapping that can visually left-align */
+}
+
+.primary-button a, .secondary-button a, .danger-button a, .documents-bouton-users a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.icon-button, .icon-button * {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.primary-button[style], .secondary-button[style], .danger-button[style] {
+    justify-content: center !important;
+}

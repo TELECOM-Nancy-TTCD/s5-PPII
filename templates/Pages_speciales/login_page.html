@@ -4,20 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TNS - Login</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   </head>
   
   <body>
     <header>
       <br>
-      <img class="logo" src="/static/tns_logo_icon_couleur.svg" height="60" alt="Logo TNS"/>
+      <img class="logo" src="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}" height="60" alt="Logo TNS"/>
       <h1 class="page-desc">Page de connexion</h1>
       <br>
     </header>
 
     <div class="login-card">
 
-      <img class="logo" src="/static/tns_logo_icon_couleur.svg" height="60" alt="Logo TNS"/>
+      <img class="logo" src="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}" height="60" alt="Logo TNS"/>
 
       <form method="post" style="display : flex; flex-direction: column; gap: 10px;">
         <div class="input-box">

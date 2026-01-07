@@ -47,7 +47,7 @@
         </div>
 
         {% for convention in context %}
-            <div class="client-card" onclick="window.location.href='/conventions/{{ convention.id }}'">
+            <div class="client-card" onclick="window.location.href='{{ url_for('conventions.convention', id=convention.id) }}'">
 
                 <div class="convention-row">
                     <div class="button-col">
@@ -74,7 +74,7 @@
                     </div>
                     {% for p in pj_as[convention.id] %}
                         <div class="convention-row"
-                             onclick="event.stopPropagation(); window.location.href='/projet/{{ p.id }}'">
+                             onclick="event.stopPropagation(); window.location.href='{{ url_for('projet_detail', projet_id=p.id) }}'">
                             <div class="button-col"></div>
                             <div class="col">{{ p.id }}</div>
                             <div class="col">{{ p.nom_projet }}</div>

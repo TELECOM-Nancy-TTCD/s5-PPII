@@ -6,8 +6,9 @@
 
     <h1 style="flex:1">Détails de l'interaction</h1>
     <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
-
-        <a href="/interactions/{{ interaction.interaction_id }}/edit" class="primary-button icon-button"
+        {% if has_permission(current_user,
+                          'peut_gerer_interactions') and interaction.utilisateur_id == current_user.utilisateur_id %}
+        <a href="{{ url_for('interactions.edit_interaction', interaction_id=interaction.interaction_id) }}" class="primary-button icon-button"
            aria-label="Modifier">
             <!-- pencil / edit icon -->
             <i class="fa-solid fa-pen"></i>
@@ -20,6 +21,7 @@
                 <i class="fa-solid fa-trash"></i>
             </button>
         </form>
+        {% endif %}
     </div>
 
     <section>
@@ -27,14 +29,24 @@
             <h2>{{ interaction.titre }}</h2>
             <p><strong>Type d'interaction :</strong> {{ interaction.type_interaction }}</p>
             <p><strong>Date :</strong> {{ interaction.date_time_interaction.strftime('%d/%m/%Y') }}</p>
-            {#        TODO: uniformiser les routes flask clients/id, users - utilisateur#}
-            <p><strong>Client :</strong> <a href="/clients/{{ interaction.client_id }}">{{ interaction.client.nom_entreprise }} (ID: {{ interaction.client.client_id }}) <i class="fa-solid fa-up-right-from-square"></i></a></p>
-            <p><strong>Interlocuteur :</strong> <a href="/utilisateurs/{{ interaction.utilisateur_id }}">{{ interaction.utilisateur.prenom }} {{ interaction.utilisateur.nom }} (ID: {{ interaction.utilisateur.utilisateur_id }}) <i class="fa-solid fa-up-right-from-square"></i></a>
+            <p><strong>Client :</strong>
+                {% if has_permission(current_user, 'peut_lire_clients') %}
+                    <a href="{{ url_for('client_detail', client_id=interaction.client_id) }}">{{ interaction.client.nom_entreprise }} (ID: {{ interaction.client.client_id }}) <i class="fa-solid fa-up-right-from-square"></i></a>
+                {% else %}
+                    {{ interaction.client.nom_entreprise }} (ID: {{ interaction.client.client_id }})
+                {% endif %}
+            </p>
+            <p><strong>Interlocuteur :</strong>
+                {% if has_permission(current_user, 'peut_lire_utilisateurs') %}
+                    <a href="{{ url_for('utilisateurs.utilisateurs_detail', uid=interaction.utilisateur_id) }}">{{ interaction.utilisateur.prenom }} {{ interaction.utilisateur.nom }} (ID: {{ interaction.utilisateur.utilisateur_id }}) <i class="fa-solid fa-up-right-from-square"></i></a>
+                {% else %}
+                    {{ interaction.utilisateur.prenom }} {{ interaction.utilisateur.nom }} (ID: {{ interaction.utilisateur.utilisateur_id }})
+                {% endif %}
             </p>
             <h3>Contenu de l'interaction :</h3>
             <p class="content">{{ interaction.contenu or interaction.content or 'Aucun contenu disponible.' }}</p>
         </div>
     </section>
-    <script src="/static/scripts/interactions.js"></script>
+    <script src="{{ url_for('static', filename='scripts/interactions.js') }}"></script>
 
 {% endblock %}

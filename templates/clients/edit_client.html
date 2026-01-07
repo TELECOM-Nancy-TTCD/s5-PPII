@@ -7,7 +7,7 @@
   <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
     <h1 style="flex:1">Modifier le client</h1>
 
-    <a href="/clients/{{ client.client_id }}" class="primary-button icon-button" aria-label="Annuler">
+    <a href="{{ url_for('client_detail', client_id=client.client_id) }}" class="primary-button icon-button" aria-label="Annuler">
       <!-- arrow-left / cancel icon -->
       <i class="fa-solid fa-arrow-left"></i>
     </a>

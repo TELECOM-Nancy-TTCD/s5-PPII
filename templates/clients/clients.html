@@ -10,7 +10,7 @@
     <a href="{{ url_for('create_client') }}" class="primary-button">Ajouter un client</a>
 </div>
 
-<form class="search-form-clients" method="get" action="/clients" >
+<form class="search-form-clients" method="get" action="{{ url_for('clients') }}" >
     <label for="q_clients" class="hidden">Recherche</label>
     <input id="q_clients" type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
     <button type="submit" class="secondary-button">Rechercher</button>
@@ -43,10 +43,10 @@
     </div>
 
     {% for client in clients_db %}
-    <div class="client-card" onclick="window.location.href='/clients/{{ client['client_id'] }}'">
+    <div class="client-card" onclick="window.location.href='{{ url_for('client_detail', client_id=client.client_id) }}'">
         <div class="client-row">
             <span class="col">{{ client.client_id }}</span>
-            <span class="col"><a href="/clients/{{ client.client_id }}" onclick="event.stopPropagation();">{{ client.nom_entreprise }}</a></span>
+            <span class="col"><a href="{{ url_for('client_detail', client_id=client.client_id) }}" onclick="event.stopPropagation();">{{ client.nom_entreprise }}</a></span>
             <span class="col">{{ client.contact_nom }}</span>
             <span class="col"><a href="mailto:{{ client.contact_email }}" onclick="event.stopPropagation();">{{ client.contact_email }}</a></span>
             <span class="col"><a href="tel:{{ client.contact_telephone }}" onclick="event.stopPropagation();">{{ client.contact_telephone }}</a></span>
