@@ -1,0 +1,2312 @@
+:root {
+    /* Fonds et valeurs globales existantes laissées intactes (ne pas toucher au fond) */
+    --bg-dark: #1b1b1b;
+    --card-bg: #292929;
+    --surface: #2b2b2c;
+    --surface-2: #2c2c2c;
+    --menu-img-bg: #2a2d39;
+
+    /* Couleurs primaires/auxiliaires (charte fournie) */
+    --primary: #253da5; /* Bleu primaire */
+    --primary-variant: #1d4c9c; /* variante */
+    --accent: #42b9bc; /* accent / teal */
+
+    --danger: #d13651; /* auxiliaire rouge */
+    --danger-hover: #e05555; /* hover danger */
+
+    --success: #65b231; /* vert succès */
+    --success-2: #4fb271; /* second vert */
+
+    --warning: #e29320; /* warning orange */
+    --highlight: #d3c116; /* jaune highlight */
+    --accent-2: #af38d6; /* violet accent */
+
+    /* Gradient exemples depuis la charte */
+    --gradient-start: #68a4d9;
+    --gradient-end: #1d4c9c;
+
+    /* Neutres / texte (laisser existants) */
+    --text-main: linen; /* couleur principale du texte (héritée) */
+    --text-light: #cccccc; /* rgb(204,204,204) */
+    --white: #ffffff;
+    --black: #000000;
+    --muted: #757779;
+    --muted-2: #888888;
+    --muted-3: #e6e6e6;
+    --border: #444444;
+    --input-bg: #3a3a3a;
+    --shadow-1: rgba(0, 0, 0, 0.2);
+    --shadow-2: rgba(0, 0, 0, 0.3);
+    --shadow-3: rgba(0, 0, 0, 0.4);
+
+    /* RGB helpers for notification translucent backgrounds and gradients */
+    --primary-rgb: 37, 61, 165; /* #253da5 */
+    --accent-rgb: 66, 185, 188; /* #42b9bc */
+    --success-rgb: 101, 178, 49; /* #65b231 */
+    --warning-rgb: 226, 147, 32; /* #e29320 */
+    --danger-rgb: 209, 54, 81; /* #d13651 */
+    --accent2-rgb: 175, 56, 214; /* #af38d6 */
+}
+
+html, body {
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    text-align: center;
+    font-family: Golos, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+main {
+    flex: 1;
+    padding-top: 100px;
+}
+
+a {
+    color: var(--text-main);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+.hidden {
+    display: none;
+}
+
+.page-desc {
+    font: 30px/1.6 system-ui;
+    color: var(--white);
+    width: 50%;
+    margin: auto;
+}
+
+.logo {
+    display: block;
+    float: left;
+    margin-right: 10px;
+    margin-left: 15px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    border-radius: 10px;
+    margin-top: 0;
+}
+
+.login-card {
+    top: 25%;
+    width: 50%;
+    margin: auto;
+    max-width: 300px;
+    background: var(--card-bg);
+    padding: 2em;
+    border-radius: 10px;
+    box-shadow: 5px 5px 10px var(--black);
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    gap: 5px;
+}
+
+.login-card input {
+    padding: 0.5em;
+    border-radius: 5px;
+    border: 1px solid var(--primary);
+    font-size: 15px;
+}
+
+.bouton_connexion {
+    margin-top: 15px;
+}
+
+.erreur_formulaire {
+    margin: 0;
+    padding: 10px 0 0;
+}
+
+.main-menu {
+    width: 100%;
+    position: fixed;
+    z-index: 2000;
+    height: 100px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    list-style-type: square;
+    background: linear-gradient(0deg, var(--bg-dark), var(--primary));
+    font-family: Golos, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: visible; /* ensure dropdowns are not clipped */
+}
+
+.main-menu-items {
+    list-style: none;
+    font-size: 18px;
+    padding: 10px 15px;
+    display: flex;
+    gap: 25px;
+    font-family: Golos, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: visible; /* ensure child absolute elements are visible */
+}
+
+.main-menu-items a {
+    text-decoration: none;
+    color: var(--text-light);
+    padding: 5px 5px;
+    display: inline-block;
+    /* retirer la marge négative qui décale les éléments et cause la superposition */
+    margin-top: 0;
+}
+
+.main-menu-img {
+    display: block;
+    /* utiliser l'alignement via flexbox du parent plutôt que float qui complique le positionnement */
+    float: none;
+    margin-right: 10px;
+    margin-left: 15px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    border-radius: 10px;
+    background-color: var(--menu-img-bg);
+    margin-top: 0;
+}
+
+.main-menu-items .menu-dropdown {
+    display: inline-block;
+    position: relative; /* base pour le positionnement absolu du dropdown */
+}
+
+/* Dropdown container: caché par défaut, visible au hover */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 100%; /* align directly under parent to preserve hover when moving pointer */
+    background-color: var(--surface);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    border-radius: 8px;
+    padding: 6px 0;
+    min-width: 160px;
+    white-space: nowrap;
+    z-index: 8000; /* suffisamment haut pour être au-dessus du contenu */
+    list-style: none;
+    margin: 0;
+}
+
+/* Items: chaque lien est un bloc flexible, centré verticalement, taille minimale assurée */
+.dropdown-content li a {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 16px !important;
+    min-height: 40px !important; /* évite tout chevauchement vertical */
+    height: 40px !important; /* forcer une hauteur stable */
+    line-height: 40px !important; /* forcer line-height pour éviter superposition */
+    color: var(--text-light) !important;
+    text-decoration: none !important;
+    font-size: 15px !important;
+    box-sizing: border-box !important;
+}
+
+.dropdown-content li {
+    pointer-events: auto;
+}
+
+.dropdown-content li:hover > a,
+.dropdown-content li:focus-within > a {
+    background-color: var(--primary) !important;
+    color: var(--white) !important;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.dropdown-content li a {
+    pointer-events: auto !important;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.dropdown-content li a:hover {
+    background-color: var(--primary) !important;
+    color: var(--white) !important;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.dropdown-content li a:hover i,
+.dropdown-content li a:hover .svg-inline--fa,
+.dropdown-content li a:hover svg {
+    color: var(--white) !important;
+    fill: var(--white) !important;
+    stroke: var(--white) !important;
+}
+
+/* afficher au survol du parent */
+.menu-dropdown:hover .dropdown-content,
+.menu-dropdown:focus-within .dropdown-content {
+    display: block;
+}
+
+/* Remonter le parent durant le hover pour éviter d'être recouvert */
+.menu-dropdown:hover,
+.menu-dropdown:focus-within {
+    z-index: 8100;
+}
+
+.main-menu .user-menu {
+    margin-left: auto;
+    margin-right: 15px;
+    display: inline-block;
+    /* positionné pour que .user-menu-items s'aligne correctement */
+    position: relative;
+    float: none; /* retirer float pour que le flux flex gère l'alignement */
+}
+
+.user-menu .user-name {
+    cursor: pointer;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--muted);
+    color: var(--text-light);
+    background-color: var(--menu-img-bg);
+}
+
+.user-menu .user-menu-items {
+    display: none;
+    position: absolute;
+    /* align the user menu under its parent, anchored to the right edge */
+    right: 0;
+    top: 100%;
+    margin-top: 8px;
+    background-color: var(--surface);
+    box-shadow: 0 6px 12px var(--shadow-2);
+    border-radius: 8px;
+    list-style: none;
+    padding: 6px 0;
+    z-index: 4000;
+    min-width: 160px;
+    white-space: nowrap;
+}
+
+.user-menu .user-menu-items a {
+    padding: 8px 20px;
+    color: var(--text-light);
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+
+/* Assurer aussi un hover propre pour le menu utilisateur */
+.user-menu .user-menu-items a:hover {
+    background-color: var(--primary);
+    color: var(--white) !important;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.user-menu:hover .user-menu-items {
+    display: block;
+}
+
+.user-menu .logout {
+    color: var(--danger) !important;
+}
+
+.user-menu .logout:hover {
+    color: var(--white) !important;
+    background-color: var(--danger-hover) !important;
+}
+
+
+.footer-menu {
+    height: 100px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: linear-gradient(180deg, var(--bg-dark), var(--primary));
+}
+
+.footer-menu-items {
+    list-style: none;
+    font-size: 20px;
+    padding: 0;
+    margin: 0 auto;
+    display: flex;
+    gap: 25px;
+    font-family: Golos, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+}
+
+.footer-menu-items a {
+    text-decoration: none;
+    color: var(--text-light);
+    display: inline-block;
+}
+
+.clients-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 25px 10px 10px;
+    position: relative;
+}
+
+
+.client-card {
+    cursor: pointer;
+    display: flex;
+    gap: 15px;
+    background-color: var(--bg-dark);
+    border-radius: 10px;
+    padding: 12px 15px;
+    box-shadow: 0 3px 6px var(--shadow-1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    flex-direction: column;
+}
+
+.client-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px var(--shadow-2);
+}
+
+.client-row {
+    display: flex;
+    gap: 15px;
+    flex: 1;
+    align-items: center;
+}
+
+.projets_associes_pageconv:hover {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.convention-row .col {
+    flex: 1;
+    min-width: 80px;
+    padding: 4px 0;
+}
+
+.button-col {
+    width: 60px;
+    display: flex;
+    justify-content: center;
+}
+
+
+.collapseur {
+    display: flex;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    align-items: center;
+    padding: 10px;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+    color: var(--text-light);
+    width: 44px;
+    height: 44px;
+    box-sizing: border-box;
+}
+
+.collapseur:focus-visible {
+    outline: none;
+}
+
+.collapseur:hover {
+    background: var(--primary-variant);
+    color: var(--white);
+    transform: translateY(-2px) scale(1.02);
+}
+
+.convention-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.convention-row:hover {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.en-tete-pj-associes {
+    display: flex;
+    background-color: #2b2b2b;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    border-radius: 10px 10px 0 0;
+    padding: 12px 15px;
+    align-items: center;
+}
+
+.col {
+    flex: 1;
+    min-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 4px 0;
+}
+
+.collapsed-row {
+    flex: 1;
+    min-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 4px 0;
+    display: none;
+}
+
+#en-tete-clients, #en-tete-conventions {
+    top: 100px;
+    position: sticky;
+    background-color: var(--surface);
+    font-weight: bold;
+    box-shadow: 0 2px 5px var(--shadow-3);
+    z-index: 10;
+    border-radius: 10px 10px 0 0;
+    padding: 12px 15px;
+}
+
+
+.lien-erreur-retour {
+    text-decoration: none;
+    color: var(--text-light);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--muted);
+    display: inline-block;
+    margin-top: 20px;
+}
+
+.grid-utilisateurs {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.card-utilisateurs {
+    background: var(--surface-2);
+    color: var(--white);
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+
+.search-form-utilisateurs, .search-form-clients, .search-form-conventions, .search-form {
+    margin: 20px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.search-form-utilisateurs input[type="text"],
+.search-form-clients input[type="text"],
+.search-form-conventions input[type="text"],
+.search-form input[type="text"] {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px 0 0 4px;
+    outline: none;
+    width: 180px;
+    background-color: var(--input-bg);
+    color: var(--white);
+}
+
+.search-form-utilisateurs button,
+.search-form-clients button,
+.search-form-conventions button,
+.search-form button {
+    padding: 8px 16px;
+    font-size: 16px;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    background-color: var(--primary);
+    color: var(--white);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.search-form-utilisateurs button:hover,
+.search-form-clients button:hover,
+.search-form-conventions button:hover,
+.search-form button:hover {
+    background-color: var(--primary-variant);
+}
+
+.documents-users {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    text-align: center;
+
+}
+
+.documents-bouton-users {
+    display: inline-block;
+    padding: 10px 14px;
+    background-color: var(--primary);
+    color: var(--white);
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 6px;
+}
+
+.documents-bouton-users:hover {
+    background-color: var(--primary-variant);
+    transform: translateY(-2px);
+}
+
+.none {
+    color: var(--muted-2);
+    font-style: italic;
+}
+
+.clients-projets-liste {
+    background-color: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px auto;
+    max-width: 1000px;
+}
+
+.clients-projets-liste ul {
+    list-style-type: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 2px;
+}
+
+.clients-projets-liste li {
+    display: contents;
+}
+
+.clients-projets-liste li span {
+    text-align: center;
+    padding: 8px 0;
+}
+
+
+.clients-projets-entete {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 10px;
+    font-size: 18px;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 5px;
+}
+
+.form-create-client {
+    max-width: 400px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bouton-ajouter-client {
+    display: inline-block;
+    padding: 10px 14px;
+    background-color: #475eab;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.bouton-ajouter-client:hover {
+    color: var(--text-main);
+    text-decoration-color: var(--text-main);
+}
+
+
+/*CSS effacé par le merge*/
+
+.interactions-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.interaction-card {
+    background: #2c2c2c;
+    border: 1px solid #444;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    max-width: 800px;
+    width: 100%;
+    word-wrap: break-word;
+}
+
+.interaction-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.interaction-text {
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.interaction-text.collapsed {
+    max-height: 80px;
+    position: relative;
+}
+
+.interaction-text.collapsed::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    background: linear-gradient(to bottom, transparent, #2c2c2c);
+}
+
+.interaction-toggle {
+    margin-top: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+/* Partie du CSS générée avec aide d'une AI */
+.timeline_jalons {
+    position: relative;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding-left: 3rem;
+}
+
+.timeline_jalons::before {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    border-left: 2px dotted #475eab;
+
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2.5rem;
+}
+
+.timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -2.4rem;
+    top: 1rem;
+    width: 12px;
+    height: 12px;
+    background-color: #1b1b1b;
+    border: 2px solid #475eab;
+    border-radius: 50%;
+
+}
+
+.timeline-card {
+    background-color: #292929;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Partie du CSS générée avec aide d'une AI */
+
+.bouton-terminer-projet {
+    display: inline-block;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    background-color: #555d55;
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.bouton-terminer-projet:hover {
+    background-color: #78947a;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.bouton-exporter,
+.bouton-importer {
+    display: inline-block;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    background-color: #475eab;
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.bouton-supprimer-utilisateur {
+    display: inline-block;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    background-color: #ab4747;
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.form-create-user {
+    max-width: 400px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bouton-ajouter-utilisateur {
+    display: inline-block;
+    padding: 10px 14px;
+    background-color: #475eab;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.bouton-ajouter-client:hover {
+    color: var(--text-main);
+    text-decoration-color: var(--text-main);
+}
+
+
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+    background: #282828;
+    margin: 10% auto;
+    padding: 20px;
+    width: 400px;
+    border-radius: 12px;
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+#form-jalon-modification,
+#form-jalon-creation {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+
+.jalon_boutton {
+    padding: 10px;
+    background-color: #475eab;
+    color: rgb(204, 204, 204);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.lien_doc_projet {
+    display: inline-block;
+    padding: 10px 14px;
+    background-color: #9c948f;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.progress-bar-container {
+    background-color: #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    height: 20px;
+    margin: 0 auto 10px auto;
+    max-width: 500px; /* limite la largeur maximale mais reste responsive */
+    width: 50%;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: #4caf50;
+    text-align: center;
+    color: black;
+    line-height: 20px;
+    font-size: 12px;
+    transition: width 0.3s ease;
+}
+
+
+/*Fin du CSS effacé par le merge*/
+
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.primary-button {
+    background-color: var(--primary);
+    border: none;
+    border-radius: 0.9em;
+    cursor: pointer;
+    padding: 0.8em 1.2em 0.8em 1em;
+    transition: all ease-in-out 0.2s;
+    font-size: 16px;
+    color: var(--white);
+}
+
+.primary-button span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+}
+
+.primary-button:hover {
+    background-color: var(--primary-variant);
+}
+
+.primary-button a {
+    text-decoration: none;
+    color: var(--white);
+}
+
+.danger-button {
+    background-color: var(--danger) !important;
+    border: none;
+    border-radius: 0.9em;
+    cursor: pointer;
+    padding: 0.8em 1.2em 0.8em 1em;
+    transition: all ease-in-out 0.2s;
+    font-size: 16px;
+    color: var(--white);
+}
+
+.danger-button span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    font-weight: 600;
+}
+
+.danger-button:hover {
+    background-color: var(--danger-hover) !important;
+}
+
+.secondary-button {
+    background-color: var(--muted);
+    border: none;
+    border-radius: 0.9em;
+    cursor: pointer;
+    padding: 0.8em 1.2em 0.8em 1em;
+    transition: all ease-in-out 0.2s;
+    font-size: 16px;
+    color: var(--white);
+}
+
+.secondary-button span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+}
+
+.secondary-button:hover {
+    background-color: var(--text-light);
+}
+
+/* From Uiverse.io by mi-series */
+.container {
+    position: relative;
+    width: 95%;
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px var(--shadow-1);
+    color: var(--text-main);
+}
+
+.container header {
+    font-size: 1.2rem;
+    color: var(--white);
+    font-weight: 600;
+    text-align: center;
+    margin: 0;
+}
+
+.container .form {
+    margin-top: 15px;
+}
+
+.form .input-box {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.input-box label {
+    color: var(--text-light);
+    display: block;
+    margin-bottom: 6px;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.form :where(.input-box input, .select-box) {
+    position: relative;
+    height: 38px;
+    width: 100%;
+    outline: none;
+    font-size: 1rem;
+    color: var(--text-main);
+    margin-top: 5px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0 12px;
+    background: var(--input-bg);
+    box-sizing: border-box; /* Ensure padding/border are included in width calculations */
+}
+
+.input-box input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(37, 61, 165, 0.08); /* palette primaire */
+}
+
+.input-box textarea {
+    position: relative;
+    width: 97.5%;
+    outline: none;
+    font-size: 1rem;
+    color: var(--text-main);
+    margin-top: 5px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    background: var(--input-bg);
+    resize: vertical;
+    min-height: 80px;
+}
+
+.input-box textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(37, 61, 165, 0.08); /* palette primaire */
+}
+
+.text-danger {
+    color: var(--danger);
+    font-size: 0.9rem;
+    margin-top: 4px;
+    text-align: left;
+}
+
+.form .column {
+    display: flex;
+    column-gap: 15px;
+    /* Allow items to wrap on smaller screens so inputs don't overflow horizontally */
+    flex-wrap: wrap;
+    align-items: flex-start; /* ensure labels/inputs align to the top */
+}
+
+.form .column .input-box {
+    width: auto; /* override the global 100% width for column layout */
+    flex: 1 1 220px; /* grow, shrink, base width */
+    min-width: 180px; /* don't become too narrow */
+}
+
+/* Ensure inner inputs/selects can shrink correctly inside flex items */
+.form .column .input-box input,
+.form .column .input-box textarea,
+.form .column .select-box select {
+    width: 100%;
+    min-width: 0; /* critical to allow flexbox children to shrink in some browsers */
+}
+
+.form .radio-box {
+    margin-top: 10px;
+}
+
+.form :where(.radio-option, .radio) {
+    display: flex;
+    align-items: center;
+    column-gap: 50px;
+    flex-wrap: wrap;
+}
+
+.form .radio {
+    column-gap: 5px;
+}
+
+.radio input {
+    accent-color: var(--primary);
+}
+
+.form :where(.radio input, .gender label) {
+    cursor: pointer;
+}
+
+.radio label {
+    color: var(--text-light);
+}
+
+.address :where(input, .select-box) {
+    margin-top: 10px;
+}
+
+.select-box select {
+    height: 100%;
+    width: 100%;
+    outline: none;
+    border-radius: 6px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    font-size: 1rem;
+    background: var(--input-bg);
+}
+
+.form button {
+    height: 40px;
+    width: 100%;
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--primary);
+}
+
+.form button:hover {
+    background: var(--primary-variant);
+}
+
+/* Dialog / modal specific tweaks */
+/* Hide icon buttons by default on regular pages; show them when the form is inside a dialog */
+.container .actions .icon-button {
+    display: none;
+}
+
+/* When container is inside a dialog, show compact circular icon buttons */
+
+/* Dialog behavior: hidden when closed, centered/fixed when open */
+dialog {
+    display: none; /* hide dialog when not open */
+    background: transparent; /* ensure no default white background shows through */
+    border-radius: 0;
+}
+
+dialog[open] {
+    display: flex; /* become a flex container when open */
+    position: fixed; /* ensure it sits above the page */
+    inset: 0; /* fill viewport to allow perfect centering */
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* let the inner .container determine visual card size */
+    border: none;
+    z-index: 3000;
+    background: transparent; /* keep dialog element transparent */
+}
+
+/* constrain dialog inner card width and center it; allow larger width */
+dialog .container {
+    max-width: 900px;
+    /* leave a small viewport margin on each side */
+    width: min(900px, calc(100vw - 40px));
+    margin: 0 auto;
+    box-sizing: border-box;
+    border-radius: 10px; /* ensure rounded corners on the visible card */
+    overflow: hidden; /* clip content so no white corners appear */
+}
+
+dialog::backdrop {
+    /* slightly darker backdrop so page content (navbar) isn't visible through rounded corners */
+    background: rgba(0, 0, 0, 0.65);
+}
+
+dialog .container .actions .icon-button {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: var(--white);
+    box-shadow: 0 2px 6px var(--shadow-2);
+}
+
+dialog .container .actions .icon-button svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+}
+
+/* spacing for the action area inside the modal */
+dialog .container .actions {
+    margin-bottom: 8px;
+}
+
+/* Ensure form columns share available space and inputs can shrink properly */
+.form .column > .input-box {
+    flex: 1;
+    min-width: 0; /* allow flex children to shrink below their content width */
+}
+
+/* Make sure form takes full width of the card */
+.container .form {
+    width: 100%;
+}
+
+/* success message styling */
+.success-message {
+    color: var(--success);
+    font-weight: 600;
+    margin: 8px 0 12px;
+}
+
+/* Styles pour le composant de recherche client */
+.client-suggestions {
+    position: absolute;
+    z-index: 4000;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin: 6px 0 0 0;
+    padding: 6px 0;
+    border-radius: 6px;
+    width: 100%;
+    max-height: 260px;
+    overflow: auto;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    list-style: none;
+}
+
+.client-suggestions .client-suggestion {
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--text-main);
+    text-align: left;
+}
+
+.client-suggestions .client-suggestion:hover,
+.client-suggestions .client-suggestion.highlight {
+    background: rgba(37, 61, 165, 0.08); /* palette primaire */
+}
+
+/* Styles pour indiquer un champ invalide */
+.invalid-field {
+    border: 1px solid var(--danger) !important;
+    box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.08);
+    background-clip: padding-box;
+}
+
+.invalid-field:focus {
+    outline: none;
+    box-shadow: 0 0 0 6px rgba(255, 107, 107, 0.16);
+}
+
+/* Shake animation for invalid fields */
+@keyframes shake {
+    0% {
+        transform: translateX(0);
+    }
+    10% {
+        transform: translateX(-6px);
+    }
+    20% {
+        transform: translateX(6px);
+    }
+    30% {
+        transform: translateX(-6px);
+    }
+    40% {
+        transform: translateX(6px);
+    }
+    50% {
+        transform: translateX(-4px);
+    }
+    60% {
+        transform: translateX(4px);
+    }
+    70% {
+        transform: translateX(-2px);
+    }
+    80% {
+        transform: translateX(2px);
+    }
+    90% {
+        transform: translateX(-1px);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+.shake {
+    animation: shake 0.6s cubic-bezier(.36, .07, .19, .97) both;
+    will-change: transform;
+}
+
+/* Responsive: on small screens, stack the column items vertically to avoid overlap/scroll */
+@media (max-width: 520px) {
+    .form .column {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form .column .input-box {
+        min-width: 0;
+        flex-basis: 100%;
+    }
+}
+
+
+.order-button {
+    /* Sans background */
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all ease-in-out 0.2s;
+    font-size: 20px;
+    color: var(--white);
+}
+
+.order-button:hover {
+    color: var(--primary);
+}
+
+.selected {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    padding: 0;
+}
+
+.pagination li a {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    color: var(--text-main);
+    margin: 0 4px;
+    border-radius: 5px;
+    transition: background-color 1s;
+}
+
+.pagination .ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    margin: 0 4px;
+    color: var(--muted-2);
+    background: transparent;
+    border: none;
+}
+
+.pagination li a.first-page, .pagination li a.last-page {
+    font-weight: 600;
+    cursor: grab;
+}
+
+/* Ensure pagination container is centered on the page */
+.pagination {
+  justify-content: center;
+  margin: 0 auto;
+}
+
+/* Make active page more prominent */
+.pagination li a.active {
+    background-color: var(--primary);
+    color: var(--white);
+    font-weight: 700;
+}
+
+/* Ensure disabled pagination links are not interactive */
+.pagination a.disabled,
+.pagination a[aria-disabled="true"] {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Pagination buttons should match the anchor appearance */
+.pagination li button {
+    display: inline-block;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    color: var(--text-main);
+    margin: 0 4px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+    font: inherit;
+}
+
+.pagination li button:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.08);
+}
+
+.pagination li button.disabled,
+.pagination li button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Keep visual parity with anchor hover */
+.pagination li button:hover:not(.disabled):not([disabled]) {
+    background-color: var(--primary-variant);
+}
+
+/* From Uiverse.io by xerith_8140 */
+/* Notification container */
+
+.notification-container {
+    position: fixed;
+    top: 2%;
+    right: 2%;
+    z-index: 10000;
+    max-width: 80%;
+
+    --content-color: var(--text-main);
+    --background-color: rgba(255, 255, 255, 0.02);
+    --font-size-content: 0.9em;
+    --icon-size: 1em;
+    /* durée de la notif (ms) — définie par JS via style.setProperty('--notif-duration', '5000ms') */
+    --notif-duration: 5000ms;
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    list-style-type: none;
+    font-family: sans-serif;
+    color: var(--content-color);
+}
+
+/* Notification Item */
+
+.notification-item {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    gap: 1em;
+    overflow: hidden;
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: rgba(0, 0, 0, 0.35) 0 6px 18px;
+    background-color: var(--surface); /* fallback */
+    transition: transform 300ms ease, opacity 300ms ease;
+    opacity: 1;
+    margin-top: 12px;
+}
+
+/* hiding state used when JS déclenche la suppression : fondu court avant suppression du DOM */
+.notification-item.hiding {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.995);
+}
+
+.notification-item svg {
+    transition: 250ms ease;
+}
+
+.notification-item:hover {
+    transform: translateY(-2px);
+}
+
+.notification-item:active {
+    transform: translateY(0);
+}
+
+.notification-item .notification-close:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.notification-item .notification-close:hover svg {
+    color: inherit;
+}
+
+.notification-item .notification-close:active svg {
+    transform: scale(1.1);
+}
+
+/* Notification Icons */
+.notification-item .notification-close {
+    padding: 2px;
+    border-radius: 5px;
+    transition: all 250ms;
+}
+
+.notification-container svg {
+    width: var(--icon-size);
+    height: var(--icon-size);
+    color: var(--content-color);
+}
+
+.notification-icon {
+    display: flex;
+    align-items: center;
+}
+
+/* Filled backgrounds (plein, sans transparence) - utilise les couleurs du thème */
+.notification-item.success {
+    background-color: var(--success);
+    color: var(--white);
+}
+
+.notification-item.success .notification-icon i,
+.notification-item.success svg {
+    color: var(--white);
+}
+
+.notification-item.info {
+    background-color: var(--accent);
+    color: var(--white);
+}
+
+.notification-item.info .notification-icon i,
+.notification-item.info svg {
+    color: var(--white);
+}
+
+.notification-item.warning {
+    background-color: var(--warning);
+    color: var(--white);
+}
+
+.notification-item.warning .notification-icon i,
+.notification-item.warning svg {
+    color: var(--white);
+}
+
+.notification-item.error {
+    background-color: var(--danger);
+    color: var(--white);
+}
+
+.notification-item.error .notification-icon i,
+.notification-item.error svg {
+    color: var(--white);
+}
+
+/* Notification content */
+.notification-content {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.notification-text {
+    font-size: var(--font-size-content);
+    user-select: none;
+}
+
+.notification-close {
+    cursor: pointer;
+    color: inherit;
+}
+
+/* Notification progress bar - utilise la variable --notif-duration définie par JS */
+.notification-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(0);
+    /* animation controlled by --notif-duration; JS doit définir cette variable sur l'élément .notification-item */
+    animation: progressBar var(--notif-duration, 5000ms) linear forwards;
+}
+
+/* Bar color per type (contraste sur fond plein) */
+.notification-item.success .notification-progress-bar {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.notification-item.info .notification-progress-bar {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.notification-item.warning .notification-progress-bar {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.notification-item.error .notification-progress-bar {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* progressBar Animation — fait partir la barre vers la gauche sur la durée fournie */
+@keyframes progressBar {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+/* From Uiverse.io by varoonrao */
+.checkbox-con {
+    margin: 10px;
+    display: flex;
+    align-items: center;
+    color: white;
+}
+
+.checkbox-con input[type="checkbox"] {
+    appearance: none;
+    width: 48px;
+    height: 27px;
+    border: 2px solid #ff0000;
+    border-radius: 20px;
+    background: #f1e1e1;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.checkbox-con input[type="checkbox"]::before {
+    content: "";
+    width: 14px;
+    height: 14px;
+    background: rgba(234, 7, 7, 0.5);
+    border: 2px solid #ea0707;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(13%, 15%);
+    transition: all 0.3s ease-in-out;
+}
+
+.checkbox-con input[type="checkbox"]::after {
+    content: url("data:image/svg+xml,%3Csvg xmlns='://www.w3.org/2000/svg' width='23' height='23' viewBox='0 0 23 23' fill='none'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M6.55021 5.84315L17.1568 16.4498L16.4497 17.1569L5.84311 6.55026L6.55021 5.84315Z' fill='%23EA0707' fill-opacity='0.89'/%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M17.1567 6.55021L6.55012 17.1568L5.84302 16.4497L16.4496 5.84311L17.1567 6.55021Z' fill='%23EA0707' fill-opacity='0.89'/%3E%3C/svg%3E");
+    position: absolute;
+    top: 0;
+    left: 20px;
+}
+
+.checkbox-con input[type="checkbox"]:checked {
+    border: 2px solid #02c202;
+    background: #e2f1e1;
+}
+
+.checkbox-con input[type="checkbox"]:checked::before {
+    background: rgba(2, 194, 2, 0.5);
+    border: 2px solid #02c202;
+    transform: translate(133%, 13%);
+    transition: all 0.3s ease-in-out;
+}
+
+.checkbox-con input[type="checkbox"]:checked::after {
+    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='13' viewBox='0 0 15 13' fill='none'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M14.8185 0.114533C15.0314 0.290403 15.0614 0.605559 14.8855 0.818454L5.00187 12.5L0.113036 6.81663C-0.0618274 6.60291 -0.0303263 6.2879 0.183396 6.11304C0.397119 5.93817 0.71213 5.96967 0.886994 6.18339L5.00187 11L14.1145 0.181573C14.2904 -0.0313222 14.6056 -0.0613371 14.8185 0.114533Z' fill='%2302C202' fill-opacity='0.9'/%3E%3C/svg%3E");
+    position: absolute;
+    top: 5px;
+    left: 5px;
+}
+
+.checkbox-con label {
+    margin-left: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.permissions-list {
+    display: grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.form-actions {
+    margin-top: 18px;
+    display: flex;
+    gap: 8px;
+}
+
+/* Strong overrides to ensure the roles page layout works even if other rules collide */
+.roles-container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+}
+
+main .roles-container .roles-sidebar {
+    flex: 0 0 25% !important;
+}
+
+main .roles-container .role-detail {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Sidebar list: keep visible and scrollable */
+main .roles-container .roles-list {
+    max-height: calc(100vh - 160px);
+    overflow: auto;
+}
+
+/* Ensure each role item stretches and shows as a card */
+main .roles-container .role-item {
+    display: block;
+}
+
+main .roles-container .role-item a.role-link {
+    display: block;
+    padding: 10px;
+}
+
+/* Ensure permissions grid is stable */
+main .roles-container .permissions-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+/* Minor: ensure selected highlight visible on dark backgrounds */
+main .roles-container .role-item.selected {
+    box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.14);
+    border-color: rgba(31, 111, 235, 0.28);
+}
+
+.permission-desc {
+    font-size: 0.9em;
+    color: var(--text-light);
+    font-style: italic;
+    text-align: left;
+}
+
+/* Roles header: align left/create button, center title, right actions */
+.roles-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.roles-header .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.roles-header h2 {
+    margin: 0;
+    flex: 1;
+    text-align: center;
+}
+
+.roles-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Role item layout: drag handle on the left then main content */
+.role-item-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.role-drag-handle {
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.role-drag-handle .order-button {
+    font-size: 16px;
+    width: 34px;
+    height: 34px;
+    padding: 6px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    cursor: grab;
+}
+
+.role-drag-handle .order-button:active {
+    cursor: grabbing;
+}
+
+.role-main {
+    flex: 1;
+    text-align: left;
+}
+
+/* Support for left and right drag handles */
+.role-item-inner {
+    display: flex;
+    align-items: center;
+}
+
+.role-drag-handle.left {
+    margin-right: 8px;
+}
+
+.role-drag-handle.right {
+    margin-left: 8px;
+}
+
+/* Ensure the link occupies remaining space between handles */
+.role-link {
+    flex: 1;
+    display: block;
+}
+
+.role-main {
+    padding: 8px 6px;
+}
+
+/* Slightly reduce clickable area of handles to avoid accidental navigation */
+.role-drag-handle .order-button {
+    background: transparent;
+    border: none;
+    padding: 6px;
+}
+
+.role-name {
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+/* Selected role: make it visually prominent */
+.role-item.selected {
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.06), rgba(255, 255, 255, 0.01));
+    border-left: 4px solid var(--primary);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.role-item.selected .role-name {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* Remove underline on hover for role links and ensure hover highlight is subtle */
+.role-link:hover {
+    text-decoration: none !important;
+    color: var(--primary); /* subtle color change on hover */
+}
+
+/* Also make sure anchor doesn't get underlined by global a:hover */
+.roles-list .role-link {
+    text-decoration: none;
+}
+
+/* Visual feedback for touch dragging */
+.role-item.dragging-touch {
+    transform: scale(0.995);
+    opacity: 0.95;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    border-left-color: rgba(var(--primary-rgb), 0.38);
+    z-index: 50;
+    position: relative;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* Make selected role contrast stronger */
+.main .roles-container .role-item.selected,
+.role-item.selected {
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.12), rgba(255, 255, 255, 0.02));
+    border-left: 4px solid var(--primary);
+    box-shadow: 0 8px 28px rgba(31, 111, 235, 0.12);
+    color: var(--white);
+}
+
+.role-item.selected .role-name {
+    color: var(--primary);
+    font-weight: 800;
+}
+
+/* Improve visible focus / selected state when text is small */
+.role-item.selected .role-link {
+    text-decoration: none !important;
+}
+
+/* Make drag handle visible and large enough for touch targets */
+.role-drag-handle {
+    flex: 0 0 44px; /* slightly larger touch target */
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.role-drag-handle .order-button {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted-2);
+}
+
+.role-drag-handle .order-button:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--primary);
+}
+
+/* On mobile, expand the clickable area of the handle and make icon more prominent */
+@media (max-width: 768px) {
+    .role-drag-handle {
+        flex: 0 0 56px;
+        width: 56px;
+        height: 56px;
+    }
+
+    .role-drag-handle .order-button {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+    }
+
+    .roles-container {
+        gap: 12px;
+    }
+}
+
+/* Accessibility: ensure handle has visible hit area even if icon small */
+.role-drag-handle .order-button::after {
+    content: '';
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    left: 0;
+    top: 0;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+/* Remove default underline hover for links inside roles list */
+.roles-list .role-link:hover {
+    text-decoration: none;
+}
+
+/* Roles UI styles */
+.roles-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px
+}
+
+.roles-sidebar {
+    width: 320px
+}
+
+.role-detail {
+    flex: 1;
+    text-align: left
+}
+
+.roles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 70vh;
+    overflow: auto;
+    padding: 8px
+}
+
+.role-item {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    display: block
+}
+
+.role-item.selected {
+    outline: 2px solid var(--primary);
+    background: linear-gradient(90deg, rgba(var(--primary-rgb), 0.06), var(--surface));
+}
+
+.role-item .role-item-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between
+}
+
+.role-main {
+    display: flex;
+    align-items: center;
+    gap: 10px
+}
+
+.role-name {
+    font-weight: 700
+}
+
+.role-meta {
+    font-size: 12px;
+    color: var(--muted)
+}
+
+.role-drag-handle {
+    display: flex;
+    align-items: center
+}
+
+.role-drag-handle .order-button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 8px;
+    border-radius: 6px
+}
+
+.role-drag-handle .order-button:focus {
+    outline: none
+}
+
+/* Disabled/locked role visuals */
+.role-disabled {
+    opacity: 0.6;
+    cursor: not-allowed; /* still clickable to view but not editable */
+}
+
+.role-disabled .role-link {
+    pointer-events: auto
+}
+
+.role-disabled .role-link .role-name {
+    color: var(--muted)
+}
+
+.role-lock {
+    margin-left: 8px;
+    color: var(--muted);
+    font-size: 14px
+}
+
+/* Permission row disabled */
+.permission-row.disabled {
+    opacity: 0.6
+}
+
+.permission-row .perm-lock {
+    margin-left: 8px
+}
+
+/* no-drop visual feedback when trying to drop into forbidden zone */
+.no-drop {
+    outline: 2px dashed var(--danger);
+    transform: translateX(4px)
+}
+
+/* Ensure drag handle visible on mobile / large touch target */
+@media (max-width: 768px) {
+    .role-drag-handle {
+        display: flex
+    }
+
+    .role-drag-handle .order-button {
+        padding: 12px;
+        border-radius: 8px
+    }
+}
+
+/* small helper for locked permission icon */
+.perm-lock i {
+    color: var(--muted);
+}
+
+/* remove underline on hover for role links specifically */
+.role-link:hover {
+    text-decoration: none
+}
+
+#empty-message {
+    text-align: center;
+    margin-top: 40px;
+}
+
+/* Drag visuals: placeholder and custom dragging */
+.role-placeholder {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.06);
+    margin: 6px 0;
+    border-radius: 6px
+}
+
+.role-item.dragging-custom {
+    opacity: 0.9;
+    transform: scale(0.995);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    z-index: 100;
+    position: relative
+}
+
+.role-item .role-link {
+    user-select: none
+}
+
+/* Avoid pointer events on inner link during custom dragging to prevent selection */
+.role-item.dragging-custom .role-link {
+    pointer-events: none
+}
+
+/* Locked permission state: grisé et curseur not-allowed */
+.permission-row.perm-locked,
+.permission-row.perm-locked label,
+.permission-row.perm-locked span {
+    opacity: 0.45;
+    color: var(--muted-2);
+}
+
+.permission-row.perm-locked input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+.permission-row.perm-locked {
+    cursor: not-allowed;
+    /* Ne pas désactiver pointer-events: on veut voir le curseur not-allowed */
+    pointer-events: auto;
+}
+
+.permission-row.perm-locked label {
+    cursor: not-allowed;
+}
+
+/* si on veut que l'input apparaisse disabled mais visible */
+.permission-row.perm-locked input[disabled] {
+    filter: grayscale(60%);
+}
+
+/* Role disabled: visuel pour les rôles que l'utilisateur ne peut modifier */
+.role-item.role-disabled {
+    opacity: 0.6;
+}
+
+.role-item.no-drop {
+    border-left: 3px solid rgba(255, 0, 0, 0.08);
+}
+
+/* small helper for drag handle on mobile to be more visible */
+.role-drag-handle .order-button {
+    background: transparent;
+    border: none;
+    color: var(--muted-2);
+}
+
+.role-drag-handle .order-button:focus {
+    outline: 2px solid rgba(var(--primary-rgb), 0.25);
+}
+
+.table-utilisateur-competences,
+.table-projet-competences {
+    border-collapse: collapse;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    width: 30%;
+    margin-bottom: 50px;
+
+}
+
+.table-utilisateur-competences th,
+.table-utilisateur-competences td,
+.table-projet-competences th,
+.table-projet-competences td {
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    text-align: center;
+}
+
+.table-utilisateur-competences th,
+.table-projet-competences th {
+    font-weight: bold;
+}
+
+.groupes-container {
+    display: flex;
+    justify-content: center; /* centre horizontalement */
+    align-items: center;     /* centre verticalement si conteneur a une hauteur */
+    flex-wrap: wrap;         /* permet plusieurs cartes sur une ligne */
+             /* espace entre les cartes */
+    min-height: 150px;       /* hauteur pour centrage vertical */
+    margin-bottom: 25px;
+
+}
+
+.groupe-form {
+    margin: 0;
+}
+
+.groupe-carte {
+    flex: 0 0 auto;
+    width: 220px;
+    padding: 15px;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background-color: #222;  /* fond sombre */
+    color: #eee;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;  /* centre le contenu de la carte */
+}
+
+.groupe-carte:hover {
+    border-color: #666;
+    box-shadow: 0 0 8px rgba(255,255,255,0.05);
+}
+
+/* Carte sélectionnée (ou unique visible) */
+.groupe-carte.selectionne {
+    cursor: default;
+    border-color: #888;
+    box-shadow: 0 0 10px rgba(255,255,255,0.1);
+}
+
+
+/* Carte sélectionnée */
+.groupe-carte.selectionne {
+    border-color: rgba(255,255,255,0.3); /* bord clair semi-transparent */
+    background-color: rgba(255,255,255,0.05); /* overlay très léger */
+    cursor: default;
+}
+
+/* Titre de la carte */
+.groupe-titre {
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+/* Liste des membres */
+.membres-liste {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+}
+
+.membre-item {
+    margin-bottom: 5px;
+}
+
+/* Bouton Lancer l'algorithme */
+#btnAfficherGroupes {
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: #007bff;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out;
+}
+
+#btnAfficherGroupes:hover {
+    background-color: #0056b3;
+}
+
+#formAjouterManuellement {
+    background-color: #222;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    color: #eee;
+}
+
+.utilisateurs-checkbox label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.utilisateurs-liste-manuel {
+    overflow-y: auto;
+    margin-bottom: 10px;
+    border: 1px solid #444;
+    padding: 10px;
+    border-radius: 8px;
+    list-style-type: none;
+}
+
+.jalon-item-accueil {
+    list-style-type: none;
+}

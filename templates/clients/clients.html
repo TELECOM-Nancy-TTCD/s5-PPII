@@ -1,0 +1,73 @@
+{% extends "menu.html" %}
+
+{% block title %}Clients{% endblock %}
+
+{% block content %}
+
+<div>
+<h1>Liste des clients</h1>
+<p style="font-size: large;">Ici se trouvent tous les clients répertoriés.</p>
+    <a href="{{ url_for('create_client') }}" class="bouton-ajouter-client">Ajouter un client</a>
+</div>
+
+<form class="search-form-clients" method="get" action="/clients" >
+    <input type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
+    <button type="submit">Rechercher</button>
+</form>
+
+    {% if peut_gerer_csv %}
+<form action="{{ url_for('import_clients') }}" method="post" enctype="multipart/form-data">
+    <input class="file-input" type="file" name="fichier" required>
+    <button type="submit", class="bouton-importer">Importer</button>
+</form>
+
+<form action="{{ url_for('export_clients') }}" >
+    <button type="submit" class="bouton-exporter">Exporter</button>
+</form>
+    {% endif %}
+
+
+
+
+<div class="clients-container">
+    <div class="client-row" id="en-tete-clients">
+        <span class="col">ID</span>
+        <span class="col">Nom entreprise</span>
+        <span class="col">Contact</span>
+        <span class="col">Email</span>
+        <span class="col">Téléphone</span>
+        <span class="col">Type client</span>
+        <span class="col">Interlocuteur principal</span>
+        <span class="col">Adresse</span>
+    </div>
+
+    {% for client in clients_db %}
+    <div class="client-card" onclick="window.location.href='/clients/{{ client['client_id'] }}'">
+        <div class="client-row">
+            <span class="col">{{ client.client_id }}</span>
+            <span class="col">{{ client.nom_entreprise }}</span>
+            <span class="col">{{ client.contact_nom }}</span>
+            <span class="col">{{ client.contact_email }}</span>
+            <span class="col">{{ client.contact_telephone }}</span>
+            <span class="col">{{ client.type_client }}</span>
+            <span class="col">
+                {%  if client.interlocuteur_principal_id %}
+                {{ client.interlocuteur_principal.nom }} {{ client.interlocuteur_principal.prenom }}
+                {% else %}
+                Non attribué
+                {% endif %}
+            </span>
+            <span class="col">{{ client.address }}</span>
+        </div>
+    </div>
+    {% endfor %}
+
+    
+    {% if request.args.get('message') %}
+        <div class="info">{{ request.args.get('message') }}</div>
+    {% endif %}
+</div>
+
+
+
+{% endblock %}

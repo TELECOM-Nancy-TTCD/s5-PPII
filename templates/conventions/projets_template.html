@@ -1,0 +1,250 @@
+{% extends "menu.html" %}
+
+{% block title %}{{projet.nom_projet}}{% endblock %}
+
+{% block content %}
+
+<h1>{{projet.nom_projet}}</h1>
+
+{% if projet.statut != "Terminé" %}
+<form method="post" action="{{ url_for('terminer_projet', projet_id=projet.projet_id) }}">
+    <button type="submit" class="bouton-terminer-projet">
+        Marquer comme terminé
+    </button>
+</form>
+{% else %}
+<p><strong>Projet terminé</strong></p>
+{% endif %}
+
+<p>Statut du projet : {{projet.statut}}</p>
+<p>Charge de travail totale: {{projet.charge_travail}} heures-homme </p>
+{% if projet.statut == 'En attente'%}
+<p> Date de début prévue : {{projet.date_debut}} </p>
+{% else %}
+<p> Date de début: {{projet.date_debut}} </p>
+{% endif %}
+
+{% if projet.statut == 'Terminé'%}
+<p> Date de fin : {{projet.date_fin}} </p>
+{% elif projet.statut == 'Annulé' and projet.date_fin != None %} 
+<p> Date d'abandon : {{projet.date_fin}} </p>
+{% elif projet.statut != 'Annulé' and projet.date_fin != None %} 
+<p> Date de fin prévue : {{projet.date_fin}} </p>
+{% endif %}
+
+<p> Budget : {{projet.budget}} € </p>
+
+<a href={{projet.doc_dossier}} class="lien_doc_projet"> Documents associés au projet </a>
+
+<p>-----</p>
+<h2> Compétences requises par le projet </h2>
+
+<div style="justify-content: center;">
+<table style="border: 1px solid linen;  ", class="table-projet-competences">
+    <tr>
+        <th> Compétence </th>
+        <th> Niveau </th>
+    </tr>
+    {% for u in competences_requises%}
+    <tr>
+        <td> {{ u[0] }}</td>
+        <td> {{ u[1] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+
+<a href="{{ url_for( 'projet_ajouter_competences', projet_id=projet.projet_id ) }}" class="bouton-ajouter-client">Ajouter des compétences</a>
+
+<p>-----</p>
+
+<h2>Algorithme</h2>
+
+{# On vérifie si un groupe est déjà sélectionné #}
+{% set groupe_existe = False %}
+{% for g in groupes %}
+    {% if g.selectionne %}
+        {% set groupe_existe = True %}
+    {% endif %}
+{% endfor %}
+
+{# Affiche le bouton de l'algorithme seulement si aucun groupe n'existe #}
+{% if not groupe_existe %}
+<button id="btnAfficherGroupes" class="jalon_boutton">
+    Lancer l'algorithme
+</button>
+{% endif %}
+
+<div id="resultats_groupes" class="groupes-container" style="{% if not groupe_affiche %}display:none;{% endif %}">
+    {% for g in groupes %}
+        <form method="POST" action="{{ url_for('selectionner_groupe', projet_id=projet.projet_id) }}" class="groupe-form">
+            <input type="hidden" name="groupe_ids" value="{{ g.ids | join(',') }}">
+            <button type="submit"
+                    class="groupe-carte {% if g.selectionne %}selectionne{% endif %}"
+                    data-groupe-id="{{ loop.index }}"
+                    {% if g.selectionne %}disabled{% endif %}>
+                <h3 class="groupe-titre">Membres : </h3>
+                <ul class="membres-liste">
+                    {% for nom in g.noms %}
+                        <li class="membre-item">{{ nom }}</li>
+                    {% endfor %}
+                </ul>
+                {% if g.score %}
+                <p class="groupe-score">Score : {{ g.score }} %</p>
+                {% endif %}
+
+            </button>
+        </form>
+    {% endfor %}
+</div>
+
+
+<a href="{{ url_for('ajouter_membres', projet_id=projet.projet_id) }}" class="jalon_boutton">
+    Ajouter des membres manuellement
+</a>
+
+<p>-----</p>
+
+<h2>Jalons du projet</h2>
+
+<button class="jalon_boutton" onclick="ouvrirCreationJalon()">Créer un nouveau jalon</button>
+
+<section class="timeline_jalons">
+    {% for j in projet.jalons%}
+    <div class="timeline-item">
+        <div class="timeline-card">
+            <button class="jalon_boutton" onclick="ouvrirModificationJalon({{ j.jalon_id }}, '{{ j.description }}', '{{ j.est_complete }}','{{ j.date_fin or '' }}')">Modifier</button>
+
+            <p>{{j.description}}</p>
+            {% if j.est_complete %}
+                <p style="color: green; font-weight:bold"> Terminé le {{j.date_fin}}</p>
+            {% else %}
+                <p style="color: red; font-weight:bold"> À faire pour le {{j.date_fin}}</p>
+            {% endif %}
+            
+        </div>
+    </div>
+  {% endfor %}
+
+</section>
+
+<!-- Ici le double div est utile car on peux faire deux position, 
+une none pour faire disparaitre la pop up et l'autre pour afficher les élément en colonnes -->
+
+<div id="modal-jalon-modification" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="fermerModificationJalon()">&times;</span>
+
+        <h2>Modifier le jalon</h2>
+
+        <form method="post" id="form-jalon-modification">
+            <input type="hidden" name="jalon_id" id="jalon_id">
+
+            <label>Description</label>
+            <input type="text" name="description" id="jalon_description" required>
+
+            <label class="checkbox">
+                <input type="checkbox" name="est_complete" id="jalon_est_complete">
+                Terminé
+            </label>
+
+            <label>Date fin</label>
+            <input type="date" name="date_fin" id="jalon_date_fin">
+
+            <button type="submit" class="jalon_boutton">Enregistrer</button>
+        </form>
+    </div>
+</div>
+
+<!-- Ici le double div est utile car on peux faire deux position, 
+une none pour faire disparaitre la pop up et l'autre pour afficher les élément en colonnes -->
+
+<div id="modal-jalon-creation" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="fermerCreationJalon()">&times;</span>
+
+        <h2>Création du jalon</h2>
+
+        <form method="post" id="form-jalon-creation">
+            <input type="hidden" name="projet_id" value="{{ projet.projet_id }}">
+
+            <label>Description</label>
+            <input type="text" name="description_creation" required>
+
+            <label class="checkbox">
+                <input type="checkbox" name="est_complete_creation">
+                Terminé
+            </label>
+
+            <label>Date fin</label>
+            <input type="date" name="date_fin_creation">
+
+            <button type="submit" class="jalon_boutton">Enregistrer</button>
+        </form>
+    </div>
+</div>
+
+
+<script>
+function ouvrirModificationJalon(id, description, est_complete, dateFin) {
+    document.getElementById("jalon_id").value = id;
+    document.getElementById("jalon_description").value = description;
+    document.getElementById("jalon_est_complete").checked = est_complete === true || est_complete === 1 || est_complete === 'True' || est_complete === '1';
+    document.getElementById("jalon_date_fin").value = dateFin || "";
+
+    document.getElementById("form-jalon-modification").action = "/jalon/" + id + "/modifier";
+    document.getElementById("modal-jalon-modification").style.display = "block";
+}
+
+
+function fermerModificationJalon() {
+    document.getElementById("modal-jalon-modification").style.display = "none";
+}
+
+
+function ouvrirCreationJalon() {
+    document.getElementById("form-jalon-creation").action = "/jalon/creer";
+    document.getElementById("modal-jalon-creation").style.display = "block";
+}
+
+function fermerCreationJalon() {
+    document.getElementById("modal-jalon-creation").style.display = "none";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const cartes = document.querySelectorAll(".groupe-carte");
+    const btn = document.getElementById("btnAfficherGroupes");
+    const container = document.getElementById("resultats_groupes");
+
+
+    let groupeSelectionne = Array.from(cartes).find(c => c.classList.contains("selectionne"));
+
+    if(groupeSelectionne){
+        btn.style.display = "none";
+        cartes.forEach(c => c.style.display = (c === groupeSelectionne) ? "flex" : "none");
+        container.style.display = "flex";
+    } else {
+        btn.style.display = "inline-block";
+        cartes.forEach(c => c.style.display = "none");
+        container.style.display = "none";
+    }
+
+
+    btn.addEventListener("click", () => {
+        cartes.forEach(c => c.style.display = "flex");
+        container.style.display = "flex";
+        btn.style.display = "none";
+    });
+
+    cartes.forEach(carte => {
+        carte.addEventListener("click", () => {
+            cartes.forEach(c => {
+                if(c !== carte) c.style.display = "none";
+            });
+            carte.classList.add("selectionne");
+        });
+    });
+});
+</script>
+
+{% endblock %}

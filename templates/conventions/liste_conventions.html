@@ -1,0 +1,108 @@
+{% extends "menu.html" %}
+
+{% block title %}Conventions{% endblock %}
+
+{% block content %}
+
+    <h1>Liste des conventions</h1>
+
+    <p>Ici se trouvent toutes les conventions courantes ou passées signées par Telecom Nancy Services.</p>
+
+
+    <form class="search-form-conventions" method="get" action="/conventions">
+        <input type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
+        <button type="submit">Rechercher</button>
+    </form>
+
+    <div>
+        <a href="{{ url_for('conventions.create_convention') }}" class="bouton-ajouter-client">Ajouter une
+            convention</a>
+    </div>
+    <div>
+        <a href="{{ url_for('create_projet_sans_convention_connue') }}" class="bouton-ajouter-client">Ajouter un projet
+            à une convention</a>
+    </div>
+
+    {% if peut_gerer_csv %}
+        <form action="{{ url_for('import_projets_termine') }}" method="post" enctype="multipart/form-data">
+            <input class="file-input" type="file" name="fichier" required>
+            <button type="submit" , class="bouton-importer">Importer</button>
+        </form>
+
+        <form action="{{ url_for('export_projets_termine') }}">
+            <button type="submit" class="bouton-exporter">Exporter</button>
+        </form>
+    {% endif %}
+
+    <div class="clients-container">
+
+        <div class="convention-row" id="en-tete-conventions">
+            <div class="button-col"></div>
+            <div class="col">ID</div>
+            <div class="col">Nom de la convention</div>
+            <div class="col">Clients liés à la convention</div>
+            <div class="col">Début de la convention</div>
+            <div class="col">Fin de la convention</div>
+        </div>
+
+        {% for convention in context %}
+            <div class="client-card" onclick="window.location.href='/conventions/{{ convention.id }}'">
+
+                <div class="convention-row">
+                    <div class="button-col">
+                        <button type="button" class="collapseur" onclick="show_projets(this, event)">
+                            <i class="fa-solid fa-xl fa-angle-right"></i>
+                        </button>
+                    </div>
+
+                    <div class="col">{{ convention.id }}</div>
+                    <div class="col">{{ convention.nom }}</div>
+                    <div class="col">{{ convention.nom_client }}</div>
+                    <div class="col">{{ convention.date_debut }}</div>
+                    <div class="col">{{ convention.date_fin }}</div>
+                </div>
+
+                <div class="collapsed-row">
+                    <div class="en-tete-pj-associes">
+                        <div class="button-col"></div>
+                        <div class="col">ID du projet</div>
+                        <div class="col">Nom du projet</div>
+                        <div class="col">Budget</div>
+                        <div class="col">Début du projet</div>
+                        <div class="col">Fin du projet</div>
+                    </div>
+                    {% for p in pj_as[convention.id] %}
+                        <div class="convention-row"
+                             onclick="event.stopPropagation(); window.location.href='/projet/{{ p.id }}'">
+                            <div class="button-col"></div>
+                            <div class="col">{{ p.id }}</div>
+                            <div class="col">{{ p.nom_projet }}</div>
+                            <div class="col">{{ p.budget }} €</div>
+                            <div class="col">{{ p.date_debut }}</div>
+                            <div class="col">{{ p.date_fin }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function show_projets(btn, event) {
+            event.stopPropagation()
+            const content = btn.closest(".client-card").querySelector(".collapsed-row");
+            const icon = btn.querySelector("i");
+
+            if (content.style.display === "none" || content.style.display === "") {
+                content.style.display = "block";
+                icon.classList.remove("fa-angle-right");
+                icon.classList.add("fa-angle-down");
+            } else {
+                content.style.display = "none";
+                icon.classList.remove("fa-angle-down");
+                icon.classList.add("fa-angle-right");
+            }
+        }
+    </script>
+
+{% endblock %}

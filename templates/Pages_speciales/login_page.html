@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNS - Login</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  
+  <body>
+    <header>
+      <br>
+      <img class="logo" src="/static/tns_logo_icon_couleur.svg" height="60"/>
+      <h1 class="page-desc">Page de connexion</h1>
+      <br>
+    </header>
+
+    <div class="login-card">
+
+      <img class="logo" src="/static/tns_logo_icon_couleur.svg" height="60"/>
+
+      <form method="post" style="display : flex; flex-direction: column; gap: 5px;">
+        <input name="Adresse e-mail" type="email" placeholder="e-mail">
+        <input name="Mot de passe" type="password" placeholder="Mot de passe">
+        {% if has_failed_login %}
+          <p class="erreur_formulaire" style="color:red; font-size:15px"> Erreur : identifiant ou mot de passe inconnu </p>
+        {% endif %}
+        <input class="bouton_connexion" type="submit" value="Se connecter">
+      </form>
+    </div>
+
+    </body>
+</html>

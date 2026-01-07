@@ -1,0 +1,28 @@
+{% extends "menu.html" %}
+
+{% block title %}Ajouter des membres{% endblock %}
+
+{% block content %}
+
+<h1>Ajouter des membres au projet {{ projet.nom_projet }}</h1>
+
+<p>Cette action créera un nouveau groupe et remplacera les membres existants.</p>
+
+<form method="POST" action="{{ url_for('ajouter_membres', projet_id=projet.projet_id) }}" class="ajout-membres-form">
+    <label for="utilisateur_ids">IDs des utilisateurs à ajouter (séparés par des virgules) :</label>
+    <input type="text" name="utilisateur_ids" id="utilisateur_ids" placeholder="Ex : 1,2,5" required>
+
+    <button type="submit" class="jalon_boutton" style="margin-bottom: 25px; margin-top: 10px;">Ajouter et créer le groupe</button>
+</form>
+
+<a href="{{ url_for('projet_detail', projet_id=projet.projet_id) }}" class="jalon_boutton" style="margin-bottom: 15px;">Retour au projet</a>
+
+<p style="margin-top: 25px;">Liste des utilisateurs disponibles :</p>
+<ul class="utilisateurs-liste-manuel">
+    {% for u in utilisateurs %}
+        <li>{{ u[1] }} {{ u[2] }} : {{ u[0] }}</li>
+    {% endfor %}
+</ul>
+<p>Pour ajouter des membres, utilisez leur ID dans le formulaire ci-dessous :</p>
+
+{% endblock %}

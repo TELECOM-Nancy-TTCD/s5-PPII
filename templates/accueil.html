@@ -1,0 +1,42 @@
+{% extends "menu.html" %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+<h1>Bienvenue sur le site interne de TNS</h1>
+
+<p>Utilisez le menu pour naviguer à travers les différentes sections.</p>
+
+<p>Ce site est réservé aux membres de TNS, vous serez invité(e) à vous connecter.</p>
+
+<p>Ce site sert au bon fonctionnement des projets de TNS.</p>
+<p>--------</p>
+<p>Voici un aperçu des projets en cours :</p>
+
+<section class="projets">
+  {% for projet in projets %}
+    <div class="projet-card">
+      <h3>{{ projet.nom_projet }} - Progression : {{ projet.progress }}%</h3>
+      
+      <!-- Barre de progression -->
+      <div class="progress-bar-background">
+        <div class="progress-bar" style="width: {{ projet.progress }}%;"></div>
+      </div>
+
+      <!-- Jalons non terminés -->
+      {% if projet.jalons %}
+        <ul class="jalons">
+          {% for j in projet.jalons %}
+            <li class="jalon-item-accueil">
+              {{ j.description }} - À faire pour le {{ j.date_fin or 'sans date' }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>Aucun jalon.</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</section>
+
+{% endblock %}

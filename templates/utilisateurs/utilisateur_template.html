@@ -1,0 +1,103 @@
+{% extends "menu.html" %}
+
+{% block content %}
+
+    <h1 style="flex:1">Détails de l'utilisateur</h1>
+
+    {% if current_user.role.administrateur or current_user.role.peut_gerer_utilisateurs %}
+
+
+        <div class="actions" style="justify-content: flex-end; gap:8px; align-items:center;">
+
+            <a href="/utilisateurs/{{ utilisateur.utilisateur_id }}/edit" class="primary-button icon-button"
+               aria-label="Modifier">
+                <!-- pencil / edit icon -->
+                <i class="fa-solid fa-pen"></i>
+            </a>
+
+            <form action="{{ url_for('supprimer_utilisateur', user_id=utilisateur['utilisateur_id']) }}" method="post"
+                  onsubmit="return confirm('Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible !');">
+                <button type="submit" class="danger-button icon-button" aria-label="Supprimer"
+                        id="delete-interaction-button" title="Supprimer" data-id="{{ utilisateur.utilisateur_id }}">
+                    <!-- trash icon -->
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </form>
+
+
+        </div>
+
+
+
+
+
+    {% endif %}
+
+    <h1>{{ utilisateur['prenom'] }} {{ utilisateur['nom'] }}</h1>
+
+    <p>Email : {{ utilisateur['email'] }}</p>
+
+    <p>Intervenant : {{ 'Oui' if utilisateur['est_intervenant'] else 'Non' }}</p>
+
+    <p>Nombre d'heure disponible (par semaine) : {{ utilisateur['heures_dispo_semaine'] }}</p>
+    <p>-----</p>
+    <h2>Compétences</h2>
+
+    <div style="justify-content: center;">
+        <table style="border: 1px solid linen;  " , class="table-utilisateur-competences">
+            <tr>
+                <th> Compétence</th>
+                <th> Niveau</th>
+            </tr>
+            {% for u in competences_requises %}
+                <tr>
+                    <td> {{ u[0] }}</td>
+                    <td> {{ u[1] }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <a href="{{ url_for( 'utilisateur_ajouter_competences', uid=utilisateur['utilisateur_id'] ) }}"
+       class="bouton-ajouter-client">Ajouter des compétences</a>
+
+    {% if peut_gerer_docs %}
+        <p>-----</p>
+        <h2>Documents</h2>
+
+        <div class="documents-users">
+
+            {% if utilisateur.doc_carte_vitale %}
+                <a href="{{ utilisateur.doc_carte_vitale }}" class="documents-bouton-users" download>
+                    Accès Carte Vitale
+                </a>
+            {% else %}
+                <p>Carte Vitale : <span class="none">Pas de document disponible</span></p>
+            {% endif %}
+
+            {% if utilisateur.doc_cni %}
+                <a href="{{ utilisateur.doc_cni }}" class="documents-bouton-users" download>
+                    Accès CNI
+                </a>
+            {% else %}
+                <p>CNI : <span class="none">Pas de document disponible</span></p>
+            {% endif %}
+
+            {% if utilisateur.doc_adhesion %}
+                <a href="{{ utilisateur.doc_adhesion }}" class="documents-bouton-users" download>
+                    Accès Attestation d'adhésion
+                </a>
+            {% else %}
+                <p>Attestation d'adhésion : <span class="none">Pas de document disponible</span></p>
+            {% endif %}
+
+            {% if utilisateur.doc_rib %}
+                <a href="{{ utilisateur.doc_rib }}" class="documents-bouton-users" download>
+                    Accès RIB
+                </a>
+            {% else %}
+                <p>RIB : <span class="none">Pas de document disponible</span></p>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

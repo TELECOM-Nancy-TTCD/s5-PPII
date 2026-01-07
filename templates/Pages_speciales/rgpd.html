@@ -1,0 +1,14 @@
+{% extends "menu.html" %}
+
+{% block title %}RGPD{% endblock %}
+
+{% block content %}
+
+<h1>Récupération des données RGPD</h1>
+<p>Cette page permet aux membres autorisés de télécharger les données personnelles des clients et utilisateurs.</p>
+
+<form action="{{ url_for('download_rgpd') }}" method="post">
+    <button type="submit">Télécharger les données RGPD</button>
+</form>
+
+{% endblock %}

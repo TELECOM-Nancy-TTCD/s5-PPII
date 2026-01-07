@@ -1,0 +1,39 @@
+{% extends "menu.html" %}
+
+{% block title %}Création d'utilisateur{% endblock %}
+
+{% block content %}
+  <h1> Création du compte d'un nouveau membre de TNS</h1>
+  {% if context.success %}
+  <h2 style="color: green;"> Utilisateur ajouté avec succès! </h2>
+  {% endif %}
+  <br>
+    <form class="form-create-user" method="post" style="display : flex; flex-direction: column; gap: 5px;">
+      <input name="e-mail" type="email" placeholder="e-mail" required>
+      <input name="mdp" type="password" placeholder="Mot de passe" required>
+      <input name="nom" type="text" placeholder="Nom">
+      <input name="prenom" type="text" placeholder="Prénom">
+      <select name="role" required>
+          <option hidden> --Sélectionnez un rôle-- </option>
+          {% for i in context.roles_possibles %}
+          <option value={{i[0]}}> {{i[1]}} </option>
+          {% endfor %}
+      </select>
+      <div>
+          <input name="est_intervenant" type="checkbox" id="est_intervenant">
+          <label for="est_intervenant">Le membre a le statut d'intervenant</label>
+      </div>
+      <div>
+          <input name="h_disp" id="h_disp" type="number"> 
+          <label for="h_disp"> Nombre d'heures moyen par semaine où l'intervenant est disponible</label>
+      </div>
+      <input name="doc_car" type="text" placeholder="Lien vers la carte vitale">
+      <input name="doc_cni" type="text" placeholder="Lien vers la CNI">
+      <input name="doc_adh" type="text" placeholder="Lien vers le document d'adhésion">
+      <input name="doc_rib" type="text" placeholder="Lien vers le RIB">      
+      <input type="submit" value="Ajouter l'utilisateur">  
+    </form>
+
+    
+  </div>
+{%endblock%}
