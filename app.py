@@ -1,5 +1,4 @@
-from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, session, \
-    jsonify
+from flask import Flask, Response, render_template, send_file, abort, redirect, url_for, flash, g, request, jsonify
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 
 from typing import cast, Literal
@@ -51,6 +50,12 @@ app.register_blueprint(conventions_bp)
 app.register_blueprint(interactions_bp)
 app.register_blueprint(clients_bp)
 app.register_blueprint(utilisateurs_bp)
+try:
+    from utilisateurs import utilisateurs_bd
+    if utilisateurs_bd:
+        app.register_blueprint(utilisateurs_bd)
+except Exception:
+    pass
 app.register_blueprint(errors_bp)
 
 @app.context_processor
@@ -805,221 +810,6 @@ def creer_jalon():
 
     return redirect(url_for("projet_detail", projet_id=projet_id))
 
-
-@app.route("/utilisateurs", methods=["GET"])
-@login_required
-def utilisateurs():
-    """Fonction pour la route /utilisateurs \n
-    Affiche la page qui liste tous les utilisateurs"""
-
-
-    recherche_utilisateurs = request.args.get("q", "").lower()
-
-    conn = sqlite3.connect('database/database.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    cursor.execute("""SELECT u.*, r.nom AS role_nom
-                      FROM Utilisateurs u
-                               LEFT JOIN Roles r ON u.role_id = r.role_id""")
-    utilisateurs_db = cursor.fetchall()
-    conn.close()
-
-    if recherche_utilisateurs:
-        utilisateurs_db = [
-            u for u in utilisateurs_db
-            if recherche_utilisateurs in u["nom"].lower()
-               or recherche_utilisateurs in u["prenom"].lower()
-               or recherche_utilisateurs in u["email"].lower()
-               or (u["role_nom"] and recherche_utilisateurs in u["role_nom"].lower())
-        ]
-
-    return render_template("utilisateurs/utilisateurs.html", utilisateurs_db=utilisateurs_db,
-                           recherche_utilisateurs=recherche_utilisateurs)
-
-
-@app.route("/utilisateurs/<int:uid>")
-@login_required
-def utilisateurs_detail(uid):
-    """Fonction pour la route /utilisateurs/id_utilisateur \n
-    Affiche la page dédié à un utilisateur"""
-
-    db = get_db()
-
-    utilisateur = db.get_user_by_id(uid)
-
-    if utilisateur is None:
-        abort(404)
-
-    # Obtention des compétences requises et du niveau
-    comp_requises = get_db().cursor().execute(
-        "SELECT c.nom, ic.niveau FROM competences c JOIN intervenant_competences ic ON c.competence_id = ic.competence_id WHERE ic.intervenant_id = ?",
-        (uid,)).fetchall()
-
-    peut_gerer_docs = has_permission(current_user, 'peut_gerer_documents')
-
-    return render_template("utilisateurs/utilisateur_template.html", utilisateur=utilisateur,
-                           competences_requises=comp_requises, peut_gerer_docs=peut_gerer_docs)
-
-
-@app.route("/utilisateurs/<int:uid>/ajouter_comp", methods=["GET", "POST"])
-@login_required
-def utilisateur_ajouter_competences(uid):
-    '''Fonction pour ajouter les compétences d'un utilisateur sur sa page'''
-
-    if not has_permission(current_user, 'peut_gerer_competences'):
-        abort(403)
-
-    if get_db().get_user_by_id(uid) is None:
-        abort(404)
-
-    c = get_db().cursor()
-    c.execute("SELECT * FROM Competences ORDER BY competence_id ASC")
-    toutes_competences = c.fetchall()
-    success = False
-
-    if request.method == "POST":
-        comp_requises = list(map(int, request.form.getlist("skills[]")))
-        niveaux = list(map(int, request.form.getlist("levels[]")))
-        s = c.execute("SELECT competence_id FROM intervenant_competences WHERE intervenant_id=?", (uid,)).fetchall()
-        for i in range(len(s)):
-            s[i] = s[i][0]
-        print(s)
-        for i, u in enumerate(comp_requises):
-            if u in s:
-                continue
-
-            s.append(u)
-            niveau_associe = niveaux[i]
-            c.execute("INSERT INTO intervenant_competences VALUES (?, ?, ?)", (uid, u, niveau_associe))
-            get_db().commit()
-
-        success = True
-
-    return render_template("ajouter_competences.html", competences=toutes_competences, success=success)
-
-
-@app.route("/utilisateurs/create", methods=["GET", "POST"])
-@login_required
-def create_user():
-    """Fonction pour la route /utilisateurs/create \n
-    C'est la page pour creer un nouvel utilisateur"""
-    if not has_permission(current_user, 'peut_gerer_utilisateurs'):
-        abort(403)
-
-    user_added_successfully = False
-    db = get_db()
-
-    if request.method == 'POST':
-        email = request.form["e-mail"]
-        hmdp = hash_password(request.form["mdp"])
-        date_expiration_mdp = (datetime.now() + timedelta(days=365)).date()
-        nom = request.form["nom"]
-        prenom = request.form["prenom"]
-        avatar = None
-        role_id = request.form["role"]
-        est_intervenant = "est_intervenant" in request.form
-        heures_dispo_semaine = request.form["h_disp"]
-        doc_carte_vitale = request.form["doc_car"]
-        doc_cni = request.form["doc_cni"]
-        doc_adhesion = request.form["doc_adh"]
-        doc_rib = request.form["doc_rib"]
-
-        user = Utilisateur.from_db_row(db, (None, email, hmdp, date_expiration_mdp, nom, prenom, avatar, role_id, est_intervenant,
-                   heures_dispo_semaine, doc_carte_vitale, doc_cni, doc_adhesion, doc_rib))
-        user.save()
-
-
-        user_added_successfully = True
-
-    # Obtention des noms de rôles possibles
-    roles_possibles = db.get_all_roles(sort_by="hierarchie")
-
-    return render_template("utilisateurs/create_utilisateur.html",
-                           context={"success": user_added_successfully, "roles_possibles": roles_possibles})
-
-
-@app.post("/utilisateurs/<int:user_id>/supprimer")
-@login_required
-def supprimer_utilisateur(user_id):
-    """Fonction pour la route /utilisateurs/id_utilisateur/supprimer \n
-    Permet de faire fonctionner le bouton de suppression de l'utilisateur"""
-
-    # On vérifier que la personne est bien un ADMIN
-    if not has_permission(current_user, 'administrateur'):
-        abort(403)
-
-    user = get_db().get_user_by_id(user_id)
-    if not user:
-        abort(404)
-
-    try:
-        user.delete()
-        flash("Utilisateur supprimé avec succès.", "success")
-    except Exception as e:
-        flash(f"Erreur lors de la suppression: {str(e)}", "danger")
-
-    return redirect(url_for("utilisateurs"))
-
-
-@app.route('/utilisateurs/<int:utilisateur_id>/edit', methods=['GET', 'POST'])
-@login_required
-def edit_utilisateur(utilisateur_id):
-    db = get_db()
-    utilisateur = db.get_user_by_id(utilisateur_id)
-    if utilisateur is None:
-        return abort(404)
-
-    if not has_permission(current_user,
-                          'peut_gerer_utilisateurs'):
-        return abort(403)
-
-    # Gestion du formulaire soumis
-    if request.method == 'POST':
-        # errors = validate_interaction_form(request.form)
-        errors = False
-        if errors:
-            return jsonify({'errors': errors}), 400
-
-        email = request.form["e-mail"]
-        nom = request.form["nom"]
-        prenom = request.form["prenom"]
-        role_id = request.form["role"]
-        est_intervenant = request.form["est_intervenant"] == "True"
-        heures_dispo_semaine = request.form["h_disp"]
-        doc_carte_vitale = request.form["doc_car"]
-        doc_cni = request.form["doc_cni"]
-        doc_adhesion = request.form["doc_adh"]
-        doc_rib = request.form["doc_rib"]
-
-        utilisateur.email = email
-        utilisateur.nom = nom
-        utilisateur.prenom = prenom
-
-        utilisateur.role_id = role_id
-
-        utilisateur.est_intervenant = est_intervenant
-        if heures_dispo_semaine.isdigit():
-            utilisateur.heures_dispo_semaine = heures_dispo_semaine
-        utilisateur.doc_carte_vitale = doc_carte_vitale
-        utilisateur.doc_cni = doc_cni
-        utilisateur.doc_adhesion = doc_adhesion
-        utilisateur.doc_rib = doc_rib
-
-        utilisateur.save()
-
-        return redirect(url_for("utilisateurs_detail", uid=utilisateur.utilisateur_id))
-
-        # return jsonify({'message': 'Interaction updated successfully'}), 200
-
-    # Obtention des interlocuteurs possibles
-    roles_possibles = db.get_all_roles(sort_by="hierarchie")
-
-    return render_template("utilisateurs/edit_utilisateur.html", context={"roles_possibles": roles_possibles},
-                           utilisateur=utilisateur, Utilisateur=Utilisateur)
-
-
-# Ci dessous les pages du pied de page
 @app.route("/cgu")
 def cgu():
     """Fonction pour la route /cgu \n
@@ -1285,6 +1075,55 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+
+# Compatibility wrappers: keep old endpoint names but delegate to the blueprint implementations
+@app.route('/utilisateurs', methods=['GET'], endpoint='utilisateurs')
+@login_required
+def _utilisateurs_wrapper():
+    try:
+        return redirect(url_for('utilisateurs.users'))
+    except Exception:
+        abort(404)
+
+@app.route('/utilisateurs/<int:uid>', endpoint='utilisateurs_detail')
+@login_required
+def _utilisateurs_detail_wrapper(uid):
+    try:
+        return redirect(url_for('utilisateurs.utilisateurs_detail', uid=uid))
+    except Exception:
+        abort(404)
+
+@app.route('/utilisateurs/<int:uid>/ajouter_comp', methods=['GET', 'POST'], endpoint='utilisateur_ajouter_competences')
+@login_required
+def _utilisateur_ajouter_competences_wrapper(uid):
+    try:
+        return redirect(url_for('utilisateurs.utilisateur_ajouter_competences', uid=uid))
+    except Exception:
+        abort(404)
+
+@app.route('/utilisateurs/create', methods=['GET', 'POST'], endpoint='create_user')
+@login_required
+def _create_user_wrapper():
+    try:
+        return redirect(url_for('utilisateurs.create_user'))
+    except Exception:
+        abort(404)
+
+@app.post('/utilisateurs/<int:user_id>/supprimer', endpoint='supprimer_utilisateur')
+@login_required
+def _supprimer_utilisateur_wrapper(user_id):
+    try:
+        return redirect(url_for('utilisateurs.supprimer_utilisateur', user_id=user_id))
+    except Exception:
+        abort(404)
+
+@app.route('/utilisateurs/<int:utilisateur_id>/edit', methods=['GET', 'POST'], endpoint='edit_utilisateur')
+@login_required
+def _edit_utilisateur_wrapper(utilisateur_id):
+    try:
+        return redirect(url_for('utilisateurs.edit_utilisateur', utilisateur_id=utilisateur_id))
+    except Exception:
+        abort(404)
 
 if __name__ == "__main__":
     app.run(debug=True)

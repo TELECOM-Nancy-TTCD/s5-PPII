@@ -17,8 +17,7 @@ CREATE TABLE Roles (
     peut_gerer_jalons BOOLEAN DEFAULT false,
     peut_assigner_intervenants BOOLEAN DEFAULT false,
 
-    peut_lire_intervenants BOOLEAN DEFAULT false,
-    peut_modifier_intervenants BOOLEAN DEFAULT false, 
+    peut_lire_utilisateurs BOOLEAN DEFAULT false,
     peut_acceder_documents BOOLEAN DEFAULT false,
     peut_gerer_competences BOOLEAN DEFAULT false,
 
@@ -164,3 +163,4 @@ CREATE TABLE Travaille_sur (
     FOREIGN KEY (utilisateur_id) REFERENCES Utilisateurs(utilisateur_id) ON UPDATE CASCADE ON DELETE SET NULL, -- Si un utilisateur est supprimé tandis qu'il travaille sur un projet, NULL travaille sur le projet
     FOREIGN KEY (projet_id) REFERENCES Projets(projet_id) ON UPDATE CASCADE ON DELETE CASCADE -- Suppression d'un projet implique suppression de la notion de qui travaille dessus
 )
+

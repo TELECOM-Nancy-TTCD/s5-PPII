@@ -6,18 +6,19 @@
 
 <h1>Liste des utilisateurs</h1>
 
-<form class="search-form" method="get" action="/utilisateurs" >
-    <input type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
-    <button type="submit">Rechercher</button>
+<form class="search-form" method="get" action="{{ url_for('utilisateurs.users') }}" >
+    <label for="q" class="hidden">Recherche</label>
+    <input id="q" type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
+    <button type="submit" class="secondary-button">Rechercher</button>
 </form>
 
 <div class="actions-utilisateurs">
-    <a href="{{ url_for('create_user') }}" class="bouton-ajouter-utilisateur">Ajouter un utilisateur.</a>
+    <a href="{{ url_for('utilisateurs.create_user') }}" class="primary-button">Ajouter un utilisateur.</a>
 </div>
 
 <div class="grid-utilisateurs">
     {% for utilisateur in utilisateurs_db %}
-    <div class="card-utilisateurs" onclick="window.location.href='/utilisateurs/{{ utilisateur['utilisateur_id'] }}'">
+    <div class="card-utilisateurs" onclick="window.location.href='{{ url_for('utilisateurs.utilisateurs_detail', uid=utilisateur.utilisateur_id) }}'">
         <h3>{{ utilisateur.prenom }} {{ utilisateur.nom }}</h3>
         <p>Rôle : {{ utilisateur['role_nom'] or 'Inconnu' }}</p>
         {% if utilisateur.est_intervenant %}

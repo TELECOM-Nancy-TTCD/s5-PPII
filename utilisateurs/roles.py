@@ -54,13 +54,9 @@ PERMISSION_META: Dict[str, Dict[str, str]] = {
         'label': 'Assigner intervenants',
         'desc': 'Attribuer des intervenants aux projets.'
     },
-    'peut_lire_intervenants': {
-        'label': 'Voir les intervenants',
-        'desc': 'Consulter la liste des intervenants et leurs compétences.'
-    },
-    'peut_modifier_intervenants': {
-        'label': 'Modifier intervenants',
-        'desc': 'Modifier les informations des intervenants.'
+    'peut_lire_utilisateurs': {
+        'label': 'Voir les utilisateurs',
+        'desc': 'Consulter la liste des utilisateurs et leurs informations de base.'
     },
     'peut_acceder_documents': {
         'label': 'Accéder aux documents',
@@ -268,7 +264,7 @@ def update_role(role_id: int):
         'administrateur', 'peut_gerer_utilisateurs', 'peut_gerer_roles',
         'peut_lire_clients', 'peut_gerer_clients', 'peut_creer_interactions', 'peut_gerer_interactions',
         'peut_lire_projets', 'peut_gerer_projets', 'peut_gerer_jalons', 'peut_assigner_intervenants',
-        'peut_lire_intervenants', 'peut_modifier_intervenants', 'peut_acceder_documents', 'peut_gerer_competences',
+        'peut_lire_utilisateurs', 'peut_acceder_documents', 'peut_gerer_competences',
         'peut_lancer_matching', 'peut_exporter_csv'
     }
 

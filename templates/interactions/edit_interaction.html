@@ -27,9 +27,9 @@
             <div class="column">
 
                 <div class="input-box">
-                    <label for="interaction-type">Support</label>
+                    <label class="form-label" for="interaction-type">Support</label>
                     <div class="select-box">
-                        <select name="type" id="interaction-type">
+                        <select name="type_interaction" id="interaction-type">
                             <option hidden>Type</option>
                             {% for t in Interaction.interactions_types %}
                                 <option value="{{ t }}"
@@ -41,8 +41,8 @@
                 </div>
 
                 <div class="input-box">
-                    <label for="interaction-date">Date de l'interaction</label>
-                    <input name="interaction-date" required placeholder="Date interaction" type="date"
+                    <label class="form-label" for="interaction-date">Date de l'interaction</label>
+                    <input name="date_interaction" required placeholder="Date interaction" type="date"
                            id="interaction-date" value="{{ interaction.date_time_interaction.strftime('%Y-%m-%d') }}">
                     <div class="field-error text-danger" id="error-interaction-date"></div>
                 </div>
@@ -53,15 +53,15 @@
             {% include 'components/search_client.html' %}
 
             <div class="input-box">
-                <label for="title">Titre</label>
+                <label class="form-label" for="title">Titre</label>
                 <input name="title" required placeholder="Objet de l'interaction" type="text" id="title"
                        value="{{ interaction.titre }}">
                 <div class="field-error text-danger" id="error-title"></div>
             </div>
 
             <div class="input-box">
-                <label for="content">Contenu</label>
-                <textarea name="content" required placeholder="Détails de l'interaction..."
+                <label class="form-label" for="content">Contenu</label>
+                <textarea name="contenu" required placeholder="Détails de l'interaction..."
                           id="content">{{ interaction.contenu or interaction.content or '' }}</textarea>
                 <div class="field-error text-danger" id="error-content"></div>
             </div>

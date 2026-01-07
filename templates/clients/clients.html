@@ -7,22 +7,23 @@
 <div>
 <h1>Liste des clients</h1>
 <p style="font-size: large;">Ici se trouvent tous les clients répertoriés.</p>
-    <a href="{{ url_for('create_client') }}" class="bouton-ajouter-client">Ajouter un client</a>
+    <a href="{{ url_for('create_client') }}" class="primary-button">Ajouter un client</a>
 </div>
 
 <form class="search-form-clients" method="get" action="/clients" >
-    <input type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
-    <button type="submit">Rechercher</button>
+    <label for="q_clients" class="hidden">Recherche</label>
+    <input id="q_clients" type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
+    <button type="submit" class="secondary-button">Rechercher</button>
 </form>
 
     {% if peut_gerer_csv %}
 <form action="{{ url_for('import_clients') }}" method="post" enctype="multipart/form-data">
     <input class="file-input" type="file" name="fichier" required>
-    <button type="submit", class="bouton-importer">Importer</button>
+    <button type="submit" class="primary-button">Importer</button>
 </form>
 
 <form action="{{ url_for('export_clients') }}" >
-    <button type="submit" class="bouton-exporter">Exporter</button>
+    <button type="submit" class="primary-button">Exporter</button>
 </form>
     {% endif %}
 

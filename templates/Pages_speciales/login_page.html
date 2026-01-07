@@ -10,22 +10,33 @@
   <body>
     <header>
       <br>
-      <img class="logo" src="/static/tns_logo_icon_couleur.svg" height="60"/>
+      <img class="logo" src="/static/tns_logo_icon_couleur.svg" height="60" alt="Logo TNS"/>
       <h1 class="page-desc">Page de connexion</h1>
       <br>
     </header>
 
     <div class="login-card">
 
-      <img class="logo" src="/static/tns_logo_icon_couleur.svg" height="60"/>
+      <img class="logo" src="/static/tns_logo_icon_couleur.svg" height="60" alt="Logo TNS"/>
 
-      <form method="post" style="display : flex; flex-direction: column; gap: 5px;">
-        <input name="Adresse e-mail" type="email" placeholder="e-mail">
-        <input name="Mot de passe" type="password" placeholder="Mot de passe">
+      <form method="post" style="display : flex; flex-direction: column; gap: 10px;" novalidate>
+        <div class="input-box">
+          <label class="form-label" for="login-email">Adresse e-mail</label>
+          <input id="login-email" name="email" type="email" placeholder="e-mail" required maxlength="200">
+          <div class="field-error" id="error-login-email"></div>
+        </div>
+
+        <div class="input-box">
+          <label class="form-label" for="login-password">Mot de passe</label>
+          <input id="login-password" name="password" type="password" placeholder="Mot de passe" required>
+          <div class="field-error" id="error-login-password"></div>
+        </div>
+
         {% if has_failed_login %}
           <p class="erreur_formulaire" style="color:red; font-size:15px"> Erreur : identifiant ou mot de passe inconnu </p>
         {% endif %}
-        <input class="bouton_connexion" type="submit" value="Se connecter">
+
+        <input class="bouton_connexion primary-button" type="submit" value="Se connecter">
       </form>
     </div>
 
