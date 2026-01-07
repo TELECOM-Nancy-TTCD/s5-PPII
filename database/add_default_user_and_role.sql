@@ -1,4 +1,4 @@
-INSERT INTO Roles VALUES (NULL, 'admin', 0, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
+INSERT INTO Roles VALUES (NULL, 'admin', 0, true, true,true, true, true, true, true, true, true, true, true, true, true, true, true, true);
 
 SELECT role_id, nom FROM Roles;
 
