@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="utf-8">
-    <title>{% block title %}TNS'app{% endblock %}</title>
+    <title>{% block title %}TNS Service{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/svg" href="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}"/>
@@ -10,40 +10,53 @@
 <body>
 
 <nav class="main-menu">
-    <img class="main-menu-img" src="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}" alt="Logo TNS"
-         width="60">
+    <a href="{{ url_for('accueil') }}" title="Accueil">
+        <img class="main-menu-img"
+             src="{{ url_for('static', filename='tns_logo_icon_couleur.svg') }}"
+             alt="Logo TNS"
+             width="60">
+    </a>
 
     <ul class="main-menu-items">
         <li><a href="{{ url_for('accueil') }}">Accueil</a></li>
-        <li><a href="{{ url_for('clients') }}">Clients</a></li>
+        {% if current_user.is_authenticated and current_user.role and has_permission(current_user, 'peut_lire_clients') %}
+            <li><a href="{{ url_for('clients') }}">Clients</a></li>
+        {% endif %}
+
         <li class="menu-dropdown">
             <a href="{{ url_for('interactions.interactions_home') }}" class="dropbtn">Interactions</a>
             <ul class="dropdown-content">
                 <li><a href="{{ url_for('interactions.interactions_home') }}"><i class="fa-solid fa-list"></i> Liste
                     interactions</a></li>
-                <li><a href="{{ url_for('interactions.create_interaction') }}"><i class="fa-solid fa-plus"></i> Créer
-                    interaction</a></li>
+                {% if current_user.is_authenticated and current_user.role and has_permission(current_user, 'peut_creer_interactions') %}
+                    <li><a href="{{ url_for('interactions.create_interaction') }}"><i class="fa-solid fa-plus"></i>
+                        Créer
+                        interaction</a></li>
+                {% endif %}
             </ul>
         </li>
-        <li  class="menu-dropdown">
+        <li class="menu-dropdown">
             <a href="{{ url_for('utilisateurs') }}">Utilisateurs</a>
             <ul class="dropdown-content">
                 <li><a href="{{ url_for('utilisateurs') }}"><i class="fa-solid fa-list"></i> Liste
                     des utilisateurs</a></li>
-                {% if current_user.is_authenticated and current_user.role and (current_user.role.peut_gerer_roles or current_user.role.administrateur) %}
-                <li><a href="{{ url_for('utilisateurs.roles') }}"><i class="fa-solid fa-at"></i> Rôles</a></li>
+                {% if current_user.is_authenticated and current_user.role and has_permission(current_user, 'peut_gerer_roles') %}
+                    <li><a href="{{ url_for('utilisateurs.roles') }}"><i class="fa-solid fa-at"></i> Rôles</a></li>
                 {% endif %}
             </ul>
         </li>
-        <li><a href="{{ url_for('conventions.index') }}">Conventions</a></li>
+        {% if current_user.is_authenticated and current_user.role and has_permission(current_user, 'peut_lire_projets') %}
+            <li><a href="{{ url_for('conventions.index') }}">Conventions</a></li>
+        {% endif %}
     </ul>
 
     {% if current_user.is_authenticated %}
         <div class="user-menu">
             <span class="user-name">{{ current_user.prenom }} {{ current_user.nom }}</span>
             <div class="user-menu-items">
-                <a href="#">Profil</a>
-                <a href="#">Paramètres</a>
+                <a href="{{ url_for('utilisateurs_detail', uid=current_user.utilisateur_id) }}">Profil</a>
+                <a href="{{ url_for('edit_utilisateur', utilisateur_id=current_user.utilisateur_id) }}">Modifier le
+                    profil</a>
                 <a href="{{ url_for('logout') }}" class="logout"><i class="fa-solid fa-right-from-bracket"></i>
                     Déconnexion</a>
             </div>

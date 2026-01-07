@@ -7,10 +7,6 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import matching
 import os, csv, io
-
-load_dotenv()
-DATABASE = os.getenv('DATABASE')
-
 import sqlite3
 from tools import get_db, has_permission, hash_password, verify_password
 from database import Client, Utilisateur, Projet, Jalon
@@ -23,28 +19,8 @@ from utilisateurs import utilisateurs_bp
 from errors import errors_bp
 
 
-def get_clients():
-    """Fonction qui renvoie tout les clients de la DB"""
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Clients")
-    clients = cursor.fetchall()
-    conn.close()
-
-    return clients
-
-
-def get_utilisateurs():
-    """Fonction qui renvoie tout les utilisateurs de la DB"""
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM Utilisateurs")
-    utilisateurs = cursor.fetchall()
-    conn.close()
-
-    return utilisateurs
+load_dotenv()
+DATABASE = os.getenv('DATABASE')
 
 
 def format_date(date_value):
@@ -61,7 +37,6 @@ def format_date(date_value):
 
     return str(date_value)
 
-
 app = Flask(__name__)
 
 login_manager = LoginManager()
@@ -77,6 +52,13 @@ app.register_blueprint(interactions_bp)
 app.register_blueprint(clients_bp)
 app.register_blueprint(utilisateurs_bp)
 app.register_blueprint(errors_bp)
+
+@app.context_processor
+def inject_helpers():
+    """Injecte des helpers réutilisables dans le contexte Jinja.
+    Permet d'appeler has_permission(current_user, 'permission') directement dans les templates.
+    """
+    return dict(has_permission=has_permission)
 
 
 @login_manager.user_loader
