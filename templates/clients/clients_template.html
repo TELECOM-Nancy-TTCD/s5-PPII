@@ -31,7 +31,13 @@
 <p><strong>Email :</strong> <a href="mailto:{{ client['contact_email'] }}">{{ client['contact_email'] }}</a></p>
 <p><strong>Téléphone :</strong> <a href="tel:{{ client['contact_telephone'] }}">{{ client['contact_telephone'] }}</a></p>
 <p><strong>Type :</strong> {{ client['type_client'] }}</p>
-<p><strong>Interlocuteur principal :</strong> {{ inter }}</p>
+<p><strong>Interlocuteur principal :</strong>
+                {% if has_permission(current_user, 'peut_lire_utilisateurs') %}
+                    <a href="{{ url_for('utilisateurs.utilisateurs_detail', uid=client.interlocuteur_principal_id) }}">{{ inter }} <i class="fa-solid fa-up-right-from-square"></i></a>
+                {% else %}
+                    {{ inter }})
+                {% endif %}
+            </p>
 <p><strong>Adresse :</strong> {{ client['address'] }}</p>
 
 <p>-----</p>
