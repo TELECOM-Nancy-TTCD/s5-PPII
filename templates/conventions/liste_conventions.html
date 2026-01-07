@@ -15,14 +15,16 @@
         <button type="submit" class="secondary-button">Rechercher</button>
     </form>
 
-    <div>
-        <a href="{{ url_for('conventions.create_convention') }}" class="primary-button">Ajouter une
-            convention</a>
-    </div>
-    <div>
-        <a href="{{ url_for('create_projet_sans_convention_connue') }}" class="primary-button">Ajouter un projet
-            à une convention</a>
-    </div>
+    {% if has_permission(current_user, 'peut_gerer_projets') %}
+        <div>
+            <a href="{{ url_for('conventions.create_convention') }}" class="primary-button">Ajouter une
+                convention</a>
+        </div>
+        <div>
+            <a href="{{ url_for('create_projet_sans_convention_connue') }}" class="primary-button">Ajouter un projet
+                à une convention</a>
+        </div>
+    {% endif %}
 
     {% if peut_gerer_csv %}
         <form action="{{ url_for('import_projets_termine') }}" method="post" enctype="multipart/form-data">
@@ -47,7 +49,8 @@
         </div>
 
         {% for convention in context %}
-            <div class="client-card" onclick="window.location.href='{{ url_for('conventions.convention', id=convention.id) }}'">
+            <div class="client-card"
+                 onclick="window.location.href='{{ url_for('conventions.convention', id=convention.convention_id) }}'">
 
                 <div class="convention-row">
                     <div class="button-col">
@@ -56,9 +59,9 @@
                         </button>
                     </div>
 
-                    <div class="col">{{ convention.id }}</div>
-                    <div class="col">{{ convention.nom }}</div>
-                    <div class="col">{{ convention.nom_client }}</div>
+                    <div class="col">{{ convention.convention_id }}</div>
+                    <div class="col">{{ convention.nom_convention }}</div>
+                    <div class="col">{{ convention.client.nom_entreprise }}</div>
                     <div class="col">{{ convention.date_debut }}</div>
                     <div class="col">{{ convention.date_fin }}</div>
                 </div>
@@ -72,11 +75,11 @@
                         <div class="col">Début du projet</div>
                         <div class="col">Fin du projet</div>
                     </div>
-                    {% for p in pj_as[convention.id] %}
+                    {% for p in convention.projets %}
                         <div class="convention-row"
-                             onclick="event.stopPropagation(); window.location.href='{{ url_for('projet_detail', projet_id=p.id) }}'">
+                             onclick="event.stopPropagation(); window.location.href='{{ url_for('projet_detail', projet_id=p.projet_id) }}'">
                             <div class="button-col"></div>
-                            <div class="col">{{ p.id }}</div>
+                            <div class="col">{{ p.projet_id }}</div>
                             <div class="col">{{ p.nom_projet }}</div>
                             <div class="col">{{ p.budget }} €</div>
                             <div class="col">{{ p.date_debut }}</div>

@@ -4,28 +4,31 @@
 
 {% block content %}
 
-<h1>Liste des utilisateurs</h1>
+    <h1>Liste des utilisateurs</h1>
 
-<form class="search-form" method="get" action="{{ url_for('utilisateurs.users') }}" >
-    <label for="q" class="hidden">Recherche</label>
-    <input id="q" type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
-    <button type="submit" class="secondary-button">Rechercher</button>
-</form>
+    <form class="search-form" method="get" action="{{ url_for('utilisateurs.users') }}">
+        <label for="q" class="hidden">Recherche</label>
+        <input id="q" type="text" name="q" placeholder="Rechercher..." value="{{ request.args.get('q','') }}">
+        <button type="submit" class="secondary-button">Rechercher</button>
+    </form>
 
-<div class="actions-utilisateurs">
-    <a href="{{ url_for('utilisateurs.create_user') }}" class="primary-button">Ajouter un utilisateur.</a>
-</div>
+    {% if has_permission(current_user, "peut_gerer_utilisateurs") %}
+        <div class="actions-utilisateurs">
+            <a href="{{ url_for('utilisateurs.create_user') }}" class="primary-button">Ajouter un utilisateur.</a>
+        </div>
+    {% endif %}
 
-<div class="grid-utilisateurs">
-    {% for utilisateur in utilisateurs_db %}
-    <div class="card-utilisateurs" onclick="window.location.href='{{ url_for('utilisateurs.utilisateurs_detail', uid=utilisateur.utilisateur_id) }}'">
-        <h3>{{ utilisateur.prenom }} {{ utilisateur.nom }}</h3>
-        <p>Rôle : {{ utilisateur.role.nom or 'Inconnu' }}</p>
-        {% if utilisateur.est_intervenant %}
-        <p>Intervenant</p>
-        {% endif %}
+    <div class="grid-utilisateurs">
+        {% for utilisateur in utilisateurs_db %}
+            <div class="card-utilisateurs"
+                 onclick="window.location.href='{{ url_for('utilisateurs.utilisateurs_detail', uid=utilisateur.utilisateur_id) }}'">
+                <h3>{{ utilisateur.prenom }} {{ utilisateur.nom }}</h3>
+                <p>Rôle : {{ utilisateur.role.nom or 'Inconnu' }}</p>
+                {% if utilisateur.est_intervenant %}
+                    <p>Intervenant</p>
+                {% endif %}
+            </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 
 {% endblock %}
