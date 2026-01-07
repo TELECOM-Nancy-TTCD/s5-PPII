@@ -40,7 +40,7 @@
             {# Si l'utilisateur peut lire les utilisateurs, pointer vers la liste, sinon vers la page des rôles #}
             {% if has_permission(current_user, 'peut_lire_utilisateurs') %}
                 <a href="{{ url_for('utilisateurs.users') }}">Utilisateurs</a>
-            {% else %}
+            {% elif has_permission(current_user, 'peut_gerer_roles') %}
                 <a href="{{ url_for('utilisateurs.roles') }}">Utilisateurs</a>
             {% endif %}
             <ul class="dropdown-content">

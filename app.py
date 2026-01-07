@@ -212,18 +212,6 @@ def clients():
     else:
         clients_db = db.get_all_clients()
 
-
-
-    # liste_interloc_principaux = []
-    # db = get_db()
-    # for c in clients_db:
-    #     interlocuteur = db.get_user_by_id(c[6])
-    #     if interlocuteur:
-    #         affichage_interlocuteur = f"{interlocuteur.nom} {interlocuteur.prenom}"
-    #     else:
-    #         affichage_interlocuteur = "Aucun interlocuteur"
-    #     liste_interloc_principaux.append(affichage_interlocuteur)
-
     peut_gerer_csv = has_permission(current_user, 'peut_exporter_csv') and has_permission(current_user, "peut_gerer_clients")
 
     return render_template("clients/clients.html", clients_db=clients_db, recherche_clients=recherche_clients,peut_gerer_csv=peut_gerer_csv)

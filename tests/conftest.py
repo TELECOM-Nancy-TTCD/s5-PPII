@@ -150,3 +150,53 @@ def db(fake_redis):
     yield database
     # cleanup
     database.close()
+
+
+from app import app as flask_app
+from tools import get_db as tools_get_db
+from database import Utilisateur
+from tools import hash_password
+
+
+@pytest.fixture
+def app(monkeypatch, db, fake_redis):
+    """Fixture that yields the Flask app configured for testing.
+
+    Nous patchons `tools.get_db` pour retourner notre objet `db` en mémoire
+    et on configure l'app pour TESTING.
+    """
+    # Patch tools.get_db to return our test db
+    monkeypatch.setattr('tools.get_db', lambda: db)
+
+    flask_app.config['TESTING'] = True
+    flask_app.config['WTF_CSRF_ENABLED'] = False
+
+    yield flask_app
+
+
+@pytest.fixture
+def client(app):
+    return app.test_client()
+
+
+def create_test_user(db, email='test@example.com', password='secret', role_id=None):
+    """Helper to create a user directly in the test database."""
+    hashed = hash_password(password)
+    cur = db.cursor()
+    cur.execute(
+        "INSERT INTO Utilisateurs (email, mot_de_passe_hashed, nom, prenom, role_id) VALUES (?, ?, ?, ?, ?)",
+        (email, hashed, 'Test', 'User', role_id)
+    )
+    db.commit()
+    return cur.lastrowid
+
+
+@pytest.fixture
+def auth_client(client, db):
+    # create test user in db
+    user_id = create_test_user(db)
+    # use client to login via POST /login
+    res = client.post('/login', data={'email': 'test@example.com', 'password': 'secret'}, follow_redirects=True)
+    assert res.status_code in (200, 302)
+    return client
+
