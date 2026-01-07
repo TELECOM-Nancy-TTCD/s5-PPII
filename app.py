@@ -41,6 +41,7 @@ app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
+login_manager.login_message = ''
 
 # Clé pour l'encodage des cookies de session
 app.secret_key = os.getenv('SECRET_KEY', b'6031f03d38eede6a7a9c5827a0bd25e418a0d236abf4665cc7c23c7249c36867')
