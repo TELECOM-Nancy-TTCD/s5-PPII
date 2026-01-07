@@ -80,8 +80,8 @@ def login():
 
     if request.method == 'POST':
         c = get_db().cursor()
-        adressemail = request.form["Adresse e-mail"]
-        mdp = request.form["Mot de passe"]
+        adressemail = request.form["email"]
+        mdp = request.form["password"]
         c.execute("SELECT utilisateur_id, mot_de_passe_hashed FROM Utilisateurs WHERE email = ?", (adressemail,))
 
         corresp = c.fetchone()
