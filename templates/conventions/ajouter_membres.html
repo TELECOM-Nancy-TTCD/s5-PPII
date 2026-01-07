@@ -12,10 +12,10 @@
     <label for="utilisateur_ids">IDs des utilisateurs à ajouter (séparés par des virgules) :</label>
     <input type="text" name="utilisateur_ids" id="utilisateur_ids" placeholder="Ex : 1,2,5" required>
 
-    <button type="submit" class="jalon_boutton" style="margin-bottom: 25px; margin-top: 10px;">Ajouter et créer le groupe</button>
+    <button type="submit" class="primary-button" style="margin-bottom: 25px; margin-top: 10px;">Ajouter et créer le groupe</button>
 </form>
 
-<a href="{{ url_for('projet_detail', projet_id=projet.projet_id) }}" class="jalon_boutton" style="margin-bottom: 15px;">Retour au projet</a>
+<a href="{{ url_for('projet_detail', projet_id=projet.projet_id) }}" class="secondary-button" style="margin-bottom: 15px;">Retour au projet</a>
 
 <p style="margin-top: 25px;">Liste des utilisateurs disponibles :</p>
 <ul class="utilisateurs-liste-manuel">

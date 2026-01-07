@@ -8,7 +8,7 @@
 
 {% if projet.statut != "Terminé" %}
 <form method="post" action="{{ url_for('terminer_projet', projet_id=projet.projet_id) }}">
-    <button type="submit" class="bouton-terminer-projet">
+    <button type="submit" class="primary-button">
         Marquer comme terminé
     </button>
 </form>
@@ -34,13 +34,13 @@
 
 <p> Budget : {{projet.budget}} € </p>
 
-<a href={{projet.doc_dossier}} class="lien_doc_projet"> Documents associés au projet </a>
+<a href="{{ projet.doc_dossier }}" class="lien_doc_projet"> Documents associés au projet </a>
 
 <p>-----</p>
 <h2> Compétences requises par le projet </h2>
 
 <div style="justify-content: center;">
-<table style="border: 1px solid linen;  ", class="table-projet-competences">
+<table style="border: 1px solid linen;" class="table-projet-competences">
     <tr>
         <th> Compétence </th>
         <th> Niveau </th>
@@ -54,7 +54,7 @@
 </table>
 </div>
 
-<a href="{{ url_for( 'projet_ajouter_competences', projet_id=projet.projet_id ) }}" class="bouton-ajouter-client">Ajouter des compétences</a>
+<a href="{{ url_for( 'projet_ajouter_competences', projet_id=projet.projet_id ) }}" class="primary-button">Ajouter des compétences</a>
 
 <p>-----</p>
 
@@ -70,7 +70,7 @@
 
 {# Affiche le bouton de l'algorithme seulement si aucun groupe n'existe #}
 {% if not groupe_existe %}
-<button id="btnAfficherGroupes" class="jalon_boutton">
+<button id="btnAfficherGroupes" class="primary-button">
     Lancer l'algorithme
 </button>
 {% endif %}
@@ -99,7 +99,7 @@
 </div>
 
 
-<a href="{{ url_for('ajouter_membres', projet_id=projet.projet_id) }}" class="jalon_boutton">
+<a href="{{ url_for('ajouter_membres', projet_id=projet.projet_id) }}" class="primary-button">
     Ajouter des membres manuellement
 </a>
 
@@ -107,13 +107,13 @@
 
 <h2>Jalons du projet</h2>
 
-<button class="jalon_boutton" onclick="ouvrirCreationJalon()">Créer un nouveau jalon</button>
+<button class="primary-button" onclick="ouvrirCreationJalon()">Créer un nouveau jalon</button>
 
 <section class="timeline_jalons">
     {% for j in projet.jalons%}
     <div class="timeline-item">
         <div class="timeline-card">
-            <button class="jalon_boutton" onclick="ouvrirModificationJalon({{ j.jalon_id }}, '{{ j.description }}', '{{ j.est_complete }}','{{ j.date_fin or '' }}')">Modifier</button>
+            <button class="primary-button" onclick="ouvrirModificationJalon({{ j.jalon_id }}, '{{ j.description }}', '{{ j.est_complete }}','{{ j.date_fin or '' }}')">Modifier</button>
 
             <p>{{j.description}}</p>
             {% if j.est_complete %}
@@ -140,18 +140,20 @@ une none pour faire disparaitre la pop up et l'autre pour afficher les élément
         <form method="post" id="form-jalon-modification">
             <input type="hidden" name="jalon_id" id="jalon_id">
 
-            <label>Description</label>
-            <input type="text" name="description" id="jalon_description" required>
+            <label class="form-label">Description
+                <input type="text" name="description" id="jalon_description" required>
+            </label>
 
             <label class="checkbox">
                 <input type="checkbox" name="est_complete" id="jalon_est_complete">
                 Terminé
             </label>
 
-            <label>Date fin</label>
-            <input type="date" name="date_fin" id="jalon_date_fin">
+            <label class="form-label">Date fin
+                <input type="date" name="date_fin" id="jalon_date_fin">
+            </label>
 
-            <button type="submit" class="jalon_boutton">Enregistrer</button>
+            <button type="submit" class="primary-button">Enregistrer</button>
         </form>
     </div>
 </div>
@@ -168,18 +170,20 @@ une none pour faire disparaitre la pop up et l'autre pour afficher les élément
         <form method="post" id="form-jalon-creation">
             <input type="hidden" name="projet_id" value="{{ projet.projet_id }}">
 
-            <label>Description</label>
-            <input type="text" name="description_creation" required>
+            <label class="form-label">Description
+                <input type="text" name="description_creation" id="description_creation" required>
+            </label>
 
             <label class="checkbox">
-                <input type="checkbox" name="est_complete_creation">
+                <input type="checkbox" name="est_complete_creation" id="est_complete_creation">
                 Terminé
             </label>
 
-            <label>Date fin</label>
-            <input type="date" name="date_fin_creation">
+            <label class="form-label">Date fin
+                <input type="date" name="date_fin_creation" id="date_fin_creation">
+            </label>
 
-            <button type="submit" class="jalon_boutton">Enregistrer</button>
+            <button type="submit" class="primary-button">Enregistrer</button>
         </form>
     </div>
 </div>

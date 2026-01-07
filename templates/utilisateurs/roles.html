@@ -46,7 +46,7 @@
               </div>
             </div>
           {% else %}
-            <a class="role-link" href="/utilisateurs/roles/{{ r.role_id }}" draggable="false">
+            <a class="role-link" href="{{ url_for('utilisateurs.role_detail', id=r.role_id) }}" draggable="false">
               <div class="role-main">
                 <div class="role-name">{{ r.nom }}</div>
                 <div class="role-meta">Hiérarchie: {{ r.hierarchie }}</div>

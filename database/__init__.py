@@ -1297,7 +1297,7 @@ class Role(DBObject, _RowInitMixin):
         'peut_gerer_utilisateurs', 'peut_gerer_roles',
         'peut_lire_clients', 'peut_gerer_clients', 'peut_creer_interactions', 'peut_gerer_interactions',
         'peut_lire_projets', 'peut_gerer_projets', 'peut_gerer_jalons', 'peut_assigner_intervenants',
-        'peut_lire_intervenants', 'peut_modifier_intervenants', 'peut_acceder_documents', 'peut_gerer_competences',
+        'peut_lire_utilisateurs', 'peut_acceder_documents', 'peut_gerer_competences',
         'peut_lancer_matching', 'peut_exporter_csv'
     ]
 
@@ -1320,8 +1320,7 @@ class Role(DBObject, _RowInitMixin):
     peut_gerer_projets: bool # Peut créer, modifier et supprimer des projets
     peut_gerer_jalons: bool # Peut créer, modifier et supprimer des jalons de projets
     peut_assigner_intervenants: bool # Peut assigner des intervenants aux projets
-    peut_lire_intervenants: bool # Peut voir la liste des intervenants et leurs détails
-    peut_modifier_intervenants: bool # Peut modifier les informations des intervenants
+    peut_lire_utilisateurs: bool # Peut voir la liste des utilisateurs et leurs détails
     peut_acceder_documents: bool # Peut accéder aux documents liés aux intervenants et projets
     peut_gerer_competences: bool # Peut créer, modifier et supprimer des compétences des intervenants
     peut_lancer_matching: bool # Peut lancer le processus de matching entre projets et intervenants
