@@ -5,10 +5,10 @@
 {% block content %}
   <h1> Création du compte d'un nouveau membre de TNS</h1>
   {% if context.success %}
-  <h2 style="color: green;"> Utilisateur ajouté avec succès! </h2>
+  <h2 class="success-message"> Utilisateur ajouté avec succès! </h2>
   {% endif %}
   <br>
-    <form class="form-create-user" method="post" style="display : flex; flex-direction: column; gap: 5px;" novalidate>
+    <form class="form-create-user" method="post" style="display : flex; flex-direction: column; gap: 5px;">
       <div class="input-box">
         <label class="form-label" for="email">E-mail</label>
         <input id="email" name="email" type="email" placeholder="e-mail" required maxlength="200" pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$">
