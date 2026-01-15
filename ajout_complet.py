@@ -173,7 +173,7 @@ def main():
         ("signature de la charte de projet", "2025-04-28", 1, 1),
         ("Implémentation de la base de données", "2025-04-29", 1, 3),
         ("Implémentation du Flask", "2025-04-29", 0, 3),
-        ("Post-Mortem", None, 0, 5)
+        ("Post-Mortem", "2026-04-23", 0, 5)
     ]
 
     for j in jalons:
