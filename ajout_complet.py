@@ -69,7 +69,21 @@ def main():
 
         ("john@admin.tns.com","superadmin","John","TNS",1,0,169),
         ("bob@tns.com","bob","Bob","Client",6,0,0),
-        ("bob2@tns.com","bob","BobDoc","Client",6,0,12)
+        ("bob2@tns.com","bob","BobDoc","Client",6,0,12),
+
+        ("junior6@tns.fr","pwd","Lefebvre","Marie",5,1,20),
+        ("junior7@tns.fr","pwd","Dubois","Jeanne",5,1,20),
+        ("junior8@tns.fr","pwd","Leroy","Jean",5,1,20),
+        ("junior9@tns.fr","pwd","Roux","Pierre",5,1,21),
+        ("junior10@tns.fr","pwd","Fournier","Michel",5,1,35),
+        ("junior11@tns.fr","pwd","Rousseau","Catherine",5,1,20),
+        ("junior12@tns.fr","pwd","Dupont","Jacques",5,1,10),
+        ("junior13@tns.fr","pwd","Lambert","Louis",5,1,10),
+        ("junior14@tns.fr","pwd","Muller","Nicole",5,1,31),
+        ("junior15@tns.fr","pwd","Blanc","Paul",5,1,16),
+        ("junior16@tns.fr","pwd","Boyer","Madelaine",5,1,20),
+        ("junior17@tns.fr","pwd","Garnier","Robert",5,1,20),
+        ("junior18@tns.fr","pwd","Legrand","Roger",5,1,20),
     ]
 
     for u in users:
@@ -133,7 +147,16 @@ def main():
         (1,"CRM","CRM interne",15000,200,date(2025,2,1),date(2025,8,31),"Terminé"),
         (2,"BI","Dashboard BI",12000,180,date(2025,5,1),date(2025,11,30),"En cours"),
         (3,"Audit","Audit technique",5000,80,date(2025,3,1),date(2025,4,30),"Terminé"),
-        (4,"API","test",4000,80,date(2024,1,1),date(2024,3,1),"En cours")
+        (4,"API","test",4000,80,date(2024,1,1),date(2024,3,1),"En cours"),
+
+        (1,"Projet C","programmation en C",300,60,date(2026,3,1),date(2026,3,29),"En cours"),
+        (1,"Projet IA","integration d'une IA",300,80,date(2026,3,1),date(2026,3,29),"En cours"),
+        (1,"Projet Mathématique","",300,60,date(2026,3,1),date(2026,3,29),"En cours"),
+        (1,"Projet Embarqué","",300,60,date(2026,3,1),date(2026,3,29),"En cours"),
+        (1,"Projet Sécurité","",300,60,date(2026,3,1),date(2026,3,29),"En cours"),
+        (2,"Projet 1","",300,60,date(2026,3,1),date(2026,3,29),"Terminé"),
+        (2,"Projet 2","",300,60,date(2026,3,1),date(2026,3,29),"Terminé"),
+        (2,"Projet 3","",300,60,date(2026,3,1),date(2026,3,29),"En cours"),
     ]
 
     for p in projets:
@@ -154,7 +177,15 @@ def main():
         (8,"Dev Frontend",None),(9,"Cloud",None),
         (10,"Docker",9),(11,"Communication",None),
         (12,"Cybersécurité",None),(13,"Flask",1),
-        (14,"HTML",8),(15,"PostgreSQL",2)
+        (14,"HTML",8),(15,"PostgreSQL",2),
+        
+        (16,"Langage C",None),
+        (17,"IA",None),
+        (18,"Mathématiques numériques",None),
+        (19,"Théorie des langages",None),
+        (20,"Logiciel embarqué",None),
+        (21,"Cryptographie",12),
+        
     ]
 
     for c in competences:
@@ -237,6 +268,17 @@ def main():
         (16,1,9),(16,13,8),(16,15,6),
         (17,1,8),(17,13,4),(17,15,7),
         (18,1,6),(18,13,5),(18,15,5),
+
+        (19,16,5),(20,16,6),(21,16,7),
+        (22,17,6),(23,17,6),
+        (24,18,6),(24,19,6),
+        (25,18,6),
+        (26,19,6),
+        (27,20,6),
+        (28,20,6),
+        (29,21,6),
+        (30,21,6),
+        (31,21,6),
     ]
 
     for ic in intervenant_competences:
@@ -256,7 +298,16 @@ def main():
         (1, 1, 7), (1, 13, 6), (1, 4, 6),(1,5,5),
         (2, 3, 6), (2, 7, 7),
         (3, 5, 6),
-        (5,1,7),(5,13,6),(5,15,5)
+        (5,1,7),(5,13,6),(5,15,5),
+
+        (6,16,6),
+        (7,17,6),
+        (8,18,6),
+        (8,19,6),
+        (9,20,6),
+        (10,21,6),
+        (11,12,6),
+        (12,21,6)
     ]
 
     for pc in projet_competences:
@@ -274,6 +325,9 @@ def main():
     travaille_sur = [
         # utilisateur_id, projet_id, est_intervenant_sur_projet, poste
         (4, 1, 0, None),
+        (27,13,1,None),
+        (30,11,1,None),
+        (31,12,1,None)
     ]
 
     for ts in travaille_sur:
