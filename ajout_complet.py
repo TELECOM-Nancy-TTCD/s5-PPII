@@ -49,11 +49,11 @@ def main():
     # =========================================================
     print("➤ Ajout des utilisateurs...")
     users = [
-        ("admin@tns.fr","pwd","Admin","Root",1,0,None),
-        ("manager1@tns.fr","pwd","Durand","Sophie",2,0,None),
-        ("manager2@tns.fr","pwd","Martin","Paul",2,0,None),
-        ("chef1@tns.fr","pwd","Bernard","Luc",3,0,None),
-        ("chef2@tns.fr","pwd","Petit","Emma",3,0,None),
+        ("admin@tns.fr","pwd","Admin","Root",1,0,34),
+        ("manager1@tns.fr","pwd","Durand","Sophie",2,0,32),
+        ("manager2@tns.fr","pwd","Martin","Paul",2,0,32),
+        ("chef1@tns.fr","pwd","Bernard","Luc",3,0,21),
+        ("chef2@tns.fr","pwd","Petit","Emma",3,0,3),
 
         ("interv1@tns.fr","pwd","Moreau","Alice",4,1,40),
         ("interv2@tns.fr","pwd","Simon","Bob",4,1,35),
@@ -84,6 +84,9 @@ def main():
         ("junior16@tns.fr","pwd","Boyer","Madelaine",5,1,20),
         ("junior17@tns.fr","pwd","Garnier","Robert",5,1,20),
         ("junior18@tns.fr","pwd","Legrand","Roger",5,1,20),
+        ("client1@tns.com","client","Dupont","Claire",6,0,5),
+        ("client2@tns.com","client","Lefevre","Marc",6,0,8)
+
     ]
 
     for u in users:
@@ -105,9 +108,21 @@ def main():
         ("Boulangerie Dupont","Claire Dupont","contact@dupont-boulangerie.fr","0677889900","Prospect",1,48.7002,6.1740,"5 Rue des Carmes, Nancy"),
         ("AutoPlus Garage","David Leroy","david@autoplus.fr","0655443322","Actif",1,48.6930,6.2000,"23 Rue Stanislas, Nancy"),
         ("ImmoCity","Eva Lambert","eva@immocity.fr","0611223344","Ancien",1,48.6800,6.1700,"41 Boulevard d'Haussonville, Nancy"),
-        ("DataPlus","Marie Data","contact@dataplus.com","0202020202","Actif",2,None,None,None),
-        ("InnovX","Paul Innov","contact@innovx.com","0303030303","Prospect",3,None,None,None),
-        ("OldSoft","Claire Old","contact@oldsoft.com","0404040404","Ancien",4,None,None,None)
+        ("DataPlus","Marie Data","contact@dataplus.com","0202020202","Actif",1,48.6850,6.1800,"10 Rue Saint-Dizier, Nancy"),
+        ("InnovX","Paul Innov","contact@innovx.com","0303030303","Prospect",1,48.6900,6.1820,"3 Rue de la Visitation, Nancy"),
+        ("OldSoft","Claire Old","contact@oldsoft.com","0404040404","Ancien",1,48.6950,6.1780,"7 Rue Charles III, Nancy"),
+        ("NetSecure","Julien Morel","julien@netsecure.fr","0612345678","Actif",1,48.6895,6.1820,"15 Rue Saint-Jean, Nancy"),
+        ("EcoBat","Sophie Renard","contact@ecobat.fr","0699887766","Prospect",1,48.6752,6.1608,"3 Rue Jeanne d'Arc, Nancy"),
+        ("BuildTech","Antoine Muller","antoine@buildtech.fr","0610101010","Actif",1,48.6880,6.1905,"27 Rue Saint-Dizier, Nancy"),
+        ("NovaConsult","Laura Henry","contact@novaconsult.fr","0620202020","Prospect",1,48.6942,6.1812,"9 Rue des Quatre Églises, Nancy"),
+        ("FastLog","Kevin Robert","kevin@fastlog.fr","0630303030","Actif",1,48.6765,6.1689,"18 Rue de la Colline, Nancy"),
+        ("MediCare+","Nathalie Lopez","contact@medicareplus.fr","0640404040","Actif",1,48.7010,6.1654,"2 Rue Mon Désert, Nancy"),
+        ("UrbanWeb","Thomas Colin","thomas@urbanweb.fr","0650505050","Prospect",1,48.6853,6.1780,"14 Rue Gambetta, Nancy"),
+        ("ArtisanBois","Pierre Faure","p.faure@artisanbois.fr","0660606060","Actif",1,48.6927,6.1701,"6 Rue Charles III, Nancy"),
+        ("CleanOffice","Isabelle Noël","contact@cleanoffice.fr","0670707070","Ancien",1,48.6794,6.1866,"33 Rue Jeanne d’Arc, Nancy"),
+        ("RestoSaveurs","Olivier Marchal","olivier@restosaveurs.fr","0680808080","Actif",1,48.6988,6.1733,"1 Place Stanislas, Nancy"),
+        ("SecureIT","Camille Perez","camille@secureit.fr","0690909090","Prospect",1,48.6825,6.1795,"12 Rue des Ponts, Nancy"),
+        ("AgriNova","Julien Perrot","contact@agrinova.fr","0611112233","Actif",1,48.6870,6.1725,"20 Rue des Dominicains, Nancy")
     ]
 
     for c in clients:
@@ -128,7 +143,19 @@ def main():
         ("Convention InnovX","Étude faisabilité",date(2025,3,1),date(2025,6,30),3),
         ("Convention OldSoft","Maintenance",date(2024,1,1),date(2024,12,31),4),
         ("Convention Alpha","Projet Alpha pour TechCorp",date(2025,4,1),date(2025,6,30),1),
-        ("Convention Beta","Projet Beta pour GreenSolutions",date(2025,4,1),date(2025,6,30),2)
+        ("Convention Beta","Projet Beta pour GreenSolutions",date(2025,4,1),date(2025,6,30),2),
+        ("Convention NetSecure","Sécurisation réseau",date(2025,5,1),date(2025,9,30),9),
+        ("Convention EcoBat","Bâtiment durable",date(2025,6,1),date(2025,12,31),10),
+        ("Convention BuildTech","Déploiement IT",date(2025,7,1),date(2025,11,30),11),
+        ("Convention NovaConsult","Consulting stratégique",date(2025,3,15),date(2025,9,15),12),
+        ("Convention FastLog","Optimisation logistique",date(2025,1,15),date(2025,7,15),13),
+        ("Convention MediCare+","Système patient",date(2025,2,1),date(2025,8,1),14),
+        ("Convention UrbanWeb","Site e-commerce",date(2025,4,15),date(2025,10,15),15),
+        ("Convention ArtisanBois","ERP menuiserie",date(2025,5,1),date(2025,11,1),16),
+        ("Convention CleanOffice","Gestion nettoyage",date(2025,1,20),date(2025,7,20),17),
+        ("Convention RestoSaveurs","Application réservation",date(2025,3,1),date(2025,9,1),18),
+        ("Convention SecureIT","Audit cybersécurité",date(2025,2,15),date(2025,8,15),19),
+        ("Convention AgriNova","Système gestion ferme",date(2025,4,1),date(2025,10,1),20)
     ]
 
     for c in conventions:
@@ -142,9 +169,7 @@ def main():
     # PROJETS
     # =========================================================
     print("➤ Ajout des projets...")
-    projets = [
-        (1,"ERP","Refonte ERP",20000,300,date(2025,1,15),date(2025,9,30),"Terminé"),
-        (1,"CRM","CRM interne",15000,200,date(2025,2,1),date(2025,8,31),"Terminé"),
+    projets =[
         (2,"BI","Dashboard BI",12000,180,date(2025,5,1),date(2025,11,30),"En cours"),
         (3,"Audit","Audit technique",5000,80,date(2025,3,1),date(2025,4,30),"Terminé"),
         (4,"API","test",4000,80,date(2024,1,1),date(2024,3,1),"En cours"),
@@ -157,13 +182,30 @@ def main():
         (2,"Projet 1","",300,60,date(2026,3,1),date(2026,3,29),"Terminé"),
         (2,"Projet 2","",300,60,date(2026,3,1),date(2026,3,29),"Terminé"),
         (2,"Projet 3","",300,60,date(2026,3,1),date(2026,3,29),"En cours"),
+        (1,1,"ERP","Refonte ERP",20000,300,date(2025,1,15),date(2025,9,30),"Terminé",1),
+        (2,1,"CRM","CRM interne",15000,200,date(2025,2,1),date(2025,8,31),"Terminé",2),
+        (3,2,"BI","Dashboard BI",12000,180,date(2025,5,1),date(2025,11,30),"En cours",3),
+        (4,3,"Audit","Audit technique",5000,80,date(2025,3,1),date(2025,4,30),"Terminé",4),
+        (5,4,"API","Test API interne",4000,80,date(2024,1,1),date(2024,3,1),"En cours",5),
+        (6,7,"Firewall","Déploiement pare-feu",8000,120,date(2025,5,10),date(2025,8,10),"En cours",6),
+        (7,8,"BIM","Maquette numérique",10000,150,date(2025,6,1),date(2025,12,1),"En cours",7),
+        (8,9,"IT Deployment","Installation serveurs",15000,200,date(2025,7,5),date(2025,11,30),"Planifié",8),
+        (9,10,"Strat Consulting","Analyse marché",9000,100,date(2025,3,20),date(2025,9,20),"En cours",9),
+        (10,11,"Logistics Optim","Optimisation flux",11000,140,date(2025,1,20),date(2025,7,20),"Terminé",10),
+        (11,12,"Patient Sys","Développement logiciel patient",13000,160,date(2025,2,10),date(2025,8,10),"En cours",11),
+        (12,13,"E-commerce","Refonte site web",7000,90,date(2025,4,20),date(2025,10,20),"Planifié",12),
+        (13,14,"ERP Menuiserie","Gestion production bois",12000,180,date(2025,5,5),date(2025,11,5),"En cours",13),
+        (14,15,"Cleaning Management","Logiciel gestion équipes",6000,70,date(2025,1,25),date(2025,7,25),"Terminé",14),
+        (15,16,"Reservation App","Application mobile",9000,110,date(2025,3,5),date(2025,9,5),"En cours",15),
+        (16,17,"Cyber Audit","Audit sécurité complète",14000,200,date(2025,2,20),date(2025,8,20),"En cours",16),
+        (17,18,"Farm Management","Logiciel ferme",10000,150,date(2025,4,5),date(2025,10,5),"Planifié",17)
     ]
 
     for p in projets:
         cur.execute("""
         INSERT OR IGNORE INTO Projets
-        (convention_id,nom_projet,description,budget,charge_travail,date_debut,date_fin,statut)
-        VALUES (?,?,?,?,?,?,?,?)
+        (projet_id, convention_id, nom_projet, description, budget, charge_travail, date_debut, date_fin, statut, doc_dossier)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
         """, p)
     print("   ✔ Projets ajoutés.\n")
     # =========================================================
